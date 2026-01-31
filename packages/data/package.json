@@ -1,0 +1,23 @@
+{
+  "name": "@cw-hackathon/data",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "data-cli": "./dist/bin/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "cli": "bun run src/bin/cli.ts",
+    "lint": "biome check .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "citty": "^0.1.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}
