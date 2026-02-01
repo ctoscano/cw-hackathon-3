@@ -355,9 +355,149 @@ Rules are guidelines, not absolutes. Break them when:
 
 ---
 
+---
+
+## WebGL Background Performance (React Three Fiber)
+
+For ambient 3D backgrounds using WebGL, follow these React Three Fiber patterns.
+
+### Core Principles
+
+**Use the `/r3f-webgl-background` skill** for scaffolding and optimization guidance.
+
+### Performance Budget
+
+| Metric | Target | Warning |
+|--------|--------|---------|
+| Draw calls | < 100 | > 50 |
+| Triangle count | < 100k | > 50k |
+| Frame time | < 16ms | > 10ms |
+
+### Pattern: On-Demand Rendering
+
+```tsx
+// ✅ Good: Controlled frame loop
+<Canvas frameloop="demand">
+  <MyBackground />
+</Canvas>
+
+// In component
+useFrame((state, delta) => {
+  uniforms.uTime.value += delta;
+  state.invalidate(); // Request next frame only when needed
+});
+```
+
+### Anti-Pattern: React State in Animation Loop
+
+```tsx
+// ❌ Bad: Causes re-render every frame
+useFrame(() => {
+  setRotation(r => r + 0.01); // DON'T DO THIS
+});
+
+// ✅ Good: Direct mutation via ref
+const meshRef = useRef<THREE.Mesh>(null!);
+useFrame((_, delta) => {
+  meshRef.current.rotation.y += delta;
+});
+```
+
+### Anti-Pattern: Creating Objects in useFrame
+
+```tsx
+// ❌ Bad: Memory leak, GC churn
+useFrame(() => {
+  const color = new THREE.Color('red'); // Created every frame!
+  mesh.material.color = color;
+});
+
+// ✅ Good: Create once, reuse
+const color = useMemo(() => new THREE.Color('red'), []);
+useFrame(() => {
+  meshRef.current.material.color = color;
+});
+```
+
+### Next.js Integration
+
+```tsx
+// Always use dynamic import for Canvas
+const WebGLScene = dynamic(
+  () => import('./WebGLScene'),
+  { ssr: false }
+);
+
+// WebGLScene.tsx
+'use client'; // Required for R3F components
+
+export function WebGLScene() {
+  return (
+    <Canvas frameloop="demand">
+      <Background />
+    </Canvas>
+  );
+}
+```
+
+### Shader Best Practices
+
+```glsl
+// ✅ Good: Use mediump for mobile
+precision mediump float;
+
+// ✅ Good: Avoid dynamic loops
+// Instead of: for (int i = 0; i < n; i++)
+// Use unrolled: value += noise(p * 1.0) * 0.5;
+//               value += noise(p * 2.0) * 0.25;
+
+// ✅ Good: Prefer math over texture lookups
+float n = fract(sin(dot(uv, vec2(127.1, 311.7))) * 43758.5453);
+```
+
+### Accessibility
+
+```tsx
+// Hook to detect reduced motion preference
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  return reduced;
+}
+
+// Usage: scale animation speed to 0 when reduced motion preferred
+const speed = useReducedMotion() ? 0 : 1;
+```
+
+### File Structure
+
+```
+app/components/webgl/
+├── index.ts                    # Barrel exports
+├── WebGLProvider.tsx           # Canvas wrapper
+├── BackgroundCanvas.tsx        # Background layer
+├── hooks/
+│   └── useReducedMotion.ts
+└── shaders/
+    ├── LandscapeBackground.tsx
+    └── GradientBackground.tsx
+```
+
+---
+
 ## Additional Resources
 
 - [React Documentation](https://react.dev) - Official React docs
 - [Next.js Documentation](https://nextjs.org/docs) - Next.js 15 App Router guide
 - [Vercel React Best Practices](https://vercel.com/blog/introducing-react-best-practices) - Performance patterns
+- [React Three Fiber Docs](https://r3f.docs.pmnd.rs/) - R3F documentation
+- [100 Three.js Tips](https://www.utsubo.com/blog/threejs-best-practices-100-tips) - Comprehensive Three.js guide
 - Our internal: `CLAUDE.md` - Project conventions and development guide
