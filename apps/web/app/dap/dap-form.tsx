@@ -142,14 +142,14 @@ PLAN
 ----
 
 Interventions:
-${dapNote.plan.interventions.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}
+${dapNote.plan.interventions.map((i, idx) => `${idx + 1}. ${i}`).join("\n")}
 
 Homework:
 ${dapNote.plan.homework}
 
 Next Session:
 ${dapNote.plan.nextSession}
-${dapNote.plan.referrals.length > 0 ? `\nReferrals:\n${dapNote.plan.referrals.map((r, idx) => `${idx + 1}. ${r}`).join('\n')}` : ''}`;
+${dapNote.plan.referrals.length > 0 ? `\nReferrals:\n${dapNote.plan.referrals.map((r, idx) => `${idx + 1}. ${r}`).join("\n")}` : ""}`;
   }
 
   return (
@@ -292,10 +292,18 @@ ${dapNote.plan.referrals.length > 0 ? `\nReferrals:\n${dapNote.plan.referrals.ma
 
                 <h3>Metadata</h3>
                 <div className={styles.dapSection}>
-                  <p><strong>Session Date:</strong> {result.dapNote.metadata.sessionDate}</p>
-                  <p><strong>Duration:</strong> {result.dapNote.metadata.sessionDuration}</p>
-                  <p><strong>Type:</strong> {result.dapNote.metadata.sessionType}</p>
-                  <p><strong>Billing Code:</strong> {result.dapNote.metadata.billingCode}</p>
+                  <p>
+                    <strong>Session Date:</strong> {result.dapNote.metadata.sessionDate}
+                  </p>
+                  <p>
+                    <strong>Duration:</strong> {result.dapNote.metadata.sessionDuration}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> {result.dapNote.metadata.sessionType}
+                  </p>
+                  <p>
+                    <strong>Billing Code:</strong> {result.dapNote.metadata.billingCode}
+                  </p>
                 </div>
 
                 {result.metadata && (
