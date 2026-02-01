@@ -21,6 +21,11 @@ export const evaluateCommand = defineCommand({
       description: "Path to original session file. If not provided, uses latest synthetic.",
       required: false,
     },
+    model: {
+      type: "string",
+      description: "AI model to use: opus, sonnet, haiku",
+      default: "haiku",
+    },
   },
   async run({ args }) {
     console.log("\n🔍 DAP Note Quality Evaluator\n");
@@ -78,6 +83,9 @@ export const evaluateCommand = defineCommand({
       schema: EvaluationResultSchema,
       prompt: prompt.user,
       system: prompt.system,
+      config: {
+        model: args.model as "opus" | "sonnet" | "haiku",
+      },
     });
 
     // Save results

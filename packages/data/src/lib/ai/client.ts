@@ -1,5 +1,5 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateObject, generateText } from "ai";
+import { claudeCode } from "ai-sdk-provider-claude-code";
 import type { z } from "zod";
 
 /**
@@ -29,26 +29,20 @@ export interface AIResult<T> {
  * Configuration for AI client
  */
 export interface AIClientConfig {
-  model?: string;
-  apiKey?: string;
+  /** Model to use: 'opus', 'sonnet', or 'haiku' */
+  model?: "opus" | "sonnet" | "haiku";
 }
 
-const DEFAULT_MODEL = "claude-sonnet-4-20250514";
-
-/**
- * Create the Anthropic provider instance
- */
-function getAnthropicProvider(apiKey?: string) {
-  return createAnthropic({
-    apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY,
-  });
-}
+/** Default model for AI calls */
+const DEFAULT_MODEL: "opus" | "sonnet" | "haiku" = "sonnet";
 
 /**
  * Generate structured output with telemetry tracking
  *
  * This is the primary function for generating typed responses from the LLM.
  * It wraps the AI SDK's generateObject with timing, token tracking, and error handling.
+ *
+ * Uses Claude Code as the AI provider - requires Claude Code CLI to be authenticated.
  */
 export async function generateStructuredOutput<T>(options: {
   schema: z.ZodType<T>;
@@ -57,22 +51,20 @@ export async function generateStructuredOutput<T>(options: {
   config?: AIClientConfig;
 }): Promise<AIResult<T>> {
   const { schema, prompt, system, config } = options;
-  const model = config?.model ?? DEFAULT_MODEL;
+  const modelName = config?.model ?? DEFAULT_MODEL;
   const startTime = new Date();
 
   const telemetry: AITelemetry = {
     startTime,
     endTime: startTime,
     durationMs: 0,
-    model,
+    model: modelName,
     success: false,
   };
 
   try {
-    const anthropic = getAnthropicProvider(config?.apiKey);
-
     const result = await generateObject({
-      model: anthropic(model),
+      model: claudeCode(modelName),
       schema,
       prompt,
       system,
@@ -83,11 +75,11 @@ export async function generateStructuredOutput<T>(options: {
     telemetry.durationMs = endTime.getTime() - startTime.getTime();
     telemetry.success = true;
 
-    // Extract token usage if available
+    // Extract token usage if available (AI SDK v6 uses inputTokens/outputTokens)
     if (result.usage) {
-      telemetry.promptTokens = result.usage.promptTokens;
-      telemetry.completionTokens = result.usage.completionTokens;
-      telemetry.totalTokens = result.usage.promptTokens + result.usage.completionTokens;
+      telemetry.promptTokens = result.usage.inputTokens;
+      telemetry.completionTokens = result.usage.outputTokens;
+      telemetry.totalTokens = result.usage.totalTokens;
     }
 
     console.log(
@@ -122,22 +114,20 @@ export async function generateTextOutput(options: {
   config?: AIClientConfig;
 }): Promise<AIResult<string>> {
   const { prompt, system, config } = options;
-  const model = config?.model ?? DEFAULT_MODEL;
+  const modelName = config?.model ?? DEFAULT_MODEL;
   const startTime = new Date();
 
   const telemetry: AITelemetry = {
     startTime,
     endTime: startTime,
     durationMs: 0,
-    model,
+    model: modelName,
     success: false,
   };
 
   try {
-    const anthropic = getAnthropicProvider(config?.apiKey);
-
     const result = await generateText({
-      model: anthropic(model),
+      model: claudeCode(modelName),
       prompt,
       system,
     });
@@ -147,10 +137,11 @@ export async function generateTextOutput(options: {
     telemetry.durationMs = endTime.getTime() - startTime.getTime();
     telemetry.success = true;
 
+    // Extract token usage if available (AI SDK v6 uses inputTokens/outputTokens)
     if (result.usage) {
-      telemetry.promptTokens = result.usage.promptTokens;
-      telemetry.completionTokens = result.usage.completionTokens;
-      telemetry.totalTokens = result.usage.promptTokens + result.usage.completionTokens;
+      telemetry.promptTokens = result.usage.inputTokens;
+      telemetry.completionTokens = result.usage.outputTokens;
+      telemetry.totalTokens = result.usage.totalTokens;
     }
 
     console.log(

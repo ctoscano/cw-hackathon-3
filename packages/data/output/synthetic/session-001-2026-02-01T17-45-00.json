@@ -1,0 +1,20 @@
+{
+  "scenario": "A 34-year-old female client presenting with generalized anxiety disorder and workplace stress. She works as a software engineer at a fast-paced startup and has been experiencing increased anxiety, sleep difficulties, and difficulty concentrating over the past 3 months. This is her 6th session in treatment.",
+  "therapeuticApproach": "Cognitive Behavioral Therapy (CBT) with elements of mindfulness-based interventions",
+  "patientPresentation": "Client arrived on time and appeared well-groomed but showed visible signs of tension including shoulder rigidity and fidgeting with her phone. She made good eye contact and was engaged throughout the session. Her speech was slightly rapid at times, particularly when discussing work situations. Affect was anxious but congruent with content discussed.",
+  "keyThemes": [
+    "Perfectionism and fear of failure at work",
+    "Difficulty setting boundaries with demanding supervisor",
+    "Catastrophic thinking patterns about performance reviews",
+    "Physical manifestations of anxiety (tension headaches, disrupted sleep)",
+    "Progress with breathing exercises between sessions"
+  ],
+  "interventions": [
+    "Cognitive restructuring of catastrophic thoughts about upcoming performance review",
+    "Behavioral experiment planning around boundary-setting",
+    "Mindfulness grounding exercise (5-4-3-2-1 sensory technique)",
+    "Psychoeducation about the anxiety-perfectionism cycle",
+    "Homework assignment for thought records"
+  ],
+  "sessionNarrative": "I had my sixth session today with Sarah, my client dealing with generalized anxiety and work stress. She came in looking pretty tense - you could see it in her shoulders and she was fidgeting with her phone in the waiting room. But she was engaged and ready to work, which is great.\n\nWe spent the first part of the session reviewing how her week went. She said the breathing exercises we worked on last time have been helping somewhat - she's been using them before meetings and it takes the edge off. But she mentioned she's been having a really hard time sleeping because her performance review is coming up next month.\n\nWhen we dug into what's keeping her up, it became clear she's caught in this cycle of catastrophic thinking. She's convinced that any feedback that isn't glowing means she's going to get fired, even though rationally she knows her work has been solid. Classic anxiety pattern - her mind jumps to the worst case scenario.\n\nSo we did some cognitive restructuring work. I had her walk me through her automatic thoughts about the review, and we examined the evidence for and against them. She was actually able to identify that she got promoted last year, her manager has given her positive feedback recently, and she's never actually received a poor review. By the end she could see that her prediction of being fired was anxiety talking, not reality.\n\nThe other big thing we tackled was her difficulty saying no to her supervisor. He's been piling extra projects on her, and she just keeps saying yes because she's afraid of being seen as not a team player. We talked about how this feeds her anxiety - more work means more stress, less sleep, worse anxiety. We planned out a behavioral experiment where she's going to try declining one small additional task this week and observe what actually happens versus what she fears will happen.\n\nWe ended with a grounding exercise because she was getting activated talking about work. The 5-4-3-2-1 technique worked well for her. I assigned thought records as homework so we can have more material to work with next session, specifically focused on situations where she notices the perfectionism showing up.\n\nOverall I'm pleased with her progress. She's developing good insight into her patterns and is willing to try new things. I want to keep building on the cognitive work and start looking at the deeper beliefs about needing to be perfect that seem to be driving a lot of this."
+}

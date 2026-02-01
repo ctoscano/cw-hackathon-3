@@ -22,6 +22,11 @@ export const generateCommand = defineCommand({
       description: "Output directory for generated files",
       required: false,
     },
+    model: {
+      type: "string",
+      description: "AI model to use: opus, sonnet, haiku",
+      default: "haiku",
+    },
   },
   async run({ args }) {
     console.log("\n📝 DAP Note Generator\n");
@@ -71,6 +76,9 @@ export const generateCommand = defineCommand({
       schema: DAPNoteSchema,
       prompt: prompt.user,
       system: prompt.system,
+      config: {
+        model: args.model as "opus" | "sonnet" | "haiku",
+      },
     });
 
     // Save outputs

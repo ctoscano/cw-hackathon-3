@@ -27,6 +27,11 @@ export const syntheticCommand = defineCommand({
         "Therapeutic modality: cbt, dbt, psychodynamic, person-centered, integrative, mixed",
       required: false,
     },
+    model: {
+      type: "string",
+      description: "AI model to use: opus, sonnet, haiku",
+      default: "haiku",
+    },
   },
   async run({ args }) {
     const count = Number.parseInt(args.count, 10);
@@ -54,6 +59,9 @@ export const syntheticCommand = defineCommand({
         prompt: prompt.system,
         system:
           "You are a helpful assistant that generates realistic therapy session narratives. Output valid JSON matching the schema.",
+        config: {
+          model: args.model as "opus" | "sonnet" | "haiku",
+        },
       });
 
       // Format as markdown for easy reading
