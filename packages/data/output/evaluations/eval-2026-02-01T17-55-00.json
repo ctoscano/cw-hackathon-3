@@ -1,0 +1,31 @@
+{
+  "overallScore": 8.5,
+  "dimensions": {
+    "completeness": 9,
+    "accuracy": 9,
+    "clinicalAppropriate": 8,
+    "insuranceCompliance": 8,
+    "actionability": 9
+  },
+  "strengths": [
+    "Excellent use of direct client quotes in the Subjective section, providing strong documentation of client's self-report",
+    "Comprehensive objective observations including physical presentation, affect, and behavioral observations",
+    "Risk assessment is thorough and explicitly addresses key safety domains",
+    "Interventions are clearly tied to presenting problems and session content",
+    "Plan section provides specific, measurable homework assignments with clear rationale",
+    "Appropriate billing code selected for 45-50 minute individual psychotherapy session"
+  ],
+  "improvements": [
+    "Clinical impression could include more specific diagnostic criteria being met (e.g., specific GAD symptoms observed)",
+    "Consider adding treatment goal progress ratings or specific outcome measures being tracked",
+    "The objective section could benefit from mental status exam language for more standardized documentation",
+    "Session number and treatment phase could be more prominently documented for continuity tracking"
+  ],
+  "promptSuggestions": [
+    "Add instruction to include specific DSM-5 criteria observations in the clinical impression section",
+    "Include prompt for standardized mental status exam elements in the objective section (orientation, memory, judgment, etc.)",
+    "Add guidance to reference specific treatment goals and progress metrics when available",
+    "Consider adding a field for session number and total planned sessions to track treatment phase",
+    "Include instruction to note any coordination of care or consultation activities"
+  ]
+}
