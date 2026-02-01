@@ -436,7 +436,21 @@ See `apps/web/.env.example` for all available options.
 
 ### packages/data
 
-CLI can read environment variables via `process.env` or Bun's `Bun.env`.
+Create `.env` for local CLI development:
+
+```env
+# Weights & Biases Weave Tracing
+WANDB_API_KEY=your-wandb-api-key
+WEAVE_PROJECT=your-team/your-project
+```
+
+Run CLI with env file:
+```bash
+cd packages/data
+bun --env-file=.env run src/bin/cli.ts dap generate ...
+```
+
+See `packages/data/.env.example` for all available options.
 
 **Weave Tracing**: Set `WEAVE_PROJECT` (or `WANDB_PROJECT` or `CORE_WEAVE`) to enable W&B Weave tracing for LLM calls. Also requires `WANDB_API_KEY` for authentication.
 
