@@ -17,6 +17,8 @@ export const main = defineCommand({
 // Re-export library modules for use in web app
 export * from "./lib/ai/client.js";
 export * from "./lib/ai/schemas.js";
+export * from "./lib/ai/intake-schemas.js";
 export * from "./lib/prompts/loader.js";
 export * from "./lib/prompts/builder.js";
+export * from "./lib/intake/index.js";
 export * from "./lib/utils/file.js";
