@@ -1,4 +1,9 @@
-import { SchemaDescriptions, buildDAPPrompt } from "@cw-hackathon/data";
+import {
+  DAPNoteSchema,
+  SchemaDescriptions,
+  buildDAPPrompt,
+  generateStructuredOutput,
+} from "@cw-hackathon/data";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -27,20 +32,28 @@ export async function POST(request: NextRequest) {
       schemaDescription: SchemaDescriptions.DAPNote,
     });
 
-    // Return prompt-only response
-    // In environments where LLM calls work, this could be extended to call generateStructuredOutput
+    // Generate DAP note using LLM
+    const result = await generateStructuredOutput({
+      schema: DAPNoteSchema,
+      prompt: prompt.user,
+      system: prompt.system,
+      config: { model: "sonnet" },
+    });
+
+    // Return generated DAP note with metadata
     return NextResponse.json({
-      mode: "prompt-only",
-      prompt: {
-        system: prompt.system,
-        user: prompt.user,
-      },
-      schema: SchemaDescriptions.DAPNote,
+      mode: "generated",
+      dapNote: result.data,
       metadata: {
-        parts: prompt.metadata.parts,
+        tokensUsed: {
+          inputTokens: result.telemetry.promptTokens,
+          outputTokens: result.telemetry.completionTokens,
+          totalTokens: result.telemetry.totalTokens,
+        },
+        executionTime: `${(result.telemetry.durationMs / 1000).toFixed(2)}s`,
+        model: result.telemetry.model,
         builtAt: prompt.metadata.builtAt.toISOString(),
       },
-      message: "Prompt generated successfully. Copy to use with Claude.",
     });
   } catch (error) {
     console.error("Error generating DAP prompt:", error);

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import styles from "./dap.module.css";
 
-interface DAPResponse {
-  mode: string;
+interface PromptOnlyResponse {
+  mode: "prompt-only";
   prompt: {
     system: string;
     user: string;
@@ -16,6 +16,45 @@ interface DAPResponse {
   };
   message: string;
 }
+
+interface GeneratedResponse {
+  mode: "generated";
+  dapNote: {
+    data: {
+      subjective: string;
+      objective: string;
+    };
+    assessment: {
+      clinicalImpression: string;
+      progress: string;
+      riskAssessment: string;
+    };
+    plan: {
+      interventions: string[];
+      homework: string;
+      nextSession: string;
+      referrals: string[];
+    };
+    metadata: {
+      sessionDate: string;
+      sessionDuration: string;
+      sessionType: string;
+      billingCode: string;
+    };
+  };
+  metadata: {
+    tokensUsed: {
+      inputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+    };
+    executionTime: string;
+    model: string;
+    builtAt: string;
+  };
+}
+
+type DAPResponse = PromptOnlyResponse | GeneratedResponse;
 
 export function DAPForm() {
   const [input, setInput] = useState("");
@@ -103,42 +142,122 @@ export function DAPForm() {
 
       {result && (
         <div className={styles.results}>
-          <div className={styles.resultSection}>
-            <div className={styles.sectionHeader}>
-              <h2>System Prompt</h2>
-              <button
-                type="button"
-                className={styles.copyButton}
-                onClick={() => copyToClipboard(result.prompt.system, "system")}
-              >
-                {copied === "system" ? "Copied!" : "Copy"}
-              </button>
-            </div>
-            <pre className={styles.promptText}>{result.prompt.system}</pre>
-          </div>
+          {result.mode === "prompt-only" ? (
+            <>
+              <div className={styles.resultSection}>
+                <div className={styles.sectionHeader}>
+                  <h2>System Prompt</h2>
+                  <button
+                    type="button"
+                    className={styles.copyButton}
+                    onClick={() => copyToClipboard(result.prompt.system, "system")}
+                  >
+                    {copied === "system" ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <pre className={styles.promptText}>{result.prompt.system}</pre>
+              </div>
 
-          <div className={styles.resultSection}>
-            <div className={styles.sectionHeader}>
-              <h2>User Prompt</h2>
-              <button
-                type="button"
-                className={styles.copyButton}
-                onClick={() => copyToClipboard(result.prompt.user, "user")}
-              >
-                {copied === "user" ? "Copied!" : "Copy"}
-              </button>
-            </div>
-            <pre className={styles.promptText}>{result.prompt.user}</pre>
-          </div>
+              <div className={styles.resultSection}>
+                <div className={styles.sectionHeader}>
+                  <h2>User Prompt</h2>
+                  <button
+                    type="button"
+                    className={styles.copyButton}
+                    onClick={() => copyToClipboard(result.prompt.user, "user")}
+                  >
+                    {copied === "user" ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <pre className={styles.promptText}>{result.prompt.user}</pre>
+              </div>
 
-          <div className={styles.resultSection}>
-            <h2>Expected Output Schema</h2>
-            <pre className={styles.schemaText}>{result.schema}</pre>
-          </div>
+              <div className={styles.resultSection}>
+                <h2>Expected Output Schema</h2>
+                <pre className={styles.schemaText}>{result.schema}</pre>
+              </div>
 
-          <p className={styles.instructions}>
-            Copy the prompts above and paste into Claude to generate your DAP note.
-          </p>
+              <p className={styles.instructions}>
+                Copy the prompts above and paste into Claude to generate your DAP note.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className={styles.resultSection}>
+                <h2>Generated DAP Note</h2>
+
+                <h3>Data</h3>
+                <div className={styles.dapSection}>
+                  <h4>Subjective</h4>
+                  <p>{result.dapNote.data.subjective}</p>
+                </div>
+                <div className={styles.dapSection}>
+                  <h4>Objective</h4>
+                  <p>{result.dapNote.data.objective}</p>
+                </div>
+
+                <h3>Assessment</h3>
+                <div className={styles.dapSection}>
+                  <h4>Clinical Impression</h4>
+                  <p>{result.dapNote.assessment.clinicalImpression}</p>
+                </div>
+                <div className={styles.dapSection}>
+                  <h4>Progress</h4>
+                  <p>{result.dapNote.assessment.progress}</p>
+                </div>
+                <div className={styles.dapSection}>
+                  <h4>Risk Assessment</h4>
+                  <p>{result.dapNote.assessment.riskAssessment}</p>
+                </div>
+
+                <h3>Plan</h3>
+                <div className={styles.dapSection}>
+                  <h4>Interventions</h4>
+                  <ul>
+                    {result.dapNote.plan.interventions.map((intervention, i) => (
+                      <li key={i}>{intervention}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className={styles.dapSection}>
+                  <h4>Homework</h4>
+                  <p>{result.dapNote.plan.homework}</p>
+                </div>
+                <div className={styles.dapSection}>
+                  <h4>Next Session</h4>
+                  <p>{result.dapNote.plan.nextSession}</p>
+                </div>
+                {result.dapNote.plan.referrals.length > 0 && (
+                  <div className={styles.dapSection}>
+                    <h4>Referrals</h4>
+                    <ul>
+                      {result.dapNote.plan.referrals.map((referral, i) => (
+                        <li key={i}>{referral}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <h3>Metadata</h3>
+                <div className={styles.dapSection}>
+                  <p><strong>Session Date:</strong> {result.dapNote.metadata.sessionDate}</p>
+                  <p><strong>Duration:</strong> {result.dapNote.metadata.sessionDuration}</p>
+                  <p><strong>Type:</strong> {result.dapNote.metadata.sessionType}</p>
+                  <p><strong>Billing Code:</strong> {result.dapNote.metadata.billingCode}</p>
+                </div>
+
+                {result.metadata && (
+                  <div className={styles.dapSection}>
+                    <p className={styles.apiMetadata}>
+                      Generated using {result.metadata.model} •
+                      {result.metadata.tokensUsed.totalTokens.toLocaleString()} tokens •
+                      {result.metadata.executionTime}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

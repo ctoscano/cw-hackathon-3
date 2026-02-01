@@ -180,6 +180,8 @@ export type PromptMetadata = z.infer<typeof PromptMetadataSchema>;
 /**
  * Generate a human-readable description of a Zod schema
  * Useful for including in prompt artifacts to show expected output format
+ *
+ * Note: Accesses Zod internal _def properties for description/values extraction
  */
 export function describeSchema(schema: z.ZodTypeAny, name: string, indent = 0): string {
   const pad = "  ".repeat(indent);
@@ -193,7 +195,8 @@ export function describeSchema(schema: z.ZodTypeAny, name: string, indent = 0): 
     const shape = schema.shape;
     for (const [key, value] of Object.entries(shape)) {
       const zodValue = value as z.ZodTypeAny;
-      const description = zodValue._def.description || "";
+      // biome-ignore lint/suspicious/noExplicitAny: Accessing Zod internal _def for description
+      const description = (zodValue._def as any).description || "";
       const isOptional = zodValue instanceof z.ZodOptional;
       const innerType = isOptional ? (zodValue as z.ZodOptional<z.ZodTypeAny>).unwrap() : zodValue;
 
@@ -229,7 +232,8 @@ export function describeSchema(schema: z.ZodTypeAny, name: string, indent = 0): 
           `${pad}  ${key}${isOptional ? "?" : ""}: boolean${description ? `  // ${description}` : ""}`,
         );
       } else if (innerType instanceof z.ZodEnum) {
-        const values = innerType._def.values.join(" | ");
+        // biome-ignore lint/suspicious/noExplicitAny: Accessing Zod internal _def for enum values
+        const values = (innerType._def as any).values.join(" | ");
         lines.push(
           `${pad}  ${key}${isOptional ? "?" : ""}: ${values}${description ? `  // ${description}` : ""}`,
         );

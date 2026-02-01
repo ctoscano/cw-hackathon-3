@@ -155,3 +155,60 @@
   background: #f0f7ff;
   border-radius: 4px;
 }
+
+.resultSection h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: #f8f8f8;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.resultSection h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem 0;
+  padding: 0 0.75rem;
+  color: #333;
+}
+
+.resultSection h3:first-of-type {
+  margin-top: 0;
+}
+
+.resultSection h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #555;
+}
+
+.dapSection {
+  padding: 0 0.75rem 1rem 0.75rem;
+  line-height: 1.6;
+}
+
+.dapSection p {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.dapSection ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.dapSection li {
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.apiMetadata {
+  font-size: 0.8125rem;
+  color: #888;
+  font-style: italic;
+  margin-top: 1rem !important;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}

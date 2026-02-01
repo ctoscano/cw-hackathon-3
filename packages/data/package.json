@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "ai": "^6.0.0",
-    "ai-sdk-provider-claude-code": "^1.0.0",
+    "ai-sdk-provider-claude-code": "^3.3.5",
     "citty": "^0.1.6",
     "gray-matter": "^4.0.3",
-    "zod": "^3.23.0"
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",
