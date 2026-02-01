@@ -1,6 +1,7 @@
 import { generateObject, generateText } from "ai";
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import type { z } from "zod";
+import { initWeave, isWeaveEnabled, weave } from "./weave.js";
 
 /**
  * Telemetry data collected during AI calls
@@ -37,12 +38,48 @@ export interface AIClientConfig {
 const DEFAULT_MODEL: "opus" | "sonnet" | "haiku" = "sonnet";
 
 /**
+ * Core structured output generation - wrapped by Weave for tracing
+ */
+async function generateStructuredOutputCore<T>(params: {
+  schema: z.ZodType<T>;
+  prompt: string;
+  system?: string;
+  modelName: string;
+}): Promise<{
+  object: T;
+  usage?: { inputTokens: number; outputTokens: number; totalTokens: number };
+}> {
+  const result = await generateObject({
+    model: claudeCode(params.modelName as "opus" | "sonnet" | "haiku"),
+    schema: params.schema,
+    prompt: params.prompt,
+    system: params.system,
+  });
+  return {
+    object: result.object,
+    usage: result.usage
+      ? {
+          inputTokens: result.usage.inputTokens ?? 0,
+          outputTokens: result.usage.outputTokens ?? 0,
+          totalTokens: result.usage.totalTokens ?? 0,
+        }
+      : undefined,
+  };
+}
+
+// Create Weave-wrapped version of the core function
+const generateStructuredOutputOp = weave.op(generateStructuredOutputCore, {
+  name: "generateStructuredOutput",
+});
+
+/**
  * Generate structured output with telemetry tracking
  *
  * This is the primary function for generating typed responses from the LLM.
  * It wraps the AI SDK's generateObject with timing, token tracking, and error handling.
  *
  * Uses Claude Code as the AI provider - requires Claude Code CLI to be authenticated.
+ * When WEAVE_PROJECT is set, calls are traced to Weights & Biases.
  */
 export async function generateStructuredOutput<T>(options: {
   schema: z.ZodType<T>;
@@ -54,6 +91,11 @@ export async function generateStructuredOutput<T>(options: {
   const modelName = config?.model ?? DEFAULT_MODEL;
   const startTime = new Date();
 
+  // Initialize Weave if configured (lazy initialization)
+  if (isWeaveEnabled()) {
+    await initWeave();
+  }
+
   const telemetry: AITelemetry = {
     startTime,
     endTime: startTime,
@@ -63,11 +105,13 @@ export async function generateStructuredOutput<T>(options: {
   };
 
   try {
-    const result = await generateObject({
-      model: claudeCode(modelName),
+    // Use Weave-wrapped version if enabled, otherwise call directly
+    const callFn = isWeaveEnabled() ? generateStructuredOutputOp : generateStructuredOutputCore;
+    const result = await callFn({
       schema,
       prompt,
       system,
+      modelName,
     });
 
     const endTime = new Date();
@@ -104,9 +148,43 @@ export async function generateStructuredOutput<T>(options: {
 }
 
 /**
+ * Core text output generation - wrapped by Weave for tracing
+ */
+async function generateTextOutputCore(params: {
+  prompt: string;
+  system?: string;
+  modelName: string;
+}): Promise<{
+  text: string;
+  usage?: { inputTokens: number; outputTokens: number; totalTokens: number };
+}> {
+  const result = await generateText({
+    model: claudeCode(params.modelName as "opus" | "sonnet" | "haiku"),
+    prompt: params.prompt,
+    system: params.system,
+  });
+  return {
+    text: result.text,
+    usage: result.usage
+      ? {
+          inputTokens: result.usage.inputTokens ?? 0,
+          outputTokens: result.usage.outputTokens ?? 0,
+          totalTokens: result.usage.totalTokens ?? 0,
+        }
+      : undefined,
+  };
+}
+
+// Create Weave-wrapped version of the core function
+const generateTextOutputOp = weave.op(generateTextOutputCore, {
+  name: "generateTextOutput",
+});
+
+/**
  * Generate text output with telemetry tracking
  *
  * Used for cases where structured output isn't needed (e.g., synthetic generation)
+ * When WEAVE_PROJECT is set, calls are traced to Weights & Biases.
  */
 export async function generateTextOutput(options: {
   prompt: string;
@@ -117,6 +195,11 @@ export async function generateTextOutput(options: {
   const modelName = config?.model ?? DEFAULT_MODEL;
   const startTime = new Date();
 
+  // Initialize Weave if configured (lazy initialization)
+  if (isWeaveEnabled()) {
+    await initWeave();
+  }
+
   const telemetry: AITelemetry = {
     startTime,
     endTime: startTime,
@@ -126,10 +209,12 @@ export async function generateTextOutput(options: {
   };
 
   try {
-    const result = await generateText({
-      model: claudeCode(modelName),
+    // Use Weave-wrapped version if enabled, otherwise call directly
+    const callFn = isWeaveEnabled() ? generateTextOutputOp : generateTextOutputCore;
+    const result = await callFn({
       prompt,
       system,
+      modelName,
     });
 
     const endTime = new Date();
