@@ -231,7 +231,11 @@ function formatCopyablePrompt(prompt: BuiltPrompt, schemaDescription?: string): 
  */
 export function buildDAPPrompt(
   sessionDescription: string,
-  options?: { outputFormat?: PromptOutputFormat; schemaDescription?: string },
+  options?: {
+    outputFormat?: PromptOutputFormat;
+    schemaDescription?: string;
+    saveToFile?: boolean;
+  },
 ): BuiltPrompt {
   return buildPrompt({
     systemParts: ["dap-notes/system.md"],
@@ -239,7 +243,7 @@ export function buildDAPPrompt(
     variables: {
       sessionDescription,
     },
-    saveToFile: true,
+    saveToFile: options?.saveToFile ?? true,
     outputPrefix: "dap-prompt",
     outputFormat: options?.outputFormat,
     schemaDescription: options?.schemaDescription,
