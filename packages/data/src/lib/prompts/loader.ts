@@ -21,11 +21,18 @@ export type PromptVariables = Record<string, string>;
  * Find the prompts directory
  */
 function findPromptsDir(): string {
-  // Try relative to current file first (for Bun direct execution)
+  // Try multiple possible locations in order of likelihood
   const dirs = [
+    // Relative to current file (for Bun direct execution from packages/data)
     join(dirname(import.meta.url.replace("file://", "")), "../../prompts"),
+    // Direct execution from packages/data
     join(process.cwd(), "src/prompts"),
+    // Running from monorepo root
     join(process.cwd(), "packages/data/src/prompts"),
+    // Running from apps/web in monorepo
+    join(process.cwd(), "../../packages/data/src/prompts"),
+    // Running from any app in apps/ directory
+    join(process.cwd(), "../..", "packages/data/src/prompts"),
   ];
 
   for (const dir of dirs) {
