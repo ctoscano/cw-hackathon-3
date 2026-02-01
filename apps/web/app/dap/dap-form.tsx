@@ -61,7 +61,7 @@ export function DAPForm() {
   const [result, setResult] = useState<DAPResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState<"system" | "user" | null>(null);
+  const [copied, setCopied] = useState<"system" | "user" | "dap" | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,7 +91,7 @@ export function DAPForm() {
     }
   }
 
-  async function copyToClipboard(text: string, type: "system" | "user") {
+  async function copyToClipboard(text: string, type: "system" | "user" | "dap") {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(type);
@@ -107,6 +107,49 @@ export function DAPForm() {
       setCopied(type);
       setTimeout(() => setCopied(null), 2000);
     }
+  }
+
+  function formatDAPNoteAsText(response: GeneratedResponse): string {
+    const { dapNote } = response;
+
+    return `DAP NOTE
+========
+
+DATA
+----
+
+Subjective:
+${dapNote.data.subjective}
+
+Objective:
+${dapNote.data.objective}
+
+
+ASSESSMENT
+----------
+
+Clinical Impression:
+${dapNote.assessment.clinicalImpression}
+
+Progress:
+${dapNote.assessment.progress}
+
+Risk Assessment:
+${dapNote.assessment.riskAssessment}
+
+
+PLAN
+----
+
+Interventions:
+${dapNote.plan.interventions.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}
+
+Homework:
+${dapNote.plan.homework}
+
+Next Session:
+${dapNote.plan.nextSession}
+${dapNote.plan.referrals.length > 0 ? `\nReferrals:\n${dapNote.plan.referrals.map((r, idx) => `${idx + 1}. ${r}`).join('\n')}` : ''}`;
   }
 
   return (
@@ -184,7 +227,16 @@ export function DAPForm() {
           ) : (
             <>
               <div className={styles.resultSection}>
-                <h2>Generated DAP Note</h2>
+                <div className={styles.sectionHeader}>
+                  <h2>Generated DAP Note</h2>
+                  <button
+                    type="button"
+                    className={styles.copyButton}
+                    onClick={() => copyToClipboard(formatDAPNoteAsText(result), "dap")}
+                  >
+                    {copied === "dap" ? "Copied!" : "Copy Full Note"}
+                  </button>
+                </div>
 
                 <h3>Data</h3>
                 <div className={styles.dapSection}>
