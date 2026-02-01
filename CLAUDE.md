@@ -246,6 +246,24 @@ Biome automatically organizes imports:
 - Constants: UPPER_SNAKE_CASE
 - Types/Interfaces: PascalCase
 
+### React and Next.js Best Practices
+
+For detailed React development patterns, performance optimization, and component design guidelines, see:
+- **[docs/react-best-practices.md](./docs/react-best-practices.md)** - Comprehensive guide covering:
+  - Performance optimization (async waterfalls, bundle size, re-renders)
+  - When NOT to use `useEffect`
+  - Server vs Client Components
+  - Data fetching patterns
+  - State management
+  - Component design patterns
+
+**Key highlights for this project:**
+- Default to Server Components for initial data loading
+- Avoid `useEffect` for data transformation or event handling
+- Use Server Actions for mutations
+- Parallelize independent async operations with `Promise.all()`
+- Calculate derived state during rendering, not in effects
+
 ## Adding New Workspaces
 
 ### New App

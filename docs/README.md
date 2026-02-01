@@ -6,6 +6,9 @@ This directory contains documentation for the CW Hackathon monorepo.
 
 - **prds/** - Product Requirement Documents
   - [repo-setup.md](./prds/repo-setup.md) - Initial monorepo setup implementation plan
+- **templates/** - Document templates
+  - [prd-template.md](./templates/prd-template.md) - Template for creating new PRDs
+- **[react-best-practices.md](./react-best-practices.md)** - React and Next.js development patterns and performance guidelines
 
 ## Quick Links
 
@@ -26,7 +29,16 @@ When adding new documentation:
 
 ### PRDs (Product Requirement Documents)
 
-Should include:
+Use the [PRD template](./templates/prd-template.md) to create new PRDs. The template includes:
+- Purpose and scope definition
+- Constraints and dependencies
+- Technical requirements (files, architecture, tech stack)
+- Implementation steps with verification criteria
+- Meta-instructions to guide LLMs in proper PRD creation
+
+Create new PRDs using the `/prd plan` skill command, which will copy the template and set up the initial structure.
+
+PRDs should include:
 - Overview and goals
 - Technical requirements
 - Implementation details
