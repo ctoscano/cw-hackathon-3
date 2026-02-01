@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 import { generateStructuredOutput } from "../../lib/ai/client.js";
-import { TherapistSessionInputSchema } from "../../lib/ai/schemas.js";
-import { buildSyntheticPrompt } from "../../lib/prompts/builder.js";
+import { SchemaDescriptions, TherapistSessionInputSchema } from "../../lib/ai/schemas.js";
+import { type PromptOutputFormat, buildSyntheticPrompt } from "../../lib/prompts/builder.js";
 import { saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
 
 export const syntheticCommand = defineCommand({
@@ -32,9 +32,62 @@ export const syntheticCommand = defineCommand({
       description: "AI model to use: opus, sonnet, haiku",
       default: "haiku",
     },
+    promptOnly: {
+      type: "boolean",
+      description:
+        "Build and save prompt artifacts without calling the LLM. Use for prompt development and inspection.",
+      alias: "p",
+      default: false,
+    },
+    outputFormat: {
+      type: "string",
+      description: "Prompt output format: markdown, json, copyable, all",
+      default: "all",
+    },
   },
   async run({ args }) {
     const count = Number.parseInt(args.count, 10);
+    const promptOnly = args.promptOnly;
+    const outputFormat = args.outputFormat as PromptOutputFormat;
+
+    if (promptOnly) {
+      console.log("\n📋 Building prompt artifacts (no LLM call)...\n");
+
+      // Build the prompt with all formats
+      const prompt = buildSyntheticPrompt({
+        scenarioType: args.scenario,
+        therapeuticModality: args.modality,
+        outputFormat,
+        schemaDescription: SchemaDescriptions.TherapistSessionInput,
+      });
+
+      console.log("\n✅ Prompt artifacts created:");
+      if (prompt.savedPaths?.markdown) {
+        console.log(`   Markdown: ${prompt.savedPaths.markdown}`);
+      }
+      if (prompt.savedPaths?.json) {
+        console.log(`   JSON: ${prompt.savedPaths.json}`);
+      }
+      if (prompt.savedPaths?.copyable) {
+        console.log(`   Copyable: ${prompt.savedPaths.copyable}`);
+      }
+
+      console.log("\n💡 Usage:");
+      console.log("   - Review the markdown file to understand prompt structure");
+      console.log("   - Copy the 'copyable' file contents directly into Claude Code Web");
+      console.log("   - Use the JSON file for programmatic prompt access");
+      console.log("\n   The expected output schema is included in each artifact.");
+
+      return {
+        success: true,
+        promptOnly: true,
+        prompt: {
+          system: prompt.system,
+          user: prompt.user,
+          savedPaths: prompt.savedPaths,
+        },
+      };
+    }
 
     console.log(`\n🧪 Generating ${count} synthetic therapy session(s)...\n`);
 

@@ -176,3 +176,83 @@ export const PromptMetadataSchema = z.object({
 });
 
 export type PromptMetadata = z.infer<typeof PromptMetadataSchema>;
+
+/**
+ * Generate a human-readable description of a Zod schema
+ * Useful for including in prompt artifacts to show expected output format
+ */
+export function describeSchema(schema: z.ZodTypeAny, name: string, indent = 0): string {
+  const pad = "  ".repeat(indent);
+  const lines: string[] = [];
+
+  if (indent === 0) {
+    lines.push(`${name} {`);
+  }
+
+  if (schema instanceof z.ZodObject) {
+    const shape = schema.shape;
+    for (const [key, value] of Object.entries(shape)) {
+      const zodValue = value as z.ZodTypeAny;
+      const description = zodValue._def.description || "";
+      const isOptional = zodValue instanceof z.ZodOptional;
+      const innerType = isOptional ? (zodValue as z.ZodOptional<z.ZodTypeAny>).unwrap() : zodValue;
+
+      if (innerType instanceof z.ZodObject) {
+        lines.push(`${pad}  ${key}${isOptional ? "?" : ""}: {`);
+        lines.push(describeSchema(innerType, "", indent + 2));
+        lines.push(`${pad}  }${description ? `  // ${description}` : ""}`);
+      } else if (innerType instanceof z.ZodArray) {
+        const elementType = innerType.element;
+        if (elementType instanceof z.ZodString) {
+          lines.push(
+            `${pad}  ${key}${isOptional ? "?" : ""}: string[]${description ? `  // ${description}` : ""}`,
+          );
+        } else if (elementType instanceof z.ZodObject) {
+          lines.push(`${pad}  ${key}${isOptional ? "?" : ""}: [{`);
+          lines.push(describeSchema(elementType, "", indent + 2));
+          lines.push(`${pad}  }]${description ? `  // ${description}` : ""}`);
+        } else {
+          lines.push(
+            `${pad}  ${key}${isOptional ? "?" : ""}: array${description ? `  // ${description}` : ""}`,
+          );
+        }
+      } else if (innerType instanceof z.ZodString) {
+        lines.push(
+          `${pad}  ${key}${isOptional ? "?" : ""}: string${description ? `  // ${description}` : ""}`,
+        );
+      } else if (innerType instanceof z.ZodNumber) {
+        lines.push(
+          `${pad}  ${key}${isOptional ? "?" : ""}: number${description ? `  // ${description}` : ""}`,
+        );
+      } else if (innerType instanceof z.ZodBoolean) {
+        lines.push(
+          `${pad}  ${key}${isOptional ? "?" : ""}: boolean${description ? `  // ${description}` : ""}`,
+        );
+      } else if (innerType instanceof z.ZodEnum) {
+        const values = innerType._def.values.join(" | ");
+        lines.push(
+          `${pad}  ${key}${isOptional ? "?" : ""}: ${values}${description ? `  // ${description}` : ""}`,
+        );
+      } else {
+        lines.push(
+          `${pad}  ${key}${isOptional ? "?" : ""}: unknown${description ? `  // ${description}` : ""}`,
+        );
+      }
+    }
+  }
+
+  if (indent === 0) {
+    lines.push("}");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Pre-generated schema descriptions for common schemas
+ */
+export const SchemaDescriptions = {
+  DAPNote: describeSchema(DAPNoteSchema, "DAPNote"),
+  TherapistSessionInput: describeSchema(TherapistSessionInputSchema, "TherapistSessionInput"),
+  EvaluationResult: describeSchema(EvaluationResultSchema, "EvaluationResult"),
+};

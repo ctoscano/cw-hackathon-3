@@ -1,8 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
-import { type EvaluationResult, EvaluationResultSchema } from "../../lib/ai/schemas.js";
-import { buildEvaluationPrompt } from "../../lib/prompts/builder.js";
+import {
+  type EvaluationResult,
+  EvaluationResultSchema,
+  SchemaDescriptions,
+} from "../../lib/ai/schemas.js";
+import { type PromptOutputFormat, buildEvaluationPrompt } from "../../lib/prompts/builder.js";
 import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
 
 export const evaluateCommand = defineCommand({
@@ -26,8 +30,23 @@ export const evaluateCommand = defineCommand({
       description: "AI model to use: opus, sonnet, haiku",
       default: "haiku",
     },
+    promptOnly: {
+      type: "boolean",
+      description:
+        "Build and save prompt artifacts without calling the LLM. Use for prompt development and inspection.",
+      alias: "p",
+      default: false,
+    },
+    outputFormat: {
+      type: "string",
+      description: "Prompt output format: markdown, json, copyable, all",
+      default: "all",
+    },
   },
   async run({ args }) {
+    const promptOnly = args.promptOnly;
+    const outputFormat = args.outputFormat as PromptOutputFormat;
+
     console.log("\n🔍 DAP Note Quality Evaluator\n");
 
     // Get DAP note
@@ -75,7 +94,42 @@ export const evaluateCommand = defineCommand({
     const prompt = buildEvaluationPrompt({
       sessionInput: sessionContent,
       dapOutput: dapContent,
+      outputFormat: promptOnly ? outputFormat : "markdown",
+      schemaDescription: promptOnly ? SchemaDescriptions.EvaluationResult : undefined,
     });
+
+    if (promptOnly) {
+      console.log("\n✅ Prompt artifacts created (no LLM call):");
+      if (prompt.savedPaths?.markdown) {
+        console.log(`   Markdown: ${prompt.savedPaths.markdown}`);
+      }
+      if (prompt.savedPaths?.json) {
+        console.log(`   JSON: ${prompt.savedPaths.json}`);
+      }
+      if (prompt.savedPaths?.copyable) {
+        console.log(`   Copyable: ${prompt.savedPaths.copyable}`);
+      }
+
+      console.log("\n💡 Usage:");
+      console.log("   - Review the markdown file to understand prompt structure");
+      console.log("   - Copy the 'copyable' file contents directly into Claude Code Web");
+      console.log("   - Use the JSON file for programmatic prompt access");
+      console.log(
+        "\n   The expected output schema (EvaluationResult) is included in each artifact.",
+      );
+
+      return {
+        success: true,
+        promptOnly: true,
+        dapSource,
+        sessionSource,
+        prompt: {
+          system: prompt.system,
+          user: prompt.user,
+          savedPaths: prompt.savedPaths,
+        },
+      };
+    }
 
     // Run evaluation
     console.log("\n🤖 Running quality evaluation...");

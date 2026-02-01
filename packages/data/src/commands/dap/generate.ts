@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
-import { type DAPNote, DAPNoteSchema } from "../../lib/ai/schemas.js";
-import { buildDAPPrompt } from "../../lib/prompts/builder.js";
+import { type DAPNote, DAPNoteSchema, SchemaDescriptions } from "../../lib/ai/schemas.js";
+import { type PromptOutputFormat, buildDAPPrompt } from "../../lib/prompts/builder.js";
 import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
 
 export const generateCommand = defineCommand({
@@ -27,8 +27,23 @@ export const generateCommand = defineCommand({
       description: "AI model to use: opus, sonnet, haiku",
       default: "haiku",
     },
+    promptOnly: {
+      type: "boolean",
+      description:
+        "Build and save prompt artifacts without calling the LLM. Use for prompt development and inspection.",
+      alias: "p",
+      default: false,
+    },
+    outputFormat: {
+      type: "string",
+      description: "Prompt output format: markdown, json, copyable, all",
+      default: "all",
+    },
   },
   async run({ args }) {
+    const promptOnly = args.promptOnly;
+    const outputFormat = args.outputFormat as PromptOutputFormat;
+
     console.log("\n📝 DAP Note Generator\n");
 
     // Get session description
@@ -68,7 +83,40 @@ export const generateCommand = defineCommand({
 
     // Build the prompt
     console.log("\n🔧 Building prompt...");
-    const prompt = buildDAPPrompt(narrative);
+    const prompt = buildDAPPrompt(narrative, {
+      outputFormat: promptOnly ? outputFormat : "markdown",
+      schemaDescription: promptOnly ? SchemaDescriptions.DAPNote : undefined,
+    });
+
+    if (promptOnly) {
+      console.log("\n✅ Prompt artifacts created (no LLM call):");
+      if (prompt.savedPaths?.markdown) {
+        console.log(`   Markdown: ${prompt.savedPaths.markdown}`);
+      }
+      if (prompt.savedPaths?.json) {
+        console.log(`   JSON: ${prompt.savedPaths.json}`);
+      }
+      if (prompt.savedPaths?.copyable) {
+        console.log(`   Copyable: ${prompt.savedPaths.copyable}`);
+      }
+
+      console.log("\n💡 Usage:");
+      console.log("   - Review the markdown file to understand prompt structure");
+      console.log("   - Copy the 'copyable' file contents directly into Claude Code Web");
+      console.log("   - Use the JSON file for programmatic prompt access");
+      console.log("\n   The expected output schema (DAPNote) is included in each artifact.");
+
+      return {
+        success: true,
+        promptOnly: true,
+        inputSource,
+        prompt: {
+          system: prompt.system,
+          user: prompt.user,
+          savedPaths: prompt.savedPaths,
+        },
+      };
+    }
 
     // Generate DAP notes
     console.log("\n🤖 Generating DAP notes...");
