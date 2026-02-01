@@ -393,17 +393,49 @@ For hackathon MVP, the following simplifications are acceptable:
 
 ### Gotchas & Surprises
 
-[To be added during implementation]
+- Pipecat SDK v1.0 uses `PipecatClientOptions` not `RTVIClientOptions` - check package types
+- Error events receive `RTVIMessage` objects with error data in the `data` property
+- `startBotAndConnect()` requires an `APIRequest` object with `endpoint` property
+- Demo mode is essential for testing UI without backend - allows text input fallback
 
 ### Demo Instructions
 
 **How to Demo:**
-[To be added during implementation]
+
+1. **Start the dev server:**
+   ```bash
+   cd /home/user/cw-hackathon-3
+   pnpm dev
+   ```
+
+2. **Navigate to the page:**
+   - Open http://localhost:3000
+   - Click "Why Therapy? (Voice Guided)" card
+   - Or navigate directly to http://localhost:3000/why-therapy
+
+3. **Test demo mode (no Daily API key needed):**
+   - Click "Start Voice Conversation"
+   - Allow microphone access when prompted
+   - You'll see a system message about demo mode
+   - Type messages in the text input to simulate conversation
+   - Bot will respond with simulated therapy guidance
+
+4. **Test production mode (requires Daily API):**
+   - Set environment variables in `.env.local`:
+     ```
+     DAILY_API_KEY=your-key
+     PIPECAT_BOT_URL=your-bot-url
+     DAILY_ROOM_URL=your-room-url
+     ```
+   - Start dev server and navigate to /why-therapy
+   - Click "Start Voice Conversation"
+   - Speak naturally and see transcriptions appear
+   - Bot should respond with voice
 
 ---
 
-**Status**: Draft
+**Status**: In Progress
 **Created**: 2026-02-01
 **Last Updated**: 2026-02-01
-**Implementation Started**: N/A
-**Completed**: N/A
+**Implementation Started**: 2026-02-01
+**Completed**: N/A (Backend bot service not yet deployed)
