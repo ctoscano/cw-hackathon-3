@@ -424,13 +424,21 @@ Create `.env.local` for local development:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
+
+# Weights & Biases Weave Tracing (optional)
+WANDB_API_KEY=your-wandb-api-key
+WEAVE_PROJECT=your-team/your-project
 ```
 
 Never commit `.env.local` - it's gitignored.
 
+See `apps/web/.env.example` for all available options.
+
 ### packages/data
 
 CLI can read environment variables via `process.env` or Bun's `Bun.env`.
+
+**Weave Tracing**: Set `WEAVE_PROJECT` (or `WANDB_PROJECT` or `CORE_WEAVE`) to enable W&B Weave tracing for LLM calls. Also requires `WANDB_API_KEY` for authentication.
 
 ## Why These Tools?
 
