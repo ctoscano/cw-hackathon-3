@@ -10,6 +10,11 @@ import {
 } from "../ai/intake-schemas.js";
 import { type BuiltPrompt, buildPrompt } from "../prompts/builder.js";
 import { getIntakeDefinition, getQuestionByIndex, getTotalSteps } from "./definitions.js";
+import {
+  getMultiselectReflection,
+  getSkipReflectionMessage,
+  shouldSkipReflection,
+} from "./templates.js";
 
 /**
  * Format a user's answer for display in prompts
@@ -143,12 +148,49 @@ function sanitizeQuestionForClient(
 }
 
 /**
+ * Get reflection for a question based on its type
+ *
+ * - Text questions: Use LLM for personalized reflection
+ * - Multiselect questions: Use template-based reflection
+ * - Singleselect questions: Skip reflection (minimal acknowledgment)
+ *
+ * This reduces LLM calls by ~50% while maintaining quality for open-ended responses.
+ */
+async function getReflectionForQuestion(options: {
+  question: IntakeQuestion;
+  answer: string | string[];
+  priorAnswers: IntakeAnswer[];
+  stepIndex: number;
+  totalSteps: number;
+}): Promise<string> {
+  const { question, answer } = options;
+
+  // Singleselect questions: skip reflection entirely (minimal message)
+  if (shouldSkipReflection(question.id)) {
+    return getSkipReflectionMessage(question.id);
+  }
+
+  // Multiselect questions: use template-based reflection
+  if (question.type === "multiselect" && Array.isArray(answer)) {
+    const templateReflection = getMultiselectReflection(question.id, answer);
+    if (templateReflection) {
+      return templateReflection;
+    }
+    // Fall through to LLM if no template found
+  }
+
+  // Text questions (and fallback): use LLM for personalized reflection
+  const reflectionResult = await generateReflection(options);
+  return reflectionResult.data;
+}
+
+/**
  * Process a single intake step
  *
  * This is the main orchestration function that:
  * 1. Validates the request
  * 2. Gets the current question
- * 3. Generates a reflection for the answer
+ * 3. Generates a reflection for the answer (strategy varies by question type)
  * 4. Determines the next question or completion
  * 5. Generates completion outputs if done
  */
@@ -169,16 +211,14 @@ export async function processIntakeStep(request: IntakeStepRequest): Promise<Int
     throw new Error(`Invalid step index: ${stepIndex}`);
   }
 
-  // Generate reflection for the current answer
-  const reflectionResult = await generateReflection({
+  // Get reflection using appropriate strategy based on question type
+  const reflection = await getReflectionForQuestion({
     question: currentQuestion,
     answer: currentAnswer,
     priorAnswers,
     stepIndex,
     totalSteps,
   });
-
-  const reflection = reflectionResult.data;
 
   // Build the complete answer record
   const completeAnswer: IntakeAnswer = {
