@@ -87,7 +87,15 @@
   color: #888;
 }
 
-/* Question History */
+/* Chat Container */
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
+}
+
+/* Legacy Question History - kept for reference */
 .history {
   display: flex;
   flex-direction: column;

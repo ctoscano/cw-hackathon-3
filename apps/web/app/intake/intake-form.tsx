@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChatMessage, formatAnswerForDisplay } from "./chat-message";
 import styles from "./intake.module.css";
 
 interface IntakeQuestion {
@@ -42,6 +43,18 @@ interface IntakeStepResponse {
   };
 }
 
+// Chat message types for the unified message list
+type ChatMessageItem =
+  | { id: string; type: "question"; questionNumber: number; question: IntakeQuestion }
+  | { id: string; type: "answer"; content: string | string[] }
+  | { id: string; type: "reflection"; content: string | null }; // null = loading
+
+// Simple ID generator for messages
+let messageIdCounter = 0;
+function generateMessageId(): string {
+  return `msg-${++messageIdCounter}`;
+}
+
 type IntakeState = "loading" | "ready" | "submitting" | "complete" | "error";
 
 export function IntakeForm() {
@@ -58,7 +71,10 @@ export function IntakeForm() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [currentQuestion, setCurrentQuestion] = useState<IntakeQuestion | null>(null);
 
-  // Answer history
+  // Chat message history - unified view of the conversation
+  const [messages, setMessages] = useState<ChatMessageItem[]>([]);
+
+  // Completed answers for API calls (includes reflections)
   const [completedAnswers, setCompletedAnswers] = useState<IntakeAnswer[]>([]);
 
   // Current input state
@@ -68,6 +84,16 @@ export function IntakeForm() {
   // Completion outputs
   const [completionOutputs, setCompletionOutputs] =
     useState<IntakeStepResponse["completionOutputs"]>(null);
+
+  // Ref for auto-scrolling
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when messages change
+  const messagesLength = messages.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally trigger scroll on message count change
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messagesLength]);
 
   // Load first question on mount
   useEffect(() => {
@@ -85,6 +111,17 @@ export function IntakeForm() {
         setIntakeDescription(data.description);
         setTotalSteps(data.totalSteps);
         setCurrentQuestion(data.firstQuestion);
+
+        // Add first question to messages
+        setMessages([
+          {
+            id: generateMessageId(),
+            type: "question",
+            questionNumber: 1,
+            question: data.firstQuestion,
+          },
+        ]);
+
         setState("ready");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load intake");
@@ -136,8 +173,20 @@ export function IntakeForm() {
 
     if (!currentQuestion || !isAnswerValid()) return;
 
+    const answer = getCurrentAnswer();
+    const isSelectionQuestion = currentQuestion.type !== "text";
+
     setState("submitting");
     setError(null);
+
+    // OPTIMISTIC UI: Immediately show the user's answer and a loading reflection
+    const answerId = generateMessageId();
+    const reflectionId = generateMessageId();
+    setMessages((prev) => [
+      ...prev,
+      { id: answerId, type: "answer", content: answer },
+      { id: reflectionId, type: "reflection", content: null }, // Loading state
+    ]);
 
     try {
       const response = await fetch("/api/intake/step", {
@@ -147,7 +196,7 @@ export function IntakeForm() {
           intakeType,
           stepIndex: currentStep,
           priorAnswers: completedAnswers,
-          currentAnswer: getCurrentAnswer(),
+          currentAnswer: answer,
         }),
       });
 
@@ -157,11 +206,25 @@ export function IntakeForm() {
         throw new Error((data as unknown as { error: string }).error || "Failed to submit answer");
       }
 
-      // Add completed answer to history
+      // Update the loading reflection with actual content
+      setMessages((prev) => {
+        const updated = [...prev];
+        // Find the last reflection (which should be loading)
+        for (let i = updated.length - 1; i >= 0; i--) {
+          const msg = updated[i];
+          if (msg.type === "reflection" && msg.content === null) {
+            updated[i] = { id: msg.id, type: "reflection", content: data.reflection };
+            break;
+          }
+        }
+        return updated;
+      });
+
+      // Add completed answer to history for future API calls
       const newAnswer: IntakeAnswer = {
         questionId: currentQuestion.id,
         questionPrompt: currentQuestion.prompt,
-        answer: getCurrentAnswer(),
+        answer: answer,
         reflection: data.reflection,
       };
       setCompletedAnswers((prev) => [...prev, newAnswer]);
@@ -170,22 +233,28 @@ export function IntakeForm() {
         setCompletionOutputs(data.completionOutputs);
         setCurrentQuestion(null);
         setState("complete");
-      } else {
-        setCurrentQuestion(data.nextQuestion);
+      } else if (data.nextQuestion) {
+        const nextQuestion = data.nextQuestion;
+        // Add next question to messages
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: generateMessageId(),
+            type: "question",
+            questionNumber: data.metadata.currentStep + 2,
+            question: nextQuestion,
+          },
+        ]);
+        setCurrentQuestion(nextQuestion);
         setCurrentStep(data.metadata.currentStep + 1);
         setState("ready");
       }
     } catch (err) {
+      // Remove the optimistic messages on error
+      setMessages((prev) => prev.slice(0, -2));
       setError(err instanceof Error ? err.message : "Failed to submit answer");
       setState("ready");
     }
-  }
-
-  function formatAnswer(answer: string | string[]): string {
-    if (Array.isArray(answer)) {
-      return answer.join(", ");
-    }
-    return answer;
   }
 
   // Loading state
@@ -217,7 +286,7 @@ export function IntakeForm() {
             <div className={styles.progressBar}>
               <div
                 className={styles.progressFill}
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
               />
             </div>
             <span className={styles.progressText}>
@@ -227,23 +296,44 @@ export function IntakeForm() {
         )}
       </header>
 
-      {/* Completed Q&A History */}
-      {completedAnswers.length > 0 && (
-        <div className={styles.history}>
-          {completedAnswers.map((answer, index) => (
-            <div key={answer.questionId} className={styles.historyItem}>
-              <div className={styles.historyQuestion}>
-                <span className={styles.questionNumber}>{index + 1}.</span>
-                {answer.questionPrompt}
-              </div>
-              <div className={styles.historyAnswer}>{formatAnswer(answer.answer)}</div>
-              <div className={styles.reflection}>{answer.reflection}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Chat Messages */}
+      <div className={styles.chatContainer}>
+        {messages.map((msg) => {
+          if (msg.type === "question") {
+            // Only show as chat bubble if it's a past question (not the current active one)
+            const isCurrentQuestion =
+              currentQuestion && msg.question.id === currentQuestion.id && state !== "complete";
+            if (isCurrentQuestion) return null;
 
-      {/* Current Question */}
+            return (
+              <ChatMessage key={msg.id} type="question" questionNumber={msg.questionNumber}>
+                {msg.question.prompt}
+              </ChatMessage>
+            );
+          }
+
+          if (msg.type === "answer") {
+            return (
+              <ChatMessage key={msg.id} type="answer" animate>
+                {formatAnswerForDisplay(msg.content)}
+              </ChatMessage>
+            );
+          }
+
+          if (msg.type === "reflection") {
+            return (
+              <ChatMessage key={msg.id} type="reflection" isLoading={msg.content === null}>
+                {msg.content}
+              </ChatMessage>
+            );
+          }
+
+          return null;
+        })}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Current Question Form */}
       {currentQuestion && state !== "complete" && (
         <form onSubmit={handleSubmit} className={styles.questionForm}>
           <div className={styles.currentQuestion}>

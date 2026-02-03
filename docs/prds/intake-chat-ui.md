@@ -1,0 +1,300 @@
+# PRD: Intake Chat-Style UI Redesign
+
+## Overview
+
+Redesign the intake experience to use a chat-like interface that improves perceived performance and creates a more conversational feel. The key insight is that showing the next question immediately after submission—before the personalized reflection arrives—dramatically reduces perceived wait time.
+
+## Goals
+
+1. **Improve perceived performance** - Users see progress immediately, not after LLM latency
+2. **Create conversational feel** - Chat-style UI mirrors a therapy conversation
+3. **Add visual delight** - SVG animation provides engaging loading state
+4. **Maintain mobile-first design** - Works well on all screen sizes
+
+## Design Concept
+
+### Chat-Style Layout
+
+The interface uses a familiar chat pattern:
+- **Questions** (from system): Left-aligned, like received messages
+- **User answers**: Right-aligned, like sent messages
+- **Reflections**: Left-aligned below the answer, with typing indicator animation
+
+```
+┌─────────────────────────────────────────┐
+│           Is Therapy Right for Me?      │
+│    What's made you consider therapy?    │
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌─────────────────────┐                │
+│  │ 1. What's made you  │   ← Question   │
+│  │    consider...      │     (left)     │
+│  └─────────────────────┘                │
+│                                         │
+│              ┌─────────────────────┐    │
+│              │ I'm working on a    │ ←  │
+│              │ startup and...      │    │
+│              └─────────────────────┘    │
+│                    User answer (right)  │
+│                                         │
+│  ┌─────────────────────┐                │
+│  │ ○ ○ ○  (animating)  │   ← Reflection │
+│  │ Noticing balance... │     arriving   │
+│  └─────────────────────┘                │
+│                                         │
+│  ┌─────────────────────┐                │
+│  │ 2. Which areas of   │   ← Next Q     │
+│  │    your life...     │    (immediate) │
+│  │    [ ] Work         │                │
+│  │    [ ] Relationships│                │
+│  └─────────────────────┘                │
+│                                         │
+│        [Continue]                       │
+└─────────────────────────────────────────┘
+```
+
+### Optimistic UI Pattern
+
+**Current flow:**
+1. User submits answer
+2. Wait for API (1-3 seconds for LLM)
+3. Show reflection + next question together
+
+**New flow (optimistic):**
+1. User submits answer
+2. **Immediately** show:
+   - User's answer (right-aligned, confirmed)
+   - Reflection placeholder with typing animation
+   - Next question (if known via prefetch or static)
+3. When API returns:
+   - Fade in reflection text
+   - User can already be answering next question
+
+### SVG Typing Animation
+
+A subtle, calming animation that suggests "thinking" without anxiety:
+
+```svg
+<svg class="typing-indicator" viewBox="0 0 40 10">
+  <circle cx="5" cy="5" r="3" class="dot dot-1"/>
+  <circle cx="20" cy="5" r="3" class="dot dot-2"/>
+  <circle cx="35" cy="5" r="3" class="dot dot-3"/>
+</svg>
+```
+
+Animation: Dots gently pulse in sequence with soft opacity/scale changes. Color matches the reflection bubble's blue theme.
+
+## Implementation Plan
+
+### Phase 1: Component Restructure
+
+#### Step 1.1: Create ChatMessage Component
+**File:** `apps/web/app/intake/chat-message.tsx`
+
+Reusable component for chat bubbles:
+- Props: `type: 'question' | 'answer' | 'reflection'`, `children`, `isLoading`
+- Handles alignment, styling, and animation states
+- Includes typing indicator for loading state
+
+#### Step 1.2: Create TypingIndicator Component
+**File:** `apps/web/app/intake/typing-indicator.tsx`
+
+SVG animation component:
+- Three dots with staggered pulse animation
+- Matches reflection bubble styling
+- Pure CSS animation (no JS)
+
+#### Step 1.3: Refactor IntakeForm for Chat Layout
+**File:** `apps/web/app/intake/intake-form.tsx`
+
+Changes:
+- Replace `historyItem` divs with ChatMessage components
+- Implement optimistic UI pattern:
+  - On submit: immediately add answer to history
+  - Show typing indicator for reflection
+  - Show next question immediately (for selection types) or after reflection (for text)
+- Track `pendingReflection` state separate from `completedAnswers`
+
+### Phase 2: Styling Updates
+
+#### Step 2.1: New Chat-Style CSS
+**File:** `apps/web/app/intake/intake.module.css`
+
+New/updated styles:
+- `.chatContainer` - Flex column with gap
+- `.messageRow` - Full width container for alignment
+- `.messageRowLeft` - Justify-start (questions, reflections)
+- `.messageRowRight` - Justify-end (user answers)
+- `.messageBubble` - Base bubble styling
+- `.questionBubble` - Light gray background, left-aligned
+- `.answerBubble` - Blue/teal background, right-aligned
+- `.reflectionBubble` - Gradient blue, left-aligned, italic
+- `.typingIndicator` - SVG container with animation
+- `.fadeIn` - Animation for reflection reveal
+
+#### Step 2.2: Animation Keyframes
+
+```css
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+```
+
+### Phase 3: Optimistic UI Logic
+
+#### Step 3.1: State Management Updates
+
+New state structure:
+```typescript
+interface ChatState {
+  messages: ChatMessage[];  // Unified message list
+  pendingReflectionIndex: number | null;  // Which message is awaiting reflection
+  currentQuestion: IntakeQuestion | null;
+  isSubmitting: boolean;
+}
+
+interface ChatMessage {
+  id: string;
+  type: 'question' | 'answer' | 'reflection';
+  content: string | string[] | null;  // null = loading
+  questionId?: string;
+}
+```
+
+#### Step 3.2: Submit Flow
+
+```typescript
+async function handleSubmit() {
+  // 1. Immediately update UI
+  addMessage({ type: 'answer', content: currentAnswer });
+  addMessage({ type: 'reflection', content: null });  // Loading state
+
+  // 2. For selection questions: show next question immediately
+  if (currentQuestion.type !== 'text' && nextQuestionKnown) {
+    addMessage({ type: 'question', content: nextQuestion.prompt });
+    setCurrentQuestion(nextQuestion);
+  }
+
+  // 3. Fetch reflection in background
+  const response = await submitAnswer();
+
+  // 4. Update reflection when ready
+  updateMessage(pendingReflectionIndex, { content: response.reflection });
+
+  // 5. For text questions: show next question after reflection
+  if (currentQuestion.type === 'text' && response.nextQuestion) {
+    addMessage({ type: 'question', content: response.nextQuestion.prompt });
+    setCurrentQuestion(response.nextQuestion);
+  }
+}
+```
+
+### Phase 4: Question Prefetching (Optional Enhancement)
+
+Since questions are static and known, we can prefetch the sequence:
+
+```typescript
+// On initial load, fetch all questions
+const questions = await fetch('/api/intake/questions?type=therapy_readiness');
+
+// Store in state, use to show next question immediately
+```
+
+This eliminates the need to wait for the API to know the next question.
+
+## UI States
+
+### Message States
+
+1. **Question (static)**
+   - Left-aligned gray bubble
+   - Shows question number and prompt
+   - For selection types: includes options
+
+2. **Answer (confirmed)**
+   - Right-aligned blue bubble
+   - Shows formatted answer
+   - Appears immediately on submit
+
+3. **Reflection (loading)**
+   - Left-aligned blue gradient bubble
+   - Shows typing indicator animation
+   - 3 pulsing dots
+
+4. **Reflection (loaded)**
+   - Same bubble, typing indicator fades out
+   - Reflection text fades in
+   - Italic styling
+
+### Transitions
+
+- Answer appears: Instant (no animation needed)
+- Typing indicator: Continuous pulse until content arrives
+- Reflection text: `fadeInUp` animation (200ms)
+- Next question: `fadeInUp` animation (200ms)
+
+## Responsive Design
+
+### Desktop (> 768px)
+- Max message width: 70% of container
+- Comfortable padding in bubbles
+- Questions and reflections align left with margin
+- Answers align right with margin
+
+### Tablet (600-768px)
+- Max message width: 80%
+- Slightly reduced padding
+
+### Mobile (< 600px)
+- Max message width: 90%
+- Full-width form inputs within question bubbles
+- Floating submit button at bottom of viewport (optional)
+
+## Accessibility
+
+- Typing indicator has `aria-label="Processing your response"`
+- Messages have appropriate semantic structure
+- Focus moves to new question input after submission
+- Animation respects `prefers-reduced-motion`
+
+## Success Metrics
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Perceived wait time | 1-3s (full LLM wait) | <0.5s (immediate feedback) |
+| Completion rate | Baseline | +10% improvement |
+| Mobile usability | Good | Excellent (chat is native mobile pattern) |
+
+## Technical Considerations
+
+### Performance
+- Keep message history efficient (virtualization for very long chats not needed for 9 questions)
+- SVG animation is GPU-accelerated
+- No additional API calls needed
+
+### State Consistency
+- Handle edge case: user rapidly clicks before reflection arrives
+- Ensure reflection content matches correct answer even with race conditions
+
+---
+
+## Files to Modify/Create
+
+| File | Action | Description |
+|------|--------|-------------|
+| `apps/web/app/intake/typing-indicator.tsx` | Create | SVG animation component |
+| `apps/web/app/intake/chat-message.tsx` | Create | Reusable chat bubble component |
+| `apps/web/app/intake/intake-form.tsx` | Modify | Refactor for chat layout + optimistic UI |
+| `apps/web/app/intake/intake.module.css` | Modify | Add chat-style CSS |
+
+## Open Questions
+
+1. Should the header (title, description, progress) remain fixed at top or scroll with content?
+2. Should there be a "scroll to bottom" button if user scrolls up?
+3. For text questions, should next question appear before or after reflection? (Current plan: after)
