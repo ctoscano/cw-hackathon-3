@@ -140,7 +140,6 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  min-height: 300px;
 }
 
 .currentQuestion {
@@ -403,7 +402,6 @@
   gap: 1.5rem;
   padding: 3rem 2rem;
   text-align: center;
-  min-height: 200px;
 }
 
 .completionWaitingIcon {
@@ -437,7 +435,6 @@
   line-height: 1.5;
   max-width: 300px;
   text-align: center;
-  min-height: 2rem;
 }
 
 /* Responsive */
