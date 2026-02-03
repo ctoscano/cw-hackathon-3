@@ -152,8 +152,10 @@ cd apps/web && pnpm list @react-three/fiber @react-three/drei three
 ```
 
 **Implementation Log**:
-- [ ] Run pnpm add commands
-- [ ] Verify no peer dependency warnings
+- [x] Run pnpm add commands
+- [x] Verify no peer dependency warnings
+
+**Completed**: All packages installed successfully. Used R3F v9 with Three.js v0.171.
 
 ### Step 2: Create WebGL Infrastructure Components
 
@@ -175,10 +177,16 @@ cat apps/web/app/components/webgl/index.ts
 ```
 
 **Implementation Log**:
-- [ ] Create WebGLProvider.tsx
-- [ ] Create BackgroundCanvas.tsx
-- [ ] Create hooks/useReducedMotion.ts
-- [ ] Create index.ts barrel
+- [x] Create WebGLProvider.tsx
+- [x] Create BackgroundCanvas.tsx
+- [x] Create hooks/useReducedMotion.ts
+- [x] Create index.ts barrel
+
+**Completed**: All infrastructure components created following `/r3f-webgl-background` skill patterns. Key implementation details:
+- WebGLProvider uses `frameloop="demand"` with `invalidate()` in useFrame for battery efficiency
+- BackgroundCanvas uses `dynamic()` with `ssr: false` for Next.js SSR compatibility
+- useReducedMotion returns boolean from `prefers-reduced-motion` media query
+- Added CSS fallback gradient for WebGL-unsupported browsers
 
 ### Step 3: Create Mountain Landscape Shader
 
@@ -200,10 +208,23 @@ cat apps/web/app/components/webgl/shaders/MountainLandscape.tsx | head -50
 ```
 
 **Implementation Log**:
-- [ ] Create MountainLandscape.tsx
-- [ ] Implement vertex shader
-- [ ] Implement fragment shader with mountains
-- [ ] Add props for customization
+- [x] Create MountainLandscape.tsx
+- [x] Implement vertex shader
+- [x] Implement fragment shader with mountains
+- [x] Add props for customization
+
+**Completed**: Implemented detailed night sky mountain scene with:
+- **Twinkling stars** (3 density layers with time-based brightness modulation)
+- **Milky Way galaxy** with FBM noise clouds and bright core glow
+- **4 mountain layers** with procedural peaks using `mountainShape()` function
+- **Grassy foreground hill** with wind-animated grass blades
+- **Atmospheric perspective** - farther mountains are more blue/misty
+- Speed prop scales time uniform (0 for reduced motion)
+
+Key shader techniques used from `threejs-shaders` skill:
+- FBM noise with 6 octaves for natural terrain
+- Hash functions for procedural star placement
+- Smoothstep for soft layer transitions
 
 ### Step 4: Create Ocean Landscape Shader
 
@@ -224,10 +245,25 @@ cat apps/web/app/components/webgl/shaders/OceanLandscape.tsx | head -50
 ```
 
 **Implementation Log**:
-- [ ] Create OceanLandscape.tsx
-- [ ] Implement wave motion shader
-- [ ] Add sky gradient
-- [ ] Add customization props
+- [x] Create OceanLandscape.tsx
+- [x] Implement wave motion shader
+- [x] Add sky gradient
+- [x] Add customization props
+
+**Completed**: Implemented sunset ocean scene with:
+- **Multi-color sunset sky** gradient (deep blue → coral → golden)
+- **Sun disc** with 3 glow layers (inner, outer, wide)
+- **Volumetric clouds** using FBM noise with sun-lit colors
+- **Multi-octave wave motion** (large swells, medium waves, small ripples)
+- **Sun reflection path** on water with sparkles using noise-based breaks
+- **3 sailboat silhouettes** at different distances
+- **5 flying birds** with animated wing flapping (sine-based)
+- Smooth horizon blending between sky and water
+
+Key shader techniques:
+- `clouds()` function with 3 FBM layers
+- `waves()` function with 6 combined sine/noise octaves
+- `boat()` and `bird()` SDF-style shape functions
 
 ### Step 5: Create Forest Landscape Shader
 
@@ -248,10 +284,31 @@ cat apps/web/app/components/webgl/shaders/ForestLandscape.tsx | head -50
 ```
 
 **Implementation Log**:
-- [ ] Create ForestLandscape.tsx
-- [ ] Implement tree silhouette generation
-- [ ] Add mist effect
-- [ ] Add customization props
+- [x] Create ForestLandscape.tsx
+- [x] Implement tree silhouette generation
+- [x] Add mist effect
+- [x] Add customization props
+
+**Completed**: Implemented morning forest scene with:
+- **Warm morning sky** gradient (soft blue → peachy transition → golden horizon)
+- **Sun with god rays** using angular sine patterns and exponential falloff
+- **Recognizable pine tree silhouettes** with 5-layer triangular canopy and pointed top
+- **4 forest layers** with atmospheric perspective:
+  - Far forest (50% misty, lightest color)
+  - Mist layer between far/mid
+  - Mid forest (25% misty)
+  - Mist layer between mid/near
+  - Near forest (darkest, most detail)
+- **Deer silhouette** with antlers (body, head, neck, legs, ears)
+- **Large foreground tree silhouettes** framing the scene
+- **Ground fog** and grass texture with noise
+- Film grain and vignette post-processing
+
+Key shader techniques:
+- `pineTree()` function builds trees from trunk + 5 triangular layers + pointed top
+- `forestLayer()` places 15 trees with randomized height/width/position
+- `deer()` SDF-style silhouette with all body parts
+- `godRays()` radial light beams from sun position
 
 ### Step 6: Create Landing Page Layout and Pages
 
@@ -279,10 +336,17 @@ pnpm --filter @cw-hackathon/web dev
 ```
 
 **Implementation Log**:
-- [ ] Create landscapes/layout.tsx
-- [ ] Create landscapes/mountain/page.tsx
-- [ ] Create landscapes/ocean/page.tsx
-- [ ] Create landscapes/forest/page.tsx
+- [x] Create landscapes/layout.tsx
+- [x] Create landscapes/mountain/page.tsx
+- [x] Create landscapes/ocean/page.tsx
+- [x] Create landscapes/forest/page.tsx
+
+**Completed**: All landing pages created with:
+- Shared layout with `overflow: hidden` for proper background layering
+- Each page has BackgroundCanvas with theme-specific fallback color
+- Hero content with title, description, and "Explore" link back to home
+- Full viewport height hero sections
+- Proper z-index layering (background behind content)
 
 ### Step 7: Update Homepage with Navigation
 
@@ -303,9 +367,16 @@ pnpm --filter @cw-hackathon/web dev
 ```
 
 **Implementation Log**:
-- [ ] Update page.tsx with navigation section
-- [ ] Add styles to globals.css
-- [ ] Test all navigation links
+- [x] Update page.tsx with navigation section
+- [x] Add styles to globals.css
+- [x] Test all navigation links
+
+**Completed**: Homepage updated with:
+- Visual card grid linking to all 3 landscape pages
+- Each card shows theme name and brief description
+- CSS hover effects (scale, shadow)
+- Responsive grid layout
+- All navigation links tested and working
 
 ### Step 8: Final Testing and Polish
 
@@ -338,20 +409,32 @@ pnpm check
 ```
 
 **Implementation Log**:
-- [ ] Test all pages in browser
-- [ ] Verify reduced motion behavior
-- [ ] Verify CSS fallback
-- [ ] Run type-check and lint
-- [ ] Fix any issues found
+- [x] Test all pages in browser
+- [x] Verify reduced motion behavior
+- [x] Verify CSS fallback
+- [x] Run type-check and lint
+- [x] Fix any issues found
+
+**Completed**: All testing passed:
+- All 3 landscape pages render correctly with animated shaders
+- Reduced motion stops animation (speed = 0)
+- CSS fallback gradients display when shader not available
+- Type-check passes
+- Lint passes after fixing biome.json configuration
+
+**Issues Found & Fixed**:
+1. biome.json had invalid key `experimentalScannerIgnores` → changed to `ignore`
+2. Non-null assertion `null!` on refs caused lint errors → changed to `null`
+3. `tsconfig.tsbuildinfo` was untracked → added to `.gitignore`
 
 ## Completion Criteria
 
-- [ ] All 3 landing pages render with animated WebGL backgrounds
-- [ ] Homepage has navigation to all landing pages
-- [ ] `prefers-reduced-motion` stops/reduces animations
-- [ ] Type-check passes (`pnpm type-check`)
-- [ ] Lint passes (`pnpm check`)
-- [ ] Mobile-responsive layout works
+- [x] All 3 landing pages render with animated WebGL backgrounds
+- [x] Homepage has navigation to all landing pages
+- [x] `prefers-reduced-motion` stops/reduces animations
+- [x] Type-check passes (`pnpm type-check`)
+- [x] Lint passes (`pnpm check`)
+- [x] Mobile-responsive layout works
 
 ## Notes
 
@@ -387,17 +470,80 @@ pnpm check
 
 ### Gotchas & Surprises
 
-[To be added during implementation]
+**Shader Complexity for Recognizable Scenes:**
+- Initial implementation used simple gradients which looked too abstract
+- User feedback required "recognizable landscapes" with specific elements (trees, mountains, animals)
+- Solution: Built SDF-style shape functions (`pineTree()`, `deer()`, `boat()`, `bird()`) to render recognizable silhouettes procedurally
+- Lesson: Shader art requires both technical skill (noise, gradients) AND illustration skill (composition, recognizable shapes)
+
+**Layering for Depth:**
+- Flat shader scenes lack depth perception
+- Solution: Used 4+ layers with atmospheric perspective (farther = lighter/bluer)
+- Added mist/fog layers between depth layers using FBM noise
+
+**R3F useThree and useFrame Patterns:**
+- `useThree()` provides `invalidate` and `size` - must call `invalidate()` each frame when using `frameloop="demand"`
+- `useFrame` callback receives `(state, delta)` - use `state.size` for current dimensions
+- Uniforms should be updated in `useFrame`, not in React render
+
+**Biome vs ESLint Configuration:**
+- Biome uses different config keys than ESLint
+- `experimentalScannerIgnores` is not valid - use `ignore` in `files` block instead
+
+**GLSL Precision:**
+- Always use `precision mediump float;` at top of fragment shader for mobile compatibility
+- `highp` can fail on some mobile GPUs
+
+**Dynamic Import with SSR:**
+- R3F Canvas cannot render server-side (requires browser WebGL context)
+- Must use `dynamic(() => import(...), { ssr: false })` in Next.js
+
+**Resources Used:**
+- `threejs-shaders` skill: Shader patterns, noise functions, uniform handling
+- `framer-code-components-overrides/webgl-shaders.md`: Transparency, cleanup patterns
+- Reference images: Anime-style landscapes with detailed organic shapes guided visual direction
 
 ### Demo Instructions
 
 **How to Demo:**
-[To be added during implementation]
+
+1. **Start the development server:**
+   ```bash
+   cd apps/web
+   pnpm dev
+   ```
+
+2. **Visit the homepage:** http://localhost:3000
+   - See navigation cards for all 3 landscape pages
+
+3. **View each landscape:**
+   - http://localhost:3000/landscapes/mountain - Night sky with stars, milky way, layered mountains
+   - http://localhost:3000/landscapes/ocean - Sunset with waves, sun reflection, boats, birds
+   - http://localhost:3000/landscapes/forest - Morning forest with pine trees, mist, deer, god rays
+
+4. **Test reduced motion:**
+   - Enable "Reduce motion" in OS accessibility settings
+   - Reload page - animations should stop (shaders become static)
+
+5. **Test performance:**
+   - Open DevTools > Performance tab
+   - Start recording, interact with page
+   - Frame time should be <16ms (60 FPS)
+
+6. **Test fallback:**
+   - In Chrome DevTools > Rendering > disable WebGL
+   - Reload - should see CSS gradient fallback colors
+
+**Key points to highlight:**
+- All visuals are procedurally generated in GLSL shaders
+- No external textures or 3D models
+- Battery-efficient rendering with `frameloop="demand"`
+- Accessibility-compliant with reduced motion support
 
 ---
 
-**Status**: Draft
+**Status**: Completed
 **Created**: 2026-02-01
-**Last Updated**: 2026-02-01
-**Implementation Started**: N/A
-**Completed**: N/A
+**Last Updated**: 2026-02-03
+**Implementation Started**: 2026-02-01
+**Completed**: 2026-02-03
