@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 import { ChatMessage, formatAnswerForDisplay } from "./chat-message";
 import styles from "./intake.module.css";
 import { TypingIndicator } from "./typing-indicator";
@@ -227,6 +228,9 @@ export function IntakeForm() {
     // If last question, show the completion waiting state
     if (isLastQuestion) {
       setState("generating_completion");
+    } else {
+      // Not the last question - enable the next question immediately
+      setState("ready");
     }
 
     try {
@@ -397,9 +401,13 @@ export function IntakeForm() {
               />
             </svg>
           </div>
-          <div className={styles.completionWaitingDots}>
-            <TypingIndicator />
-          </div>
+          <TypingAnimation
+            words={["Gathering insights ✨", "Personalizing results 🎯", "Almost ready 🚀"]}
+            loop
+            className={styles.completionWaitingText}
+            duration={80}
+            showCursor={false}
+          />
         </div>
       )}
 
@@ -504,8 +512,17 @@ export function IntakeForm() {
               {completionOutputs.personalizedBrief
                 .split("\n")
                 .filter((p) => p.trim())
-                .map((paragraph) => (
-                  <p key={paragraph.slice(0, 50)}>{paragraph}</p>
+                .map((paragraph, index) => (
+                  <TypingAnimation
+                    key={paragraph.slice(0, 50)}
+                    as="p"
+                    duration={15}
+                    delay={index * 800}
+                    showCursor={false}
+                    className={styles.completionParagraph}
+                  >
+                    {paragraph}
+                  </TypingAnimation>
                 ))}
             </div>
           </section>
@@ -516,8 +533,17 @@ export function IntakeForm() {
               {completionOutputs.firstSessionGuide
                 .split("\n")
                 .filter((p) => p.trim())
-                .map((paragraph) => (
-                  <p key={paragraph.slice(0, 50)}>{paragraph}</p>
+                .map((paragraph, index) => (
+                  <TypingAnimation
+                    key={paragraph.slice(0, 50)}
+                    as="p"
+                    duration={15}
+                    delay={index * 800 + 1000}
+                    showCursor={false}
+                    className={styles.completionParagraph}
+                  >
+                    {paragraph}
+                  </TypingAnimation>
                 ))}
             </div>
           </section>
@@ -532,7 +558,14 @@ export function IntakeForm() {
               {completionOutputs.experiments.map((experiment, i) => (
                 <div key={experiment.slice(0, 50)} className={styles.experiment}>
                   <span className={styles.experimentNumber}>{i + 1}</span>
-                  <p>{experiment}</p>
+                  <TypingAnimation
+                    as="p"
+                    duration={15}
+                    delay={i * 1000 + 2000}
+                    showCursor={false}
+                  >
+                    {experiment}
+                  </TypingAnimation>
                 </div>
               ))}
             </div>

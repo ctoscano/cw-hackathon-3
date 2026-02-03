@@ -330,7 +330,8 @@
   gap: 0.75rem;
 }
 
-.completionContent p {
+.completionContent p,
+.completionParagraph {
   margin: 0;
   line-height: 1.6;
   color: #444;
@@ -435,21 +436,8 @@
   margin: 0;
   line-height: 1.5;
   max-width: 300px;
-  animation: fadeInOut 3s ease-in-out infinite;
-}
-
-@keyframes fadeInOut {
-  0%,
-  100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.completionWaitingDots {
-  margin-top: 0.5rem;
+  text-align: center;
+  min-height: 2rem;
 }
 
 /* Responsive */

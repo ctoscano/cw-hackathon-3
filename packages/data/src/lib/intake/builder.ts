@@ -10,11 +10,6 @@ import {
 } from "../ai/intake-schemas.js";
 import { type BuiltPrompt, buildPrompt } from "../prompts/builder.js";
 import { getIntakeDefinition, getQuestionByIndex, getTotalSteps } from "./definitions.js";
-import {
-  getMultiselectReflection,
-  getSkipReflectionMessage,
-  shouldSkipReflection,
-} from "./templates.js";
 
 /**
  * Format a user's answer for display in prompts
@@ -148,13 +143,7 @@ function sanitizeQuestionForClient(
 }
 
 /**
- * Get reflection for a question based on its type
- *
- * - Text questions: Use LLM for personalized reflection
- * - Multiselect questions: Use template-based reflection
- * - Singleselect questions: Skip reflection (minimal acknowledgment)
- *
- * This reduces LLM calls by ~50% while maintaining quality for open-ended responses.
+ * Get reflection for a question - always uses LLM for personalized responses
  */
 async function getReflectionForQuestion(options: {
   question: IntakeQuestion;
@@ -163,23 +152,7 @@ async function getReflectionForQuestion(options: {
   stepIndex: number;
   totalSteps: number;
 }): Promise<string> {
-  const { question, answer } = options;
-
-  // Singleselect questions: skip reflection entirely (minimal message)
-  if (shouldSkipReflection(question.id)) {
-    return getSkipReflectionMessage(question.id);
-  }
-
-  // Multiselect questions: use template-based reflection
-  if (question.type === "multiselect" && Array.isArray(answer)) {
-    const templateReflection = getMultiselectReflection(question.id, answer);
-    if (templateReflection) {
-      return templateReflection;
-    }
-    // Fall through to LLM if no template found
-  }
-
-  // Text questions (and fallback): use LLM for personalized reflection
+  // Always use LLM for personalized, context-aware reflections
   const reflectionResult = await generateReflection(options);
   return reflectionResult.data;
 }
