@@ -4,10 +4,10 @@
  * Uses Firefox with Mesa llvmpipe for software-rendered WebGL
  */
 
-import { firefox } from "playwright";
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { firefox } from "playwright";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 const SCREENSHOT_DIR = join(process.cwd(), "screenshots");

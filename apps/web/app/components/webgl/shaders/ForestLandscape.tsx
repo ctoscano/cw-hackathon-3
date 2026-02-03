@@ -81,50 +81,39 @@ export function ForestLandscape({ speed = 0.3 }: ForestLandscapeProps) {
       return f / 0.9375;
     }
 
-    // Tree silhouette SDF-like function
+    // Pine tree silhouette - classic triangular shape
     float tree(vec2 uv, float x, float height, float width) {
       vec2 p = uv - vec2(x, 0.0);
 
       // Trunk
-      float trunk = smoothstep(width * 0.15, width * 0.1, abs(p.x)) *
-                    step(0.0, p.y) * step(p.y, height * 0.4);
+      float trunkW = width * 0.12;
+      float trunk = smoothstep(trunkW, trunkW * 0.7, abs(p.x)) *
+                    step(0.0, p.y) * step(p.y, height * 0.25);
 
-      // Canopy - triangular layers
+      // Main triangular canopy - single clean triangle
       float canopy = 0.0;
-      for(float i = 0.0; i < 4.0; i++) {
-        float layerY = height * (0.2 + i * 0.2);
-        float layerH = height * 0.35;
-        float layerW = width * (1.0 - i * 0.15);
+      float baseY = height * 0.1;
+      float canopyH = height * 0.95;
+      float y = p.y - baseY;
 
-        float y = p.y - layerY;
-        if(y > 0.0 && y < layerH) {
-          float t = y / layerH;
-          float w = layerW * (1.0 - t);
-          canopy = max(canopy, smoothstep(w + 0.002, w, abs(p.x)));
-        }
-      }
-
-      // Pointed top
-      float topY = height * 0.85;
-      float topH = height * 0.2;
-      float topT = (p.y - topY) / topH;
-      if(topT > 0.0 && topT < 1.0) {
-        float topW = width * 0.25 * (1.0 - topT);
-        canopy = max(canopy, smoothstep(topW + 0.002, topW, abs(p.x)));
+      if(y > 0.0 && y < canopyH) {
+        float t = y / canopyH;
+        float w = width * (1.0 - t * 0.95);
+        canopy = smoothstep(w + 0.003, w - 0.003, abs(p.x));
       }
 
       return max(trunk, canopy);
     }
 
-    // Forest layer
+    // Forest layer - more trees, larger sizes
     float forestLayer(vec2 uv, float baseY, float scale, float seed) {
       float forest = 0.0;
 
-      for(float i = 0.0; i < 12.0; i++) {
+      for(float i = 0.0; i < 18.0; i++) {
         float treeSeed = seed + i * 73.0;
-        float x = hash(treeSeed) * 1.3 - 0.15;
-        float h = (0.08 + hash(treeSeed + 1.0) * 0.12) * scale;
-        float w = (0.015 + hash(treeSeed + 2.0) * 0.01) * scale;
+        float x = hash(treeSeed) * 1.4 - 0.2;
+        float h = (0.15 + hash(treeSeed + 1.0) * 0.2) * scale;
+        float w = (0.025 + hash(treeSeed + 2.0) * 0.02) * scale;
 
         forest = max(forest, tree(uv, x, baseY + h, w));
       }
@@ -167,84 +156,80 @@ export function ForestLandscape({ speed = 0.3 }: ForestLandscapeProps) {
       float aspect = uResolution.x / uResolution.y;
 
       // Light source position (morning sun, upper right)
-      vec2 lightPos = vec2(0.8, 0.85);
+      vec2 lightPos = vec2(0.75, 0.9);
 
       // === SKY ===
-      // Warm morning gradient
-      vec3 skyTop = vec3(0.45, 0.6, 0.8);
-      vec3 skyMid = vec3(0.85, 0.75, 0.65);
-      vec3 skyLow = vec3(1.0, 0.9, 0.75);
+      // Deeper, more saturated morning gradient
+      vec3 skyTop = vec3(0.35, 0.5, 0.7);
+      vec3 skyMid = vec3(0.7, 0.55, 0.45);
+      vec3 skyLow = vec3(0.9, 0.7, 0.5);
 
-      float skyGrad = pow(uv.y, 0.7);
+      float skyGrad = pow(uv.y, 0.6);
       vec3 sky = mix(skyLow, skyMid, smoothstep(0.2, 0.5, skyGrad));
       sky = mix(sky, skyTop, smoothstep(0.5, 1.0, skyGrad));
 
-      // Sun glow
+      // Sun glow - reduced intensity
       float sunDist = length((uv - lightPos) * vec2(1.0, 1.3));
-      float sunCore = smoothstep(0.06, 0.04, sunDist);
-      float sunGlow1 = exp(-sunDist * 5.0) * 0.8;
-      float sunGlow2 = exp(-sunDist * 2.0) * 0.4;
-      float sunGlow3 = exp(-sunDist * 0.8) * 0.2;
+      float sunCore = smoothstep(0.05, 0.03, sunDist);
+      float sunGlow1 = exp(-sunDist * 6.0) * 0.5;
+      float sunGlow2 = exp(-sunDist * 2.5) * 0.25;
 
-      sky = mix(sky, vec3(1.0, 1.0, 0.95), sunCore);
-      sky += vec3(1.0, 0.95, 0.8) * sunGlow1;
-      sky += vec3(1.0, 0.85, 0.6) * sunGlow2;
-      sky += vec3(1.0, 0.7, 0.4) * sunGlow3;
+      sky = mix(sky, vec3(1.0, 0.95, 0.85), sunCore);
+      sky += vec3(1.0, 0.9, 0.7) * sunGlow1;
+      sky += vec3(1.0, 0.8, 0.5) * sunGlow2;
 
-      // God rays in sky
+      // God rays in sky - reduced
       float rays = godRays(uv, lightPos, time);
-      sky += vec3(1.0, 0.95, 0.85) * rays;
+      sky += vec3(1.0, 0.9, 0.7) * rays * 0.7;
 
       vec3 color = sky;
 
       // === DISTANT HILLS ===
-      float hills = fbm(vec2(uv.x * 2.0 + 5.0, 0.0)) * 0.12 + 0.38;
+      float hills = fbm(vec2(uv.x * 2.0 + 5.0, 0.0)) * 0.1 + 0.55;
       float hillMask = smoothstep(hills + 0.02, hills - 0.02, uv.y);
-      vec3 hillColor = mix(vec3(0.6, 0.65, 0.7), vec3(0.75, 0.8, 0.85), hillMask * 0.5);
-      color = mix(color, hillColor, hillMask * 0.6);
+      vec3 hillColor = vec3(0.35, 0.42, 0.45);
+      color = mix(color, hillColor, hillMask * 0.8);
 
-      // === BACK FOREST LAYER (most fog) ===
-      float backForest = forestLayer(uv, 0.28, 0.55, 100.0);
-      vec3 backTreeColor = vec3(0.4, 0.48, 0.5);
-      // Heavy atmospheric fog
-      backTreeColor = mix(backTreeColor, vec3(0.75, 0.78, 0.8), 0.6);
-      color = mix(color, backTreeColor, backForest * 0.8);
+      // === BACK FOREST LAYER (distant, more faded) ===
+      float backForest = forestLayer(uv, 0.45, 0.6, 100.0);
+      vec3 backTreeColor = vec3(0.25, 0.32, 0.35);
+      // Light atmospheric perspective
+      backTreeColor = mix(backTreeColor, vec3(0.45, 0.5, 0.52), 0.3);
+      color = mix(color, backTreeColor, backForest * 0.9);
 
-      // Fog layer 1
+      // Subtle mist band
       float fog1 = fog(uv, time, 1.0);
-      float fogMask1 = smoothstep(0.5, 0.2, uv.y) * smoothstep(0.1, 0.25, uv.y);
-      color = mix(color, vec3(0.9, 0.92, 0.9), fog1 * fogMask1 * 0.5);
-
-      // God rays through fog
-      color += vec3(1.0, 0.95, 0.85) * rays * fogMask1 * 0.3;
+      float fogMask1 = smoothstep(0.6, 0.4, uv.y) * smoothstep(0.3, 0.45, uv.y);
+      color = mix(color, vec3(0.55, 0.58, 0.55), fog1 * fogMask1 * 0.2);
 
       // === MID FOREST LAYER ===
-      float midForest = forestLayer(uv, 0.2, 0.75, 200.0);
-      vec3 midTreeColor = vec3(0.25, 0.32, 0.3);
-      midTreeColor = mix(midTreeColor, vec3(0.55, 0.58, 0.55), 0.35);
-      color = mix(color, midTreeColor, midForest * 0.9);
+      float midForest = forestLayer(uv, 0.3, 0.85, 200.0);
+      vec3 midTreeColor = vec3(0.12, 0.18, 0.15);
+      midTreeColor = mix(midTreeColor, vec3(0.25, 0.3, 0.28), 0.2);
+      color = mix(color, midTreeColor, midForest * 0.95);
 
-      // Fog layer 2
+      // Light mist
       float fog2 = fog(uv, time * 1.2, 2.0);
-      float fogMask2 = smoothstep(0.35, 0.12, uv.y) * smoothstep(0.05, 0.15, uv.y);
-      color = mix(color, vec3(0.85, 0.88, 0.85), fog2 * fogMask2 * 0.45);
+      float fogMask2 = smoothstep(0.4, 0.2, uv.y) * smoothstep(0.1, 0.25, uv.y);
+      color = mix(color, vec3(0.5, 0.55, 0.5), fog2 * fogMask2 * 0.15);
 
-      // More god rays
-      color += vec3(1.0, 0.95, 0.85) * rays * fogMask2 * 0.25;
+      // Subtle god rays
+      color += vec3(1.0, 0.9, 0.7) * rays * fogMask2 * 0.08;
 
       // === NEAR FOREST LAYER ===
-      float nearForest = forestLayer(uv, 0.12, 1.0, 300.0);
-      vec3 nearTreeColor = vec3(0.12, 0.18, 0.15);
-      nearTreeColor = mix(nearTreeColor, vec3(0.35, 0.38, 0.35), 0.15);
-      color = mix(color, nearTreeColor, nearForest * 0.95);
+      float nearForest = forestLayer(uv, 0.12, 1.1, 300.0);
+      vec3 nearTreeColor = vec3(0.06, 0.1, 0.08);
+      color = mix(color, nearTreeColor, nearForest * 0.98);
 
       // === FOREGROUND SILHOUETTE TREES ===
-      float leftTree = tree(uv, -0.02, 0.75, 0.09);
-      float rightTree = tree(uv, 1.0, 0.68, 0.08);
-      float edgeTree = tree(uv, 0.88, 0.52, 0.06);
+      float leftTree = tree(uv, -0.03, 0.85, 0.12);
+      float rightTree = tree(uv, 1.02, 0.78, 0.11);
+      float edgeTree = tree(uv, 0.85, 0.6, 0.08);
+      float extraTree = tree(uv, 0.15, 0.55, 0.07);
 
-      vec3 silhouetteColor = vec3(0.04, 0.06, 0.05);
-      color = mix(color, silhouetteColor, max(max(leftTree, rightTree), edgeTree) * 0.98);
+      vec3 silhouetteColor = vec3(0.02, 0.04, 0.03);
+      float allForeground = max(max(max(leftTree, rightTree), edgeTree), extraTree);
+      color = mix(color, silhouetteColor, allForeground * 0.99);
 
       // === GROUND ===
       float groundY = 0.08 + fbm(vec2(uv.x * 5.0, 0.0)) * 0.015;
@@ -264,23 +249,25 @@ export function ForestLandscape({ speed = 0.3 }: ForestLandscapeProps) {
 
       // === POST PROCESSING ===
 
-      // Warm morning tint
-      color = mix(color, color * vec3(1.08, 1.02, 0.95), 0.3);
+      // Warm morning tint - subtle
+      color = mix(color, color * vec3(1.05, 1.0, 0.95), 0.2);
 
-      // Soft contrast
-      color = pow(color, vec3(0.95));
+      // Add contrast - darken shadows, preserve highlights
+      color = pow(color, vec3(1.1));
+      color = color * 1.05 - 0.02;
+      color = clamp(color, 0.0, 1.0);
 
-      // Vignette
-      float vignette = 1.0 - length((uv - 0.5) * vec2(0.8, 1.0)) * 0.35;
+      // Vignette - stronger
+      float vignette = 1.0 - length((uv - 0.5) * vec2(0.9, 1.1)) * 0.4;
       color *= vignette;
 
       // Very subtle film grain
-      float grain = hash2(uv * 500.0 + time) * 0.015;
-      color += grain - 0.0075;
+      float grain = hash2(uv * 500.0 + time) * 0.012;
+      color += grain - 0.006;
 
-      // Final sun influence
-      float sunInfluence = exp(-length(uv - lightPos) * 1.5) * 0.08;
-      color += vec3(1.0, 0.9, 0.7) * sunInfluence;
+      // Final sun influence - reduced
+      float sunInfluence = exp(-length(uv - lightPos) * 2.0) * 0.05;
+      color += vec3(1.0, 0.85, 0.6) * sunInfluence;
 
       gl_FragColor = vec4(color, 1.0);
     }
