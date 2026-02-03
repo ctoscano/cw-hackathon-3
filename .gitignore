@@ -38,5 +38,11 @@ pnpm-debug.log*
 # Testing
 coverage/
 
+# Screenshots (from Playwright visual testing)
+*.png
+
+# TypeScript
+*.tsbuildinfo
+
 # Misc
 .cache/
