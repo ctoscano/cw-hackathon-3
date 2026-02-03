@@ -9,8 +9,8 @@ interface MountainLandscapeProps {
   speed?: number;
 }
 
-// Raymarched mountain with IQ domain warping for organic detail
-export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
+// Layered mountain silhouettes with IQ domain warping for organic shapes
+export function MountainLandscape({ speed = 0.3 }: MountainLandscapeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { invalidate, size } = useThree();
   const reducedMotion = useReducedMotion();
@@ -47,14 +47,14 @@ export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
     uniform vec2 uResolution;
 
     // ============================================
-    // NOISE & DOMAIN WARPING
+    // NOISE FUNCTIONS (IQ style)
     // ============================================
 
-    mat2 m = mat2(0.8, 0.6, -0.6, 0.8);
-
     float hash(vec2 p) {
-      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
     }
+
+    mat2 m = mat2(0.8, 0.6, -0.6, 0.8);
 
     float noise(vec2 p) {
       vec2 i = floor(p);
@@ -77,7 +77,7 @@ export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
       return f / 0.96875;
     }
 
-    // Domain warping for organic patterns
+    // Domain warping for organic mountain shapes
     float warpedFbm(vec2 p, float intensity) {
       vec2 q = vec2(
         fbm(p + vec2(0.0, 0.0)),
@@ -91,136 +91,92 @@ export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
     }
 
     // ============================================
-    // TERRAIN with domain warping
+    // MOUNTAIN SILHOUETTES
     // ============================================
 
-    float terrain(vec2 p) {
-      float h = 0.0;
+    // Organic mountain ridge using domain warping
+    float mountainRidge(vec2 uv, float baseY, float height, float scale, float seed, float time) {
+      float x = uv.x * scale + seed;
 
-      // Large scale features with domain warping
-      h += warpedFbm(p * 0.12, 3.0) * 3.5;
+      // Domain warped base shape
+      float warp = warpedFbm(vec2(x * 0.3, seed), 2.5) * 0.05;
 
-      // Medium features
-      h += fbm(p * 0.25 + 10.0) * 1.8;
+      // Main peak structure
+      float h = baseY;
+      h += warpedFbm(vec2(x * 0.15 + seed, 0.0), 3.0) * height * 0.7;
+      h += fbm(vec2(x * 0.4 + seed * 2.0, 0.0)) * height * 0.3;
 
-      // Sharp ridges using warped abs
-      float ridge = abs(warpedFbm(p * 0.3, 2.0) - 0.5) * 2.0;
-      h += ridge * 1.5;
+      // Sharp peaks
+      float peaks = abs(fbm(vec2(x * 0.8, seed)) - 0.5) * 2.0;
+      h += peaks * height * 0.25;
 
-      // Fine erosion detail
-      h += fbm(p * 0.8 + 20.0) * 0.4;
-      h += fbm(p * 1.6 + 30.0) * 0.15;
+      // Fine detail
+      h += fbm(vec2(x * 2.0 + seed, 0.0)) * height * 0.08;
 
-      return h * 0.32;
+      // Return 1 when below mountain line (uv.y < h), 0 when above
+      return 1.0 - smoothstep(h - 0.008, h + 0.008, uv.y + warp);
     }
 
-    vec3 calcNormal(vec2 p, float eps) {
-      return normalize(vec3(
-        terrain(p - vec2(eps, 0.0)) - terrain(p + vec2(eps, 0.0)),
-        2.0 * eps,
-        terrain(p - vec2(0.0, eps)) - terrain(p + vec2(0.0, eps))
-      ));
-    }
+    // Snow caps on peaks
+    float snowCap(vec2 uv, float baseY, float height, float scale, float seed, float snowLine) {
+      float x = uv.x * scale + seed;
 
-    float castRay(vec3 ro, vec3 rd, float tmin, float tmax) {
-      float t = tmin;
-      for (int i = 0; i < 100; i++) {
-        vec3 p = ro + rd * t;
-        float h = p.y - terrain(p.xz);
-        if (h < 0.002 * t || t > tmax) break;
-        t += h * 0.45;
-      }
-      return t;
-    }
+      float h = baseY;
+      h += warpedFbm(vec2(x * 0.15 + seed, 0.0), 3.0) * height * 0.7;
+      h += fbm(vec2(x * 0.4 + seed * 2.0, 0.0)) * height * 0.3;
+      float peaks = abs(fbm(vec2(x * 0.8, seed)) - 0.5) * 2.0;
+      h += peaks * height * 0.25;
 
-    float shadow(vec3 ro, vec3 rd, float tmin, float tmax) {
-      float res = 1.0;
-      float t = tmin;
-      for (int i = 0; i < 24; i++) {
-        vec3 p = ro + rd * t;
-        float h = p.y - terrain(p.xz);
-        res = min(res, 10.0 * h / t);
-        t += clamp(h, 0.05, 0.8);
-        if (res < 0.001 || t > tmax) break;
-      }
-      return clamp(res, 0.0, 1.0);
+      // Snow above snow line with organic edge
+      float snowNoise = fbm(vec2(x * 3.0, seed * 0.5)) * 0.03;
+      // Snow shows above snowLine but below mountain peak h
+      float aboveSnowLine = smoothstep(snowLine - 0.02 + snowNoise, snowLine + 0.02 + snowNoise, uv.y);
+      float belowPeak = 1.0 - smoothstep(h - 0.01, h + 0.01, uv.y);
+
+      return aboveSnowLine * belowPeak;
     }
 
     // ============================================
-    // ORGANIC MATERIAL with domain warping
-    // ============================================
-
-    vec3 terrainMaterial(vec3 pos, vec3 nor) {
-      float h = pos.y;
-      float slope = 1.0 - nor.y;
-
-      // Warped rock color variation
-      float rockVar = warpedFbm(pos.xz * 1.5, 2.0);
-      vec3 rock1 = vec3(0.12, 0.10, 0.08);
-      vec3 rock2 = vec3(0.22, 0.18, 0.14);
-      vec3 rock3 = vec3(0.30, 0.25, 0.20);
-      vec3 rock = mix(rock1, rock2, rockVar);
-      rock = mix(rock, rock3, fbm(pos.xz * 4.0) * 0.5);
-
-      // Organic moss/lichen in crevices
-      float mossVar = warpedFbm(pos.xz * 3.0, 3.0);
-      float mossMask = smoothstep(0.6, 0.3, slope) * smoothstep(0.2, 0.5, h) * mossVar;
-      vec3 moss = vec3(0.08, 0.12, 0.06);
-      rock = mix(rock, moss, mossMask * 0.4);
-
-      // Snow with organic wind patterns
-      float snowNoise = warpedFbm(pos.xz * 2.0, 4.0);
-      float snowMask = smoothstep(0.25, 0.6, h) * smoothstep(0.55, 0.2, slope);
-      snowMask *= 0.5 + snowNoise * 0.7;
-      snowMask = smoothstep(0.0, 0.6, snowMask);
-
-      // Wind-blown snow streaks
-      float windStreak = fbm(pos.xz * vec2(0.5, 8.0) + 50.0);
-      snowMask *= 0.7 + windStreak * 0.5;
-
-      vec3 snow = vec3(0.88, 0.90, 0.95);
-      snow = mix(snow, vec3(0.75, 0.82, 0.92), (1.0 - nor.y) * 0.3);
-
-      return mix(rock, snow, clamp(snowMask, 0.0, 1.0));
-    }
-
-    // ============================================
-    // SKY with organic clouds
+    // SKY with clouds
     // ============================================
 
     float stars(vec2 uv) {
-      vec2 id = floor(uv * 150.0);
-      vec2 f = fract(uv * 150.0);
+      vec2 id = floor(uv * 200.0);
+      vec2 f = fract(uv * 200.0);
       float h = hash(id);
-      if (h > 0.985) {
+      if (h > 0.992) {
         float d = length(f - 0.5);
-        return smoothstep(0.12, 0.0, d) * (h - 0.985) * 70.0;
+        float twinkle = sin(h * 100.0 + uTime * 2.0) * 0.3 + 0.7;
+        return smoothstep(0.15, 0.0, d) * (h - 0.992) * 130.0 * twinkle;
       }
       return 0.0;
     }
 
-    vec3 nightSky(vec3 rd, float time) {
-      vec3 skyHigh = vec3(0.015, 0.02, 0.06);
-      vec3 skyLow = vec3(0.08, 0.06, 0.12);
-      float skyGrad = pow(max(rd.y, 0.0), 0.5);
-      vec3 sky = mix(skyLow, skyHigh, skyGrad);
+    vec3 dawnSky(vec2 uv, float time) {
+      // Dawn gradient
+      vec3 skyTop = vec3(0.08, 0.12, 0.28);
+      vec3 skyMid = vec3(0.25, 0.18, 0.35);
+      vec3 skyLow = vec3(0.85, 0.45, 0.35);
+      vec3 horizon = vec3(1.0, 0.75, 0.45);
 
-      // Milky way using domain warping
-      vec2 skyUv = vec2(atan(rd.x, rd.z), rd.y);
-      float milky = warpedFbm(skyUv * 2.0 + 5.0, 3.0);
-      float milkyBand = smoothstep(0.3, 0.0, abs(skyUv.x + skyUv.y * 0.3 - 0.2));
-      sky += vec3(0.12, 0.1, 0.18) * milky * milkyBand * 0.5;
+      float y = uv.y;
+      vec3 sky = mix(horizon, skyLow, smoothstep(0.2, 0.35, y));
+      sky = mix(sky, skyMid, smoothstep(0.35, 0.55, y));
+      sky = mix(sky, skyTop, smoothstep(0.55, 0.85, y));
 
-      // Stars
-      float s = stars(skyUv + 0.5);
-      s += stars(skyUv * 1.7 + 10.0) * 0.6;
-      s += stars(skyUv * 2.3 + 20.0) * 0.3;
-      sky += vec3(1.0, 0.95, 0.85) * s;
+      // Stars (fading near horizon)
+      float starMask = smoothstep(0.4, 0.7, y);
+      float s = stars(uv + 0.5);
+      s += stars(uv * 1.5 + 10.0) * 0.6;
+      sky += vec3(1.0, 0.98, 0.95) * s * starMask;
 
-      // Aurora-like nebula
-      float nebula = warpedFbm(skyUv * vec2(1.0, 3.0) + time * 0.02, 4.0);
-      nebula *= smoothstep(0.0, 0.4, rd.y) * smoothstep(0.8, 0.3, rd.y);
-      sky += vec3(0.05, 0.1, 0.15) * nebula * 0.3;
+      // Wispy clouds using domain warping
+      vec2 cloudUv = uv * vec2(2.0, 4.0) + vec2(time * 0.02, 0.0);
+      float clouds = warpedFbm(cloudUv, 3.0);
+      clouds *= smoothstep(0.3, 0.5, uv.y) * smoothstep(0.8, 0.6, uv.y);
+
+      vec3 cloudCol = mix(vec3(1.0, 0.7, 0.5), vec3(0.9, 0.85, 0.95), uv.y);
+      sky = mix(sky, cloudCol, clouds * 0.35);
 
       return sky;
     }
@@ -230,78 +186,87 @@ export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
     // ============================================
 
     void main() {
-      vec2 uv = vUv * 2.0 - 1.0;
+      vec2 uv = vUv;
       uv.x *= uResolution.x / uResolution.y;
       float time = uTime;
 
-      // Camera
-      vec3 ro = vec3(time * 0.4, 2.8, -6.0);
-      vec3 ta = vec3(time * 0.4 + 4.0, 1.2, 6.0);
-
-      vec3 ww = normalize(ta - ro);
-      vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
-      vec3 vv = cross(uu, ww);
-      vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.7 * ww);
+      float parallax = time * 0.02;
 
       // Sky
-      vec3 sky = nightSky(rd, time);
+      vec3 col = dawnSky(vUv, time);
 
-      // Moon
-      vec3 moonDir = normalize(vec3(0.5, 0.45, 0.3));
-      float moonDot = dot(rd, moonDir);
-      float moon = smoothstep(0.994, 0.998, moonDot);
-      float moonGlow = pow(max(moonDot, 0.0), 48.0) * 0.6;
-      sky += vec3(1.0, 0.98, 0.92) * moon;
-      sky += vec3(0.25, 0.22, 0.32) * moonGlow;
+      // Sun glow on horizon
+      vec2 sunPos = vec2(0.75, 0.28);
+      float sunDist = length(vUv - sunPos);
+      float sunGlow = exp(-sunDist * 3.0) * 0.8;
+      float sun = smoothstep(0.045, 0.02, sunDist);
+      col += vec3(1.0, 0.6, 0.3) * sunGlow;
+      col += vec3(1.0, 0.95, 0.85) * sun;
 
-      vec3 col = sky;
+      // Mountain layer colors (back to front) - darker silhouettes
+      vec3 col6 = vec3(0.32, 0.28, 0.38);  // Most distant - purple haze
+      vec3 col5 = vec3(0.22, 0.20, 0.30);
+      vec3 col4 = vec3(0.14, 0.13, 0.22);
+      vec3 col3 = vec3(0.09, 0.08, 0.15);
+      vec3 col2 = vec3(0.05, 0.04, 0.10);
+      vec3 col1 = vec3(0.02, 0.02, 0.05);  // Foreground - almost black
 
-      // Raycast terrain
-      float t = castRay(ro, rd, 0.1, 100.0);
+      vec3 snowCol = vec3(0.95, 0.92, 1.0);
 
-      if (t < 100.0) {
-        vec3 pos = ro + rd * t;
-        vec3 nor = calcNormal(pos.xz, 0.02);
+      // Layer 6 - Most distant mountains (taller, more prominent)
+      vec2 uv6 = vec2(uv.x + parallax * 0.1, uv.y);
+      float m6 = mountainRidge(uv6, 0.25, 0.35, 1.2, 60.0, time);
+      col = mix(col, col6, m6);
+      float snow6 = snowCap(uv6, 0.25, 0.35, 1.2, 60.0, 0.48);
+      col = mix(col, snowCol * 0.7, snow6 * 0.5);
 
-        // Material
-        vec3 mat = terrainMaterial(pos, nor);
+      // Layer 5
+      vec2 uv5 = vec2(uv.x + parallax * 0.2, uv.y);
+      float m5 = mountainRidge(uv5, 0.22, 0.38, 1.5, 50.0, time);
+      col = mix(col, col5, m5);
+      float snow5 = snowCap(uv5, 0.22, 0.38, 1.5, 50.0, 0.46);
+      col = mix(col, snowCol * 0.75, snow5 * 0.55);
 
-        // Lighting
-        vec3 sunDir = normalize(vec3(0.4, 0.35, -0.5));
-        float dif = max(dot(nor, sunDir), 0.0);
-        dif = dif * 0.5 + pow(dif, 4.0) * 0.4;
+      // Layer 4
+      vec2 uv4 = vec2(uv.x + parallax * 0.35, uv.y);
+      float m4 = mountainRidge(uv4, 0.18, 0.42, 1.8, 40.0, time);
+      col = mix(col, col4, m4);
+      float snow4 = snowCap(uv4, 0.18, 0.42, 1.8, 40.0, 0.44);
+      col = mix(col, snowCol * 0.8, snow4 * 0.6);
 
-        float moonLit = max(dot(nor, moonDir), 0.0) * 0.3;
-        float amb = 0.12 + 0.08 * nor.y;
-        float sha = shadow(pos + nor * 0.02, sunDir, 0.05, 25.0);
+      // Layer 3
+      vec2 uv3 = vec2(uv.x + parallax * 0.55, uv.y);
+      float m3 = mountainRidge(uv3, 0.12, 0.48, 2.2, 30.0, time);
+      col = mix(col, col3, m3);
+      float snow3 = snowCap(uv3, 0.12, 0.48, 2.2, 30.0, 0.42);
+      col = mix(col, snowCol * 0.85, snow3 * 0.65);
 
-        col = mat * (amb + dif * sha * 0.8 + moonLit);
+      // Layer 2
+      vec2 uv2 = vec2(uv.x + parallax * 0.8, uv.y);
+      float m2 = mountainRidge(uv2, 0.05, 0.50, 2.8, 20.0, time);
+      col = mix(col, col2, m2);
+      float snow2 = snowCap(uv2, 0.05, 0.50, 2.8, 20.0, 0.38);
+      col = mix(col, snowCol * 0.9, snow2 * 0.7);
 
-        // Specular on snow
-        float spec = pow(max(dot(reflect(-sunDir, nor), -rd), 0.0), 24.0);
-        float snowAmt = smoothstep(0.3, 0.7, pos.y);
-        col += vec3(0.25, 0.28, 0.35) * spec * snowAmt * sha * 0.4;
+      // Layer 1 - Foreground
+      vec2 uv1 = vec2(uv.x + parallax * 1.2, uv.y);
+      float m1 = mountainRidge(uv1, 0.0, 0.40, 3.5, 10.0, time);
+      col = mix(col, col1, m1);
 
-        // Rim light
-        float rim = pow(1.0 - max(dot(nor, -rd), 0.0), 2.5);
-        col += vec3(0.1, 0.1, 0.18) * rim * 0.35;
-
-        // Fog
-        float fog = 1.0 - exp(-t * 0.018);
-        vec3 fogCol = mix(vec3(0.04, 0.04, 0.1), sky * 0.5, 0.3);
-        col = mix(col, fogCol, fog);
-      }
+      // Atmospheric fog between layers
+      float fog = warpedFbm(uv * vec2(3.0, 1.5) + time * 0.01, 2.0);
+      float fogMask = smoothstep(0.35, 0.15, uv.y) * smoothstep(0.0, 0.1, uv.y);
+      col = mix(col, col4 * 1.5, fog * fogMask * 0.25);
 
       // Tone mapping
-      col = col / (1.0 + col);
-      col = pow(col, vec3(0.88));
+      col = pow(col, vec3(0.92));
 
       // Vignette
-      float vig = 1.0 - dot(vUv - 0.5, vUv - 0.5) * 0.6;
+      float vig = 1.0 - dot(vUv - 0.5, vUv - 0.5) * 0.5;
       col *= vig;
 
-      // Subtle blue night tint
-      col = mix(col, col * vec3(0.9, 0.95, 1.1), 0.1);
+      // Subtle color grade
+      col = mix(col, col * vec3(1.0, 0.95, 1.05), 0.1);
 
       gl_FragColor = vec4(col, 1.0);
     }
