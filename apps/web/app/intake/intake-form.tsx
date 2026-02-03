@@ -65,13 +65,6 @@ type IntakeState =
   | "complete"
   | "error";
 
-// Delightful messages shown while generating completion
-const completionWaitingMessages = [
-  "Weaving together your responses...",
-  "Creating something personalized just for you...",
-  "Almost there — putting the finishing touches on your results...",
-];
-
 export function IntakeForm() {
   const [state, setState] = useState<IntakeState>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -106,9 +99,6 @@ export function IntakeForm() {
   const [completionOutputs, setCompletionOutputs] =
     useState<IntakeStepResponse["completionOutputs"]>(null);
 
-  // Waiting message index for completion
-  const [waitingMessageIndex, setWaitingMessageIndex] = useState(0);
-
   // Ref for auto-scrolling
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -118,17 +108,6 @@ export function IntakeForm() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesLength]);
-
-  // Cycle through waiting messages during completion generation
-  useEffect(() => {
-    if (state !== "generating_completion") return;
-
-    const interval = setInterval(() => {
-      setWaitingMessageIndex((prev) => (prev + 1) % completionWaitingMessages.length);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [state]);
 
   // Load intake on mount
   useEffect(() => {
@@ -248,7 +227,6 @@ export function IntakeForm() {
     // If last question, show the completion waiting state
     if (isLastQuestion) {
       setState("generating_completion");
-      setWaitingMessageIndex(0);
     }
 
     try {
@@ -419,9 +397,6 @@ export function IntakeForm() {
               />
             </svg>
           </div>
-          <p className={styles.completionWaitingText}>
-            {completionWaitingMessages[waitingMessageIndex]}
-          </p>
           <div className={styles.completionWaitingDots}>
             <TypingIndicator />
           </div>

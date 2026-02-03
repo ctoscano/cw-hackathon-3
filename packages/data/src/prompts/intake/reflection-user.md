@@ -28,7 +28,7 @@ The person is on question {{questionNumber}} of {{totalQuestions}} in an intake 
 
 ## Instructions
 
-Generate a brief, supportive reflection (1-2 sentences) that:
+Generate a brief, supportive reflection (1 sentence, max ~15 words) that:
 
 1. Reflects back the essence of what they shared
 2. Normalizes their experience
@@ -36,6 +36,7 @@ Generate a brief, supportive reflection (1-2 sentences) that:
 
 Remember:
 - Be specific to what they said, not generic
+- Keep it conversational and concise
 - Avoid clinical jargon unless it clarifies
 - No advice, diagnosis, or pressure
 - Warmth without being saccharine
