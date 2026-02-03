@@ -212,6 +212,7 @@ export function IntakeForm() {
     const answer = getCurrentAnswer();
     const isLastQuestion = currentStep >= totalSteps - 1;
     const nextStepIndex = currentStep + 1;
+    const submittingStepIndex = currentStep; // Store the step we're submitting
 
     setState("submitting");
     setError(null);
@@ -256,7 +257,7 @@ export function IntakeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           intakeType,
-          stepIndex: currentStep - (isLastQuestion ? 0 : 1), // Use original step for API
+          stepIndex: submittingStepIndex, // Use the stored step index (always >= 0)
           priorAnswers: completedAnswers,
           currentAnswer: answer,
         }),
