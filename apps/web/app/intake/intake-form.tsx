@@ -374,7 +374,6 @@ export function IntakeForm() {
                 key={msg.id}
                 type="reflection"
                 isLoading={msg.content === null}
-                typeAnimation={msg.content !== null}
               >
                 {msg.content}
               </ChatMessage>

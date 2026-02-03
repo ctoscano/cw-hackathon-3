@@ -85,17 +85,16 @@ export function IntakeDemo() {
 
       {/* Section: Reflection Bubbles */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Reflection Bubbles (with Typing Animation)</h2>
+        <h2 className={styles.sectionTitle}>Reflection Bubbles</h2>
         <p className={styles.sectionDescription}>
-          Personalized reflections appear after each answer with a typing animation, showing
-          empathetic acknowledgment.
+          Personalized reflections appear after each answer, showing empathetic acknowledgment.
         </p>
         <div className={styles.chatDemo}>
-          <ChatMessage type="reflection" typeAnimation={showAnimations}>
+          <ChatMessage type="reflection">
             That shift from "more discipline" to "how do I make this sustainable" is something many
             high-performers eventually recognize.
           </ChatMessage>
-          <ChatMessage type="reflection" typeAnimation={showAnimations}>
+          <ChatMessage type="reflection">
             The areas you're describing often connect in surprising ways.
           </ChatMessage>
         </div>
@@ -105,7 +104,7 @@ export function IntakeDemo() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Loading State (Reflection Pending)</h2>
         <p className={styles.sectionDescription}>
-          While waiting for the LLM response, the reflection bubble shows a typing indicator.
+          While waiting for the LLM response, the reflection bubble shows rotating animated words.
         </p>
         <div className={styles.chatDemo}>
           <ChatMessage type="reflection" isLoading>
@@ -128,7 +127,7 @@ export function IntakeDemo() {
             I&apos;ve been feeling stuck in my career and it&apos;s affecting my mood and
             relationships. I keep putting off making changes.
           </ChatMessage>
-          <ChatMessage type="reflection" typeAnimation={showAnimations}>
+          <ChatMessage type="reflection">
             Feeling stuck while knowing something needs to change is a really common experience.
           </ChatMessage>
           <ChatMessage type="question" questionNumber={2}>

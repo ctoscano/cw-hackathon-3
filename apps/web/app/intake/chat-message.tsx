@@ -35,19 +35,23 @@ export function ChatMessage({
 
   // Render content with optional typing animation
   const renderContent = () => {
-    if (isLoading) {
-      return <TypingIndicator />;
+    if (isLoading && type === "reflection") {
+      // Show rotating words for reflection loading
+      // Wrap in container to prevent height jitter during animation
+      return (
+        <span style={{ display: "inline-block", minWidth: "120px" }}>
+          <TypingAnimation
+            words={["Reflecting...", "Processing...", "Thinking..."]}
+            loop
+            duration={80}
+            showCursor={false}
+          />
+        </span>
+      );
     }
 
-    if (typeAnimation && typeof children === "string") {
-      return (
-        <TypingAnimation
-          duration={20}
-          showCursor={false}
-        >
-          {children}
-        </TypingAnimation>
-      );
+    if (isLoading) {
+      return <TypingIndicator />;
     }
 
     return children;
