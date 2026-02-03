@@ -161,6 +161,67 @@
   color: #155724;
 }
 
+/* Section Note */
+.sectionNote {
+  font-size: 0.8125rem;
+  color: #888;
+  margin: 0.5rem 0 0 0;
+  padding: 0.75rem;
+  background: #f0f7ff;
+  border-radius: 6px;
+  border-left: 3px solid #4a90d9;
+  line-height: 1.5;
+}
+
+/* Completion Waiting Demo */
+.completionWaitingDemo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 3rem 2rem;
+  background: #fafafa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.completionWaitingIcon {
+  width: 80px;
+  height: 80px;
+}
+
+.completionWaitingSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.completionWaitingCircle {
+  animation: spin 1.5s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.completionWaitingText {
+  font-size: 1.125rem;
+  color: #444;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+.completionWaitingDots {
+  margin-top: 0.5rem;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .title {

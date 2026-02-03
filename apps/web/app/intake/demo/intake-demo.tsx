@@ -149,20 +149,86 @@ export function IntakeDemo() {
         </div>
       </section>
 
-      {/* Section: Optimistic UI Demo */}
+      {/* Section: Optimistic UI with Immediate Next Question */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Optimistic UI Pattern</h2>
+        <h2 className={styles.sectionTitle}>Optimistic UI: Next Question Appears Immediately</h2>
         <p className={styles.sectionDescription}>
-          When users submit an answer, their response appears immediately while the reflection
-          loads. This dramatically improves perceived performance.
+          When users submit an answer, the next question appears immediately — they can start
+          reading or answering while the reflection loads in the background.
+        </p>
+        <div className={styles.chatDemo}>
+          <ChatMessage type="question" questionNumber={3}>
+            When this issue shows up, what tends to happen for you?
+          </ChatMessage>
+          <ChatMessage type="answer" animate={showAnimations}>
+            I overthink decisions and end up avoiding them entirely.
+          </ChatMessage>
+          <ChatMessage type="reflection" isLoading>
+            {null}
+          </ChatMessage>
+          <ChatMessage type="question" questionNumber={4}>
+            What have you already tried to handle this on your own?
+          </ChatMessage>
+        </div>
+        <p className={styles.sectionNote}>
+          ↑ Notice: Question 4 is already visible while the reflection for Q3 is still loading. The
+          user can start thinking about or answering Q4 immediately.
+        </p>
+      </section>
+
+      {/* Section: Completion Waiting State */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Completion Waiting State</h2>
+        <p className={styles.sectionDescription}>
+          After the final question, a delightful waiting experience shows rotating messages while
+          personalized results are generated.
+        </p>
+        <div className={styles.completionWaitingDemo}>
+          <div className={styles.completionWaitingIcon}>
+            <svg viewBox="0 0 100 100" className={styles.completionWaitingSvg} aria-hidden="true">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e8f4fd" strokeWidth="8" />
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="#4a90d9"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray="251.2"
+                strokeDashoffset="125.6"
+                className={styles.completionWaitingCircle}
+              />
+            </svg>
+          </div>
+          <p className={styles.completionWaitingText}>Weaving together your responses...</p>
+          <div className={styles.completionWaitingDots}>
+            <TypingIndicator />
+          </div>
+        </div>
+        <p className={styles.sectionNote}>
+          Messages cycle through: &quot;Weaving together your responses...&quot; → &quot;Creating
+          something personalized just for you...&quot; → &quot;Almost there — putting the finishing
+          touches...&quot;
+        </p>
+      </section>
+
+      {/* Section: Optimistic UI Pattern Comparison */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Before vs After: Perceived Performance</h2>
+        <p className={styles.sectionDescription}>
+          The optimistic UI pattern dramatically reduces perceived wait time.
         </p>
         <div className={styles.stateComparison}>
           <div className={styles.stateColumn}>
-            <h3>Before (waiting)</h3>
+            <h3>Before (blocking)</h3>
             <div className={styles.stateBadge} data-state="waiting">
               User waits 1-3s
             </div>
-            <p>User sees &quot;Processing...&quot; button with no visual progress.</p>
+            <p>
+              User clicks &quot;Continue&quot;, sees &quot;Processing...&quot;, waits for API, then
+              sees answer + reflection + next question all at once.
+            </p>
           </div>
           <div className={styles.stateColumn}>
             <h3>After (optimistic)</h3>
@@ -170,8 +236,8 @@ export function IntakeDemo() {
               Instant feedback
             </div>
             <p>
-              User sees their answer immediately + typing indicator. Feels like natural
-              conversation.
+              User clicks &quot;Continue&quot;, immediately sees their answer + typing indicator +
+              next question. Reflection fades in when ready.
             </p>
           </div>
         </div>

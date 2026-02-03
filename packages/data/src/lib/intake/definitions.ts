@@ -185,3 +185,16 @@ export function getTotalSteps(intakeType: string): number {
   const intake = getIntakeDefinition(intakeType);
   return intake?.questions.length ?? 0;
 }
+
+/**
+ * Get all questions for an intake (without clinical intentions)
+ */
+export function getAllQuestions(
+  intakeType: string,
+): Array<Omit<IntakeDefinition["questions"][number], "clinicalIntention">> | undefined {
+  const intake = getIntakeDefinition(intakeType);
+  if (!intake) return undefined;
+
+  // Strip clinical intentions from all questions
+  return intake.questions.map(({ clinicalIntention: _, ...question }) => question);
+}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "./chat-message";
 import styles from "./intake.module.css";
+import { TypingIndicator } from "./typing-indicator";
 
 interface IntakeQuestion {
   id: string;
@@ -25,6 +26,7 @@ interface IntakeStartResponse {
   description: string;
   totalSteps: number;
   firstQuestion: IntakeQuestion;
+  allQuestions: IntakeQuestion[];
 }
 
 interface IntakeStepResponse {
@@ -55,7 +57,20 @@ function generateMessageId(): string {
   return `msg-${++messageIdCounter}`;
 }
 
-type IntakeState = "loading" | "ready" | "submitting" | "complete" | "error";
+type IntakeState =
+  | "loading"
+  | "ready"
+  | "submitting"
+  | "generating_completion"
+  | "complete"
+  | "error";
+
+// Delightful messages shown while generating completion
+const completionWaitingMessages = [
+  "Weaving together your responses...",
+  "Creating something personalized just for you...",
+  "Almost there — putting the finishing touches on your results...",
+];
 
 export function IntakeForm() {
   const [state, setState] = useState<IntakeState>("loading");
@@ -67,6 +82,9 @@ export function IntakeForm() {
   const [intakeDescription, setIntakeDescription] = useState<string>("");
   const [totalSteps, setTotalSteps] = useState<number>(0);
 
+  // All questions (prefetched for immediate display)
+  const [allQuestions, setAllQuestions] = useState<IntakeQuestion[]>([]);
+
   // Current step tracking
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [currentQuestion, setCurrentQuestion] = useState<IntakeQuestion | null>(null);
@@ -77,6 +95,9 @@ export function IntakeForm() {
   // Completed answers for API calls (includes reflections)
   const [completedAnswers, setCompletedAnswers] = useState<IntakeAnswer[]>([]);
 
+  // Pending reflection that needs to be updated when API returns
+  const [pendingReflectionId, setPendingReflectionId] = useState<string | null>(null);
+
   // Current input state
   const [textInput, setTextInput] = useState<string>("");
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -84,6 +105,9 @@ export function IntakeForm() {
   // Completion outputs
   const [completionOutputs, setCompletionOutputs] =
     useState<IntakeStepResponse["completionOutputs"]>(null);
+
+  // Waiting message index for completion
+  const [waitingMessageIndex, setWaitingMessageIndex] = useState(0);
 
   // Ref for auto-scrolling
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -95,7 +119,18 @@ export function IntakeForm() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesLength]);
 
-  // Load first question on mount
+  // Cycle through waiting messages during completion generation
+  useEffect(() => {
+    if (state !== "generating_completion") return;
+
+    const interval = setInterval(() => {
+      setWaitingMessageIndex((prev) => (prev + 1) % completionWaitingMessages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [state]);
+
+  // Load intake on mount
   useEffect(() => {
     async function loadIntake() {
       try {
@@ -110,6 +145,7 @@ export function IntakeForm() {
         setIntakeName(data.name);
         setIntakeDescription(data.description);
         setTotalSteps(data.totalSteps);
+        setAllQuestions(data.allQuestions);
         setCurrentQuestion(data.firstQuestion);
 
         // Add first question to messages
@@ -174,7 +210,8 @@ export function IntakeForm() {
     if (!currentQuestion || !isAnswerValid()) return;
 
     const answer = getCurrentAnswer();
-    const isSelectionQuestion = currentQuestion.type !== "text";
+    const isLastQuestion = currentStep >= totalSteps - 1;
+    const nextStepIndex = currentStep + 1;
 
     setState("submitting");
     setError(null);
@@ -182,11 +219,36 @@ export function IntakeForm() {
     // OPTIMISTIC UI: Immediately show the user's answer and a loading reflection
     const answerId = generateMessageId();
     const reflectionId = generateMessageId();
-    setMessages((prev) => [
-      ...prev,
+
+    // Build new messages optimistically
+    const newMessages: ChatMessageItem[] = [
       { id: answerId, type: "answer", content: answer },
       { id: reflectionId, type: "reflection", content: null }, // Loading state
-    ]);
+    ];
+
+    // If not the last question, immediately show the next question
+    // This is the key to perceived performance - user can start reading/answering
+    if (!isLastQuestion && allQuestions[nextStepIndex]) {
+      const nextQuestion = allQuestions[nextStepIndex];
+      newMessages.push({
+        id: generateMessageId(),
+        type: "question",
+        questionNumber: nextStepIndex + 1,
+        question: nextQuestion,
+      });
+      // Update current question immediately so user can start answering
+      setCurrentQuestion(nextQuestion);
+      setCurrentStep(nextStepIndex);
+    }
+
+    setMessages((prev) => [...prev, ...newMessages]);
+    setPendingReflectionId(reflectionId);
+
+    // If last question, show the completion waiting state
+    if (isLastQuestion) {
+      setState("generating_completion");
+      setWaitingMessageIndex(0);
+    }
 
     try {
       const response = await fetch("/api/intake/step", {
@@ -194,7 +256,7 @@ export function IntakeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           intakeType,
-          stepIndex: currentStep,
+          stepIndex: currentStep - (isLastQuestion ? 0 : 1), // Use original step for API
           priorAnswers: completedAnswers,
           currentAnswer: answer,
         }),
@@ -209,16 +271,16 @@ export function IntakeForm() {
       // Update the loading reflection with actual content
       setMessages((prev) => {
         const updated = [...prev];
-        // Find the last reflection (which should be loading)
         for (let i = updated.length - 1; i >= 0; i--) {
           const msg = updated[i];
-          if (msg.type === "reflection" && msg.content === null) {
+          if (msg.type === "reflection" && msg.id === reflectionId) {
             updated[i] = { id: msg.id, type: "reflection", content: data.reflection };
             break;
           }
         }
         return updated;
       });
+      setPendingReflectionId(null);
 
       // Add completed answer to history for future API calls
       const newAnswer: IntakeAnswer = {
@@ -233,25 +295,22 @@ export function IntakeForm() {
         setCompletionOutputs(data.completionOutputs);
         setCurrentQuestion(null);
         setState("complete");
-      } else if (data.nextQuestion) {
-        const nextQuestion = data.nextQuestion;
-        // Add next question to messages
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: generateMessageId(),
-            type: "question",
-            questionNumber: data.metadata.currentStep + 2,
-            question: nextQuestion,
-          },
-        ]);
-        setCurrentQuestion(nextQuestion);
-        setCurrentStep(data.metadata.currentStep + 1);
+      } else {
+        // Already showed next question optimistically, just update state
         setState("ready");
       }
     } catch (err) {
       // Remove the optimistic messages on error
-      setMessages((prev) => prev.slice(0, -2));
+      const messagesToRemove = isLastQuestion ? 2 : 3;
+      setMessages((prev) => prev.slice(0, -messagesToRemove));
+      setPendingReflectionId(null);
+
+      // Restore previous question state if we optimistically moved forward
+      if (!isLastQuestion && allQuestions[currentStep - 1]) {
+        setCurrentQuestion(allQuestions[currentStep - 1]);
+        setCurrentStep(currentStep - 1);
+      }
+
       setError(err instanceof Error ? err.message : "Failed to submit answer");
       setState("ready");
     }
@@ -275,13 +334,16 @@ export function IntakeForm() {
     );
   }
 
+  const isGeneratingCompletion = state === "generating_completion";
+  const showQuestionForm = currentQuestion && !isGeneratingCompletion && state !== "complete";
+
   return (
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
         <h1 className={styles.title}>{intakeName}</h1>
         <p className={styles.description}>{intakeDescription}</p>
-        {state !== "complete" && (
+        {state !== "complete" && !isGeneratingCompletion && (
           <div className={styles.progress}>
             <div className={styles.progressBar}>
               <div
@@ -302,7 +364,10 @@ export function IntakeForm() {
           if (msg.type === "question") {
             // Only show as chat bubble if it's a past question (not the current active one)
             const isCurrentQuestion =
-              currentQuestion && msg.question.id === currentQuestion.id && state !== "complete";
+              currentQuestion &&
+              msg.question.id === currentQuestion.id &&
+              state !== "complete" &&
+              !isGeneratingCompletion;
             if (isCurrentQuestion) return null;
 
             return (
@@ -333,8 +398,37 @@ export function IntakeForm() {
         <div ref={chatEndRef} />
       </div>
 
+      {/* Completion Waiting State */}
+      {isGeneratingCompletion && (
+        <div className={styles.completionWaiting}>
+          <div className={styles.completionWaitingIcon}>
+            <svg viewBox="0 0 100 100" className={styles.completionWaitingSvg} aria-hidden="true">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e8f4fd" strokeWidth="8" />
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="#4a90d9"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray="251.2"
+                strokeDashoffset="125.6"
+                className={styles.completionWaitingCircle}
+              />
+            </svg>
+          </div>
+          <p className={styles.completionWaitingText}>
+            {completionWaitingMessages[waitingMessageIndex]}
+          </p>
+          <div className={styles.completionWaitingDots}>
+            <TypingIndicator />
+          </div>
+        </div>
+      )}
+
       {/* Current Question Form */}
-      {currentQuestion && state !== "complete" && (
+      {showQuestionForm && (
         <form onSubmit={handleSubmit} className={styles.questionForm}>
           <div className={styles.currentQuestion}>
             <div className={styles.questionLabel}>
