@@ -370,7 +370,12 @@ export function IntakeForm() {
 
           if (msg.type === "reflection") {
             return (
-              <ChatMessage key={msg.id} type="reflection" isLoading={msg.content === null}>
+              <ChatMessage
+                key={msg.id}
+                type="reflection"
+                isLoading={msg.content === null}
+                typeAnimation={msg.content !== null}
+              >
                 {msg.content}
               </ChatMessage>
             );
@@ -512,17 +517,10 @@ export function IntakeForm() {
               {completionOutputs.personalizedBrief
                 .split("\n")
                 .filter((p) => p.trim())
-                .map((paragraph, index) => (
-                  <TypingAnimation
-                    key={paragraph.slice(0, 50)}
-                    as="p"
-                    duration={15}
-                    delay={index * 800}
-                    showCursor={false}
-                    className={styles.completionParagraph}
-                  >
+                .map((paragraph) => (
+                  <p key={paragraph.slice(0, 50)} className={styles.completionParagraph}>
                     {paragraph}
-                  </TypingAnimation>
+                  </p>
                 ))}
             </div>
           </section>
@@ -533,17 +531,10 @@ export function IntakeForm() {
               {completionOutputs.firstSessionGuide
                 .split("\n")
                 .filter((p) => p.trim())
-                .map((paragraph, index) => (
-                  <TypingAnimation
-                    key={paragraph.slice(0, 50)}
-                    as="p"
-                    duration={15}
-                    delay={index * 800 + 1000}
-                    showCursor={false}
-                    className={styles.completionParagraph}
-                  >
+                .map((paragraph) => (
+                  <p key={paragraph.slice(0, 50)} className={styles.completionParagraph}>
                     {paragraph}
-                  </TypingAnimation>
+                  </p>
                 ))}
             </div>
           </section>
@@ -558,14 +549,7 @@ export function IntakeForm() {
               {completionOutputs.experiments.map((experiment, i) => (
                 <div key={experiment.slice(0, 50)} className={styles.experiment}>
                   <span className={styles.experimentNumber}>{i + 1}</span>
-                  <TypingAnimation
-                    as="p"
-                    duration={15}
-                    delay={i * 1000 + 2000}
-                    showCursor={false}
-                  >
-                    {experiment}
-                  </TypingAnimation>
+                  <p>{experiment}</p>
                 </div>
               ))}
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 import styles from "./chat-message.module.css";
 import { TypingIndicator } from "./typing-indicator";
 
@@ -12,6 +13,7 @@ interface ChatMessageProps {
   isLoading?: boolean;
   questionNumber?: number;
   animate?: boolean;
+  typeAnimation?: boolean; // Enable typing animation for content
 }
 
 /**
@@ -27,8 +29,29 @@ export function ChatMessage({
   isLoading = false,
   questionNumber,
   animate = false,
+  typeAnimation = false,
 }: ChatMessageProps) {
   const isLeft = type === "question" || type === "reflection";
+
+  // Render content with optional typing animation
+  const renderContent = () => {
+    if (isLoading) {
+      return <TypingIndicator />;
+    }
+
+    if (typeAnimation && typeof children === "string") {
+      return (
+        <TypingAnimation
+          duration={20}
+          showCursor={false}
+        >
+          {children}
+        </TypingAnimation>
+      );
+    }
+
+    return children;
+  };
 
   return (
     <div
@@ -44,7 +67,7 @@ export function ChatMessage({
         {type === "question" && questionNumber !== undefined && (
           <span className={styles.questionNumber}>{questionNumber}.</span>
         )}
-        {isLoading ? <TypingIndicator /> : children}
+        {renderContent()}
       </div>
     </div>
   );

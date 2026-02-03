@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
 import { TypingIndicator } from "../typing-indicator";
 import styles from "./demo.module.css";
@@ -84,19 +85,18 @@ export function IntakeDemo() {
 
       {/* Section: Reflection Bubbles */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Reflection Bubbles</h2>
+        <h2 className={styles.sectionTitle}>Reflection Bubbles (with Typing Animation)</h2>
         <p className={styles.sectionDescription}>
-          Personalized reflections appear after each answer, showing empathetic acknowledgment.
+          Personalized reflections appear after each answer with a typing animation, showing
+          empathetic acknowledgment.
         </p>
         <div className={styles.chatDemo}>
-          <ChatMessage type="reflection">
-            Noticing that balance is slipping before things reach a crisis point shows real
-            self-awareness — that&apos;s actually when a lot of people find it most helpful to pause
-            and explore what&apos;s going on.
+          <ChatMessage type="reflection" typeAnimation={showAnimations}>
+            That shift from "more discipline" to "how do I make this sustainable" is something many
+            high-performers eventually recognize.
           </ChatMessage>
-          <ChatMessage type="reflection">
-            It makes sense that these areas feel connected — they often influence each other in ways
-            that aren&apos;t always obvious at first.
+          <ChatMessage type="reflection" typeAnimation={showAnimations}>
+            The areas you're describing often connect in surprising ways.
           </ChatMessage>
         </div>
       </section>
@@ -128,10 +128,8 @@ export function IntakeDemo() {
             I&apos;ve been feeling stuck in my career and it&apos;s affecting my mood and
             relationships. I keep putting off making changes.
           </ChatMessage>
-          <ChatMessage type="reflection">
-            Feeling stuck while knowing something needs to change is a really common experience —
-            and the fact that you&apos;re noticing how it&apos;s affecting different parts of your
-            life suggests you&apos;re ready to look at it more closely.
+          <ChatMessage type="reflection" typeAnimation={showAnimations}>
+            Feeling stuck while knowing something needs to change is a really common experience.
           </ChatMessage>
           <ChatMessage type="question" questionNumber={2}>
             Which areas of your life feel most affected right now?
@@ -178,10 +176,10 @@ export function IntakeDemo() {
 
       {/* Section: Completion Waiting State */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Completion Waiting State</h2>
+        <h2 className={styles.sectionTitle}>Completion Waiting State (with Typing Animation)</h2>
         <p className={styles.sectionDescription}>
-          After the final question, a delightful waiting experience shows rotating messages while
-          personalized results are generated.
+          After the final question, rotating animated messages appear while personalized results are
+          generated.
         </p>
         <div className={styles.completionWaitingDemo}>
           <div className={styles.completionWaitingIcon}>
@@ -201,15 +199,21 @@ export function IntakeDemo() {
               />
             </svg>
           </div>
-          <p className={styles.completionWaitingText}>Weaving together your responses...</p>
-          <div className={styles.completionWaitingDots}>
-            <TypingIndicator />
-          </div>
+          {showAnimations ? (
+            <TypingAnimation
+              words={["Gathering insights ✨", "Personalizing results 🎯", "Almost ready 🚀"]}
+              loop
+              className={styles.completionWaitingText}
+              duration={80}
+              showCursor={false}
+            />
+          ) : (
+            <p className={styles.completionWaitingText}>Gathering insights ✨</p>
+          )}
         </div>
         <p className={styles.sectionNote}>
-          Messages cycle through: &quot;Weaving together your responses...&quot; → &quot;Creating
-          something personalized just for you...&quot; → &quot;Almost there — putting the finishing
-          touches...&quot;
+          Messages cycle through: &quot;Gathering insights ✨&quot; → &quot;Personalizing results
+          🎯&quot; → &quot;Almost ready 🚀&quot;
         </p>
       </section>
 
