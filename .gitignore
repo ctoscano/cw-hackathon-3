@@ -41,3 +41,8 @@ coverage/
 
 # Misc
 .cache/
+
+# Skills (local installations)
+.agents/
+.claude/skills/
+.opencode/
