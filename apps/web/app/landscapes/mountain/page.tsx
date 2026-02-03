@@ -2,10 +2,22 @@
 
 import { BackgroundCanvas, MountainLandscape } from "../../components/webgl";
 
+// Night sky mountain scene fallback gradient
+const mountainFallback = `linear-gradient(
+  to bottom,
+  #0a0a1a 0%,
+  #1a1a3a 20%,
+  #2a1a4a 40%,
+  #1a2a4a 60%,
+  #0f1f3f 75%,
+  #0a1020 90%,
+  #050510 100%
+)`;
+
 export default function MountainPage() {
   return (
     <>
-      <BackgroundCanvas fallbackColor="#1a1a2e">
+      <BackgroundCanvas fallbackGradient={mountainFallback}>
         <MountainLandscape />
       </BackgroundCanvas>
       <main className="landscape-content">

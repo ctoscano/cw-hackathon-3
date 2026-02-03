@@ -2,10 +2,25 @@
 
 import { BackgroundCanvas, OceanLandscape } from "../../components/webgl";
 
+// Sunset ocean scene fallback gradient
+const oceanFallback = `linear-gradient(
+  to bottom,
+  #1a2a4a 0%,
+  #3a4a6a 15%,
+  #6a5a7a 25%,
+  #aa6a6a 35%,
+  #da8a5a 45%,
+  #eaa040 52%,
+  #4a6a7a 55%,
+  #3a5a6a 65%,
+  #2a4a5a 80%,
+  #1a3a4a 100%
+)`;
+
 export default function OceanPage() {
   return (
     <>
-      <BackgroundCanvas fallbackColor="#2c3e50">
+      <BackgroundCanvas fallbackGradient={oceanFallback}>
         <OceanLandscape />
       </BackgroundCanvas>
       <main className="landscape-content">

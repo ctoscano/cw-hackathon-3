@@ -11,14 +11,22 @@ const WebGLProvider = dynamic(
 interface BackgroundCanvasProps {
   children: ReactNode;
   className?: string;
+  /** Single color fallback */
   fallbackColor?: string;
+  /** CSS gradient fallback (takes precedence over fallbackColor) */
+  fallbackGradient?: string;
 }
 
 export function BackgroundCanvas({
   children,
   className = "",
   fallbackColor = "#0a0a0a",
+  fallbackGradient,
 }: BackgroundCanvasProps) {
+  const backgroundStyle = fallbackGradient
+    ? { background: fallbackGradient }
+    : { backgroundColor: fallbackColor };
+
   return (
     <div
       className={`background-canvas ${className}`}
@@ -26,7 +34,7 @@ export function BackgroundCanvas({
         position: "fixed",
         inset: 0,
         zIndex: -1,
-        backgroundColor: fallbackColor,
+        ...backgroundStyle,
       }}
     >
       <WebGLProvider>{children}</WebGLProvider>

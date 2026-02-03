@@ -2,10 +2,25 @@
 
 import { BackgroundCanvas, ForestLandscape } from "../../components/webgl";
 
+// Morning forest scene fallback gradient
+const forestFallback = `linear-gradient(
+  to bottom,
+  #a7c4d9 0%,
+  #d4b896 20%,
+  #e8c9a0 35%,
+  #f0d8a8 45%,
+  #c9d4a8 55%,
+  #8aaa88 65%,
+  #5a7a68 75%,
+  #3a5a48 85%,
+  #1a3a28 95%,
+  #0a2018 100%
+)`;
+
 export default function ForestPage() {
   return (
     <>
-      <BackgroundCanvas fallbackColor="#1a252f">
+      <BackgroundCanvas fallbackGradient={forestFallback}>
         <ForestLandscape />
       </BackgroundCanvas>
       <main className="landscape-content">
