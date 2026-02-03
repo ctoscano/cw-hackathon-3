@@ -53,13 +53,14 @@ export function OceanLandscape({ speed = 1.0 }: OceanLandscapeProps) {
     const int ITER_GEOMETRY = 3;
     const int ITER_FRAGMENT = 5;
 
-    // Sea parameters
-    const float SEA_HEIGHT = 0.6;
-    const float SEA_CHOPPY = 4.0;
-    const float SEA_SPEED = 0.8;
-    const float SEA_FREQ = 0.16;
-    const vec3 SEA_BASE = vec3(0.0, 0.09, 0.18);
-    const vec3 SEA_WATER_COLOR = vec3(0.8, 0.9, 0.6) * 0.6;
+    // Sea parameters - enhanced for more dramatic waves
+    const float SEA_HEIGHT = 0.8;
+    const float SEA_CHOPPY = 5.0;
+    const float SEA_SPEED = 0.9;
+    const float SEA_FREQ = 0.14;
+    const vec3 SEA_BASE = vec3(0.0, 0.1, 0.22);
+    const vec3 SEA_WATER_COLOR = vec3(0.6, 0.85, 0.7) * 0.7;
+    const vec3 SEA_DEEP = vec3(0.0, 0.04, 0.12);
 
     // Rotation matrix for wave octaves
     const mat2 octave_m = mat2(1.6, 1.2, -1.2, 1.6);
@@ -92,15 +93,17 @@ export function OceanLandscape({ speed = 1.0 }: OceanLandscapeProps) {
       return pow(max(dot(reflect(e, n), l), 0.0), s) * nrm;
     }
 
-    // Sky color - warm sunset tones
+    // Sky color - rich sunset tones with more depth
     vec3 getSkyColor(vec3 e) {
       e.y = (max(e.y, 0.0) * 0.8 + 0.2) * 0.8;
-      vec3 skyHigh = vec3(0.3, 0.5, 0.9);
-      vec3 skyMid = vec3(1.0, 0.6, 0.4);
-      vec3 skyLow = vec3(1.0, 0.8, 0.5);
+      vec3 skyHigh = vec3(0.25, 0.45, 0.85);
+      vec3 skyMid = vec3(0.95, 0.55, 0.35);
+      vec3 skyLow = vec3(1.0, 0.75, 0.45);
+      vec3 skyHorizon = vec3(1.0, 0.5, 0.3);
 
-      vec3 col = mix(skyLow, skyMid, pow(e.y, 0.4));
-      col = mix(col, skyHigh, pow(e.y, 2.0));
+      vec3 col = mix(skyHorizon, skyLow, pow(e.y, 0.3));
+      col = mix(col, skyMid, pow(e.y, 0.6));
+      col = mix(col, skyHigh, pow(e.y, 2.5));
       return col;
     }
 
@@ -157,20 +160,34 @@ export function OceanLandscape({ speed = 1.0 }: OceanLandscapeProps) {
       return p.y - h;
     }
 
-    // Get sea color with Fresnel and lighting
+    // Get sea color with Fresnel and lighting - enhanced depth and color
     vec3 getSeaColor(vec3 p, vec3 n, vec3 l, vec3 eye, vec3 dist, float time) {
       float fresnel = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
-      fresnel = pow(fresnel, 3.0) * 0.5;
+      fresnel = pow(fresnel, 3.0) * 0.65;
 
       vec3 reflected = getSkyColor(reflect(eye, n));
-      vec3 refracted = SEA_BASE + diffuse(n, l, 80.0) * SEA_WATER_COLOR * 0.12;
+
+      // Richer underwater color with depth gradient
+      float depth = max(SEA_HEIGHT - p.y, 0.0);
+      vec3 underwaterCol = mix(SEA_BASE, SEA_DEEP, depth * 0.5);
+      vec3 refracted = underwaterCol + diffuse(n, l, 80.0) * SEA_WATER_COLOR * 0.15;
 
       vec3 color = mix(refracted, reflected, fresnel);
 
-      float atten = max(1.0 - dot(dist, dist) * 0.001, 0.0);
-      color += SEA_WATER_COLOR * (p.y - SEA_HEIGHT) * 0.18 * atten;
+      // Subsurface scattering effect
+      float sss = pow(max(dot(l, -eye), 0.0), 4.0) * 0.15;
+      color += SEA_WATER_COLOR * sss;
 
-      color += vec3(specular(n, l, eye, 60.0));
+      // Wave foam hints at peaks
+      float foam = smoothstep(0.7, 0.9, p.y / SEA_HEIGHT);
+      foam *= pow(1.0 - abs(n.y), 2.0);
+      color = mix(color, vec3(0.9, 0.95, 1.0), foam * 0.3);
+
+      float atten = max(1.0 - dot(dist, dist) * 0.001, 0.0);
+      color += SEA_WATER_COLOR * (p.y - SEA_HEIGHT) * 0.2 * atten;
+
+      // Stronger specular highlights
+      color += vec3(specular(n, l, eye, 60.0)) * 1.2;
 
       return color;
     }
@@ -263,13 +280,23 @@ export function OceanLandscape({ speed = 1.0 }: OceanLandscapeProps) {
         pow(smoothstep(0.0, -0.02, dir.y), 0.3)
       );
 
-      // Add sun glow
+      // Add sun glow - enhanced
       float sunDot = max(dot(dir, light), 0.0);
-      color += vec3(1.0, 0.8, 0.6) * pow(sunDot, 8.0) * 0.5;
-      color += vec3(1.0, 0.9, 0.7) * pow(sunDot, 64.0) * 1.0;
+      color += vec3(1.0, 0.7, 0.4) * pow(sunDot, 6.0) * 0.6;
+      color += vec3(1.0, 0.85, 0.6) * pow(sunDot, 32.0) * 0.8;
+      color += vec3(1.0, 0.95, 0.9) * pow(sunDot, 128.0) * 1.2;
 
       // Post-processing
-      color = pow(color, vec3(0.65)); // Tone mapping
+      color = pow(color, vec3(0.6)); // Tone mapping - slightly warmer
+
+      // Vignette
+      vec2 vigUv = vUv * 2.0 - 1.0;
+      float vignette = 1.0 - dot(vigUv * 0.5, vigUv * 0.5);
+      vignette = smoothstep(0.0, 0.7, vignette);
+      color *= mix(0.7, 1.0, vignette);
+
+      // Subtle color grading - warm shadows
+      color = mix(color, color * vec3(1.05, 0.98, 0.9), 0.2);
 
       gl_FragColor = vec4(color, 1.0);
     }

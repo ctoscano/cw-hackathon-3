@@ -109,23 +109,33 @@ export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
       float h = p.y;
       float slope = 1.0 - n.y;
 
-      // Base rock colors
-      vec3 rock1 = vec3(0.15, 0.12, 0.1);    // Dark rock
-      vec3 rock2 = vec3(0.25, 0.22, 0.2);    // Light rock
-      vec3 snow = vec3(0.9, 0.95, 1.0);      // Snow
-      vec3 grass = vec3(0.1, 0.15, 0.08);    // Dark vegetation
+      // Richer rock colors with more variation
+      vec3 rock1 = vec3(0.12, 0.1, 0.08);     // Dark rock
+      vec3 rock2 = vec3(0.22, 0.18, 0.15);    // Medium rock
+      vec3 rock3 = vec3(0.35, 0.3, 0.25);     // Light rock
+      vec3 snow = vec3(0.85, 0.9, 0.95);      // Snow - slightly blue tint
+      vec3 ice = vec3(0.7, 0.8, 0.9);         // Ice/glacier
+      vec3 grass = vec3(0.08, 0.12, 0.06);    // Dark vegetation
 
-      // Mix based on noise
+      // Multi-layer noise for rock variation
       float rockNoise = fbm(p.xz * 2.0);
+      float rockNoise2 = fbm(p.xz * 5.0 + 100.0);
       vec3 rockColor = mix(rock1, rock2, rockNoise);
+      rockColor = mix(rockColor, rock3, rockNoise2 * 0.5);
 
       // Add grass at lower elevations, flatter areas
-      float grassMask = smoothstep(0.8, 0.3, h) * smoothstep(0.5, 0.2, slope);
-      vec3 col = mix(rockColor, grass, grassMask * 0.5);
+      float grassMask = smoothstep(0.9, 0.4, h) * smoothstep(0.45, 0.15, slope);
+      vec3 col = mix(rockColor, grass, grassMask * 0.6);
+
+      // Add ice on steep slopes at mid elevations
+      float iceMask = smoothstep(0.4, 0.8, slope) * smoothstep(0.4, 0.8, h) * smoothstep(1.2, 0.6, h);
+      col = mix(col, ice, iceMask * 0.4);
 
       // Add snow at high elevations and flat areas
-      float snowMask = smoothstep(0.6, 1.2, h) * smoothstep(0.6, 0.2, slope);
-      snowMask += smoothstep(1.0, 1.5, h) * 0.5;
+      float snowMask = smoothstep(0.5, 1.0, h) * smoothstep(0.5, 0.15, slope);
+      snowMask += smoothstep(0.9, 1.4, h) * 0.6;
+      // Wind-blown snow pattern
+      snowMask *= 0.7 + fbm(p.xz * 8.0) * 0.5;
       col = mix(col, snow, clamp(snowMask, 0.0, 1.0));
 
       return col;
@@ -261,29 +271,40 @@ export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
 
       vec3 color;
 
-      if(t < 50.0 && rd.y < 0.3) {
+      if(t < 50.0 && rd.y < 0.35) {
         // Hit terrain
         vec3 n = getTerrainNormal(hitPos);
 
-        // Lighting
-        vec3 lightDir = normalize(vec3(0.5, 0.3, -0.5));
-        float moonLight = max(dot(n, lightDir), 0.0) * 0.3;
+        // Enhanced moonlight - brighter and more directional
+        vec3 lightDir = normalize(vec3(0.4, 0.5, -0.4));
+        float moonLight = max(dot(n, lightDir), 0.0);
+        moonLight = moonLight * 0.5 + pow(moonLight, 3.0) * 0.3; // Brighter highlights
 
-        // Ambient from sky
-        float skyLight = max(n.y, 0.0) * 0.2;
+        // Ambient from sky - stronger
+        float skyLight = max(n.y, 0.0) * 0.25;
+
+        // Back light for depth
+        vec3 backLight = normalize(vec3(-0.3, 0.2, 0.5));
+        float backLit = max(dot(n, backLight), 0.0) * 0.15;
 
         // Terrain color
         vec3 terrCol = terrainColor(hitPos, n);
 
-        // Apply lighting
-        color = terrCol * (moonLight + skyLight + 0.05);
+        // Apply lighting with better ambient
+        float totalLight = moonLight + skyLight + backLit + 0.08;
+        color = terrCol * totalLight;
 
-        // Rim lighting
-        float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-        color += vec3(0.1, 0.1, 0.2) * rim * 0.3;
+        // Specular highlight for snow/ice
+        float spec = pow(max(dot(reflect(-lightDir, n), -rd), 0.0), 32.0);
+        float snowAmount = smoothstep(0.5, 1.0, hitPos.y);
+        color += vec3(0.3, 0.35, 0.4) * spec * snowAmount * 0.5;
 
-        // Apply fog
-        color = applyFog(color, fogCol, t);
+        // Rim lighting - more visible
+        float rim = pow(1.0 - max(dot(n, -rd), 0.0), 2.5);
+        color += vec3(0.12, 0.12, 0.2) * rim * 0.4;
+
+        // Apply fog - less dense
+        color = applyFog(color, fogCol, t * 0.8);
       } else {
         // Sky
         color = skyCol;

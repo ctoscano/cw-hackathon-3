@@ -81,39 +81,55 @@ export function ForestLandscape({ speed = 0.3 }: ForestLandscapeProps) {
       return f / 0.9375;
     }
 
-    // Pine tree silhouette - classic triangular shape
+    // Pine tree silhouette - layered triangle shape for realistic pine
     float tree(vec2 uv, float x, float height, float width) {
       vec2 p = uv - vec2(x, 0.0);
 
       // Trunk
-      float trunkW = width * 0.12;
-      float trunk = smoothstep(trunkW, trunkW * 0.7, abs(p.x)) *
-                    step(0.0, p.y) * step(p.y, height * 0.25);
+      float trunkW = width * 0.08;
+      float trunk = smoothstep(trunkW, trunkW * 0.5, abs(p.x)) *
+                    step(0.0, p.y) * step(p.y, height * 0.2);
 
-      // Main triangular canopy - single clean triangle
+      // Layered canopy - multiple triangular tiers like real pine trees
       float canopy = 0.0;
-      float baseY = height * 0.1;
-      float canopyH = height * 0.95;
-      float y = p.y - baseY;
 
-      if(y > 0.0 && y < canopyH) {
-        float t = y / canopyH;
-        float w = width * (1.0 - t * 0.95);
-        canopy = smoothstep(w + 0.003, w - 0.003, abs(p.x));
+      // Layer 1 - bottom, widest
+      float y1 = p.y - height * 0.1;
+      if(y1 > 0.0 && y1 < height * 0.4) {
+        float t = y1 / (height * 0.4);
+        float w = width * (1.0 - t * 0.7);
+        canopy = max(canopy, smoothstep(w, w - 0.005, abs(p.x)));
+      }
+
+      // Layer 2 - middle
+      float y2 = p.y - height * 0.35;
+      if(y2 > 0.0 && y2 < height * 0.4) {
+        float t = y2 / (height * 0.4);
+        float w = width * 0.75 * (1.0 - t * 0.75);
+        canopy = max(canopy, smoothstep(w, w - 0.004, abs(p.x)));
+      }
+
+      // Layer 3 - top
+      float y3 = p.y - height * 0.6;
+      if(y3 > 0.0 && y3 < height * 0.45) {
+        float t = y3 / (height * 0.45);
+        float w = width * 0.5 * (1.0 - t * 0.9);
+        canopy = max(canopy, smoothstep(w, w - 0.003, abs(p.x)));
       }
 
       return max(trunk, canopy);
     }
 
-    // Forest layer - more trees, larger sizes
+    // Forest layer - dense tree coverage
     float forestLayer(vec2 uv, float baseY, float scale, float seed) {
       float forest = 0.0;
 
-      for(float i = 0.0; i < 18.0; i++) {
-        float treeSeed = seed + i * 73.0;
-        float x = hash(treeSeed) * 1.4 - 0.2;
-        float h = (0.15 + hash(treeSeed + 1.0) * 0.2) * scale;
-        float w = (0.025 + hash(treeSeed + 2.0) * 0.02) * scale;
+      // Many more trees for dense forest
+      for(float i = 0.0; i < 25.0; i++) {
+        float treeSeed = seed + i * 47.0;
+        float x = fract(hash(treeSeed) + i * 0.04) * 1.2 - 0.1; // Better distribution
+        float h = (0.12 + hash(treeSeed + 1.0) * 0.18) * scale;
+        float w = (0.03 + hash(treeSeed + 2.0) * 0.025) * scale;
 
         forest = max(forest, tree(uv, x, baseY + h, w));
       }
@@ -185,50 +201,60 @@ export function ForestLandscape({ speed = 0.3 }: ForestLandscapeProps) {
       vec3 color = sky;
 
       // === DISTANT HILLS ===
-      float hills = fbm(vec2(uv.x * 2.0 + 5.0, 0.0)) * 0.1 + 0.55;
+      float hills = fbm(vec2(uv.x * 2.0 + 5.0, 0.0)) * 0.08 + 0.62;
       float hillMask = smoothstep(hills + 0.02, hills - 0.02, uv.y);
-      vec3 hillColor = vec3(0.35, 0.42, 0.45);
-      color = mix(color, hillColor, hillMask * 0.8);
+      vec3 hillColor = vec3(0.3, 0.38, 0.42);
+      color = mix(color, hillColor, hillMask * 0.85);
 
-      // === BACK FOREST LAYER (distant, more faded) ===
-      float backForest = forestLayer(uv, 0.45, 0.6, 100.0);
-      vec3 backTreeColor = vec3(0.25, 0.32, 0.35);
-      // Light atmospheric perspective
-      backTreeColor = mix(backTreeColor, vec3(0.45, 0.5, 0.52), 0.3);
+      // === FAR FOREST LAYER (most distant) ===
+      float farForest = forestLayer(uv, 0.52, 0.5, 50.0);
+      vec3 farTreeColor = vec3(0.28, 0.35, 0.4);
+      color = mix(color, farTreeColor, farForest * 0.85);
+
+      // === BACK FOREST LAYER ===
+      float backForest = forestLayer(uv, 0.42, 0.7, 100.0);
+      vec3 backTreeColor = vec3(0.2, 0.28, 0.3);
       color = mix(color, backTreeColor, backForest * 0.9);
 
-      // Subtle mist band
+      // Subtle mist between layers
       float fog1 = fog(uv, time, 1.0);
-      float fogMask1 = smoothstep(0.6, 0.4, uv.y) * smoothstep(0.3, 0.45, uv.y);
-      color = mix(color, vec3(0.55, 0.58, 0.55), fog1 * fogMask1 * 0.2);
+      float fogMask1 = smoothstep(0.55, 0.4, uv.y) * smoothstep(0.35, 0.45, uv.y);
+      color = mix(color, vec3(0.5, 0.55, 0.52), fog1 * fogMask1 * 0.15);
+
+      // === MID-BACK FOREST LAYER ===
+      float midBackForest = forestLayer(uv, 0.32, 0.85, 150.0);
+      vec3 midBackTreeColor = vec3(0.14, 0.2, 0.18);
+      color = mix(color, midBackTreeColor, midBackForest * 0.92);
 
       // === MID FOREST LAYER ===
-      float midForest = forestLayer(uv, 0.3, 0.85, 200.0);
-      vec3 midTreeColor = vec3(0.12, 0.18, 0.15);
-      midTreeColor = mix(midTreeColor, vec3(0.25, 0.3, 0.28), 0.2);
+      float midForest = forestLayer(uv, 0.22, 1.0, 200.0);
+      vec3 midTreeColor = vec3(0.08, 0.14, 0.1);
       color = mix(color, midTreeColor, midForest * 0.95);
 
       // Light mist
       float fog2 = fog(uv, time * 1.2, 2.0);
-      float fogMask2 = smoothstep(0.4, 0.2, uv.y) * smoothstep(0.1, 0.25, uv.y);
-      color = mix(color, vec3(0.5, 0.55, 0.5), fog2 * fogMask2 * 0.15);
+      float fogMask2 = smoothstep(0.35, 0.18, uv.y) * smoothstep(0.1, 0.22, uv.y);
+      color = mix(color, vec3(0.45, 0.5, 0.45), fog2 * fogMask2 * 0.12);
 
       // Subtle god rays
-      color += vec3(1.0, 0.9, 0.7) * rays * fogMask2 * 0.08;
+      color += vec3(1.0, 0.9, 0.7) * rays * fogMask2 * 0.06;
 
       // === NEAR FOREST LAYER ===
-      float nearForest = forestLayer(uv, 0.12, 1.1, 300.0);
-      vec3 nearTreeColor = vec3(0.06, 0.1, 0.08);
-      color = mix(color, nearTreeColor, nearForest * 0.98);
+      float nearForest = forestLayer(uv, 0.1, 1.2, 300.0);
+      vec3 nearTreeColor = vec3(0.04, 0.08, 0.05);
+      color = mix(color, nearTreeColor, nearForest * 0.97);
 
-      // === FOREGROUND SILHOUETTE TREES ===
-      float leftTree = tree(uv, -0.03, 0.85, 0.12);
-      float rightTree = tree(uv, 1.02, 0.78, 0.11);
-      float edgeTree = tree(uv, 0.85, 0.6, 0.08);
-      float extraTree = tree(uv, 0.15, 0.55, 0.07);
+      // === FOREGROUND SILHOUETTE TREES - Large and prominent ===
+      float leftTree = tree(uv, -0.05, 0.95, 0.14);
+      float leftTree2 = tree(uv, 0.08, 0.7, 0.1);
+      float rightTree = tree(uv, 1.04, 0.88, 0.13);
+      float rightTree2 = tree(uv, 0.92, 0.72, 0.09);
+      float centerTree = tree(uv, 0.5, 0.6, 0.08);
+      float centerTree2 = tree(uv, 0.35, 0.55, 0.07);
+      float centerTree3 = tree(uv, 0.65, 0.52, 0.065);
 
-      vec3 silhouetteColor = vec3(0.02, 0.04, 0.03);
-      float allForeground = max(max(max(leftTree, rightTree), edgeTree), extraTree);
+      vec3 silhouetteColor = vec3(0.01, 0.02, 0.015);
+      float allForeground = max(max(max(max(max(max(leftTree, leftTree2), rightTree), rightTree2), centerTree), centerTree2), centerTree3);
       color = mix(color, silhouetteColor, allForeground * 0.99);
 
       // === GROUND ===
