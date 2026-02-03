@@ -9,7 +9,9 @@ interface MountainLandscapeProps {
   speed?: number;
 }
 
-export function MountainLandscape({ speed = 0.15 }: MountainLandscapeProps) {
+// Raymarched mountain terrain with starry night sky
+// Inspired by Inigo Quilez terrain techniques
+export function MountainLandscape({ speed = 0.5 }: MountainLandscapeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { invalidate, size } = useThree();
   const reducedMotion = useReducedMotion();
@@ -45,207 +47,263 @@ export function MountainLandscape({ speed = 0.15 }: MountainLandscapeProps) {
     uniform float uTime;
     uniform vec2 uResolution;
 
-    // Hash functions for noise
-    float hash(float n) { return fract(sin(n) * 43758.5453123); }
-    float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+    const float PI = 3.141592653589793;
+
+    // Rotation matrix for noise
+    const mat2 m = mat2(0.80, 0.60, -0.60, 0.80);
+
+    // Hash functions
+    float hash(float n) {
+      return fract(sin(n) * 43758.5453123);
+    }
+
+    float hash2(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    }
+
+    vec3 hash3(vec2 p) {
+      vec3 q = vec3(
+        dot(p, vec2(127.1, 311.7)),
+        dot(p, vec2(269.5, 183.3)),
+        dot(p, vec2(419.2, 371.9))
+      );
+      return fract(sin(q) * 43758.5453);
+    }
 
     // 2D Noise
     float noise(vec2 p) {
       vec2 i = floor(p);
       vec2 f = fract(p);
-      float a = hash2(i);
-      float b = hash2(i + vec2(1.0, 0.0));
-      float c = hash2(i + vec2(0.0, 1.0));
-      float d = hash2(i + vec2(1.0, 1.0));
-      vec2 u = f * f * (3.0 - 2.0 * f);
-      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+      f = f * f * (3.0 - 2.0 * f);
+      float n = i.x + i.y * 57.0;
+      return mix(
+        mix(hash(n + 0.0), hash(n + 1.0), f.x),
+        mix(hash(n + 57.0), hash(n + 58.0), f.x),
+        f.y
+      );
     }
 
-    // Fractal Brownian Motion
+    // FBM for terrain
     float fbm(vec2 p) {
-      float value = 0.0;
-      float amplitude = 0.5;
-      float frequency = 1.0;
-      for (int i = 0; i < 6; i++) {
-        value += amplitude * noise(p * frequency);
-        frequency *= 2.0;
-        amplitude *= 0.5;
-      }
-      return value;
+      float f = 0.0;
+      f += 0.5000 * noise(p); p = m * p * 2.02;
+      f += 0.2500 * noise(p); p = m * p * 2.03;
+      f += 0.1250 * noise(p); p = m * p * 2.01;
+      f += 0.0625 * noise(p); p = m * p * 2.04;
+      f += 0.03125 * noise(p);
+      return f / 0.9375;
     }
 
-    // Mountain shape with peaks
-    float mountainShape(float x, float seed, float peakiness) {
-      float base = fbm(vec2(x * 2.0 + seed, seed)) * 0.5;
-      // Add sharper peaks
-      float peaks = 0.0;
-      for (float i = 0.0; i < 5.0; i++) {
-        float peakX = hash(seed + i * 100.0);
-        float peakHeight = hash(seed + i * 200.0) * 0.3 + 0.1;
-        float peakWidth = hash(seed + i * 300.0) * 0.15 + 0.05;
-        float dist = abs(x - peakX);
-        // Triangular peak shape
-        peaks = max(peaks, peakHeight * max(0.0, 1.0 - dist / peakWidth) * peakiness);
-      }
-      return base + peaks;
+    // Terrain height function
+    float terrain(vec2 p) {
+      float h = fbm(p * 0.3) * 2.0;
+      h += fbm(p * 0.6 + 10.0) * 1.0;
+      h += fbm(p * 1.2 + 20.0) * 0.5;
+      // Add sharp ridges
+      h += pow(abs(fbm(p * 0.8)), 0.5) * 1.5;
+      return h * 0.4;
     }
 
-    // Star field
-    float stars(vec2 uv, float density) {
-      vec2 gridUV = floor(uv * density);
-      float starRandom = hash2(gridUV);
-      vec2 cellUV = fract(uv * density);
-      vec2 starPos = vec2(hash2(gridUV + 0.1), hash2(gridUV + 0.2));
-      float starDist = length(cellUV - starPos);
-      float starSize = hash2(gridUV + 0.3) * 0.015 + 0.005;
-      float star = smoothstep(starSize, 0.0, starDist);
-      // Only show some stars
-      star *= step(0.85, starRandom);
-      // Twinkle
-      star *= 0.5 + 0.5 * sin(uTime * (hash2(gridUV + 0.4) * 3.0 + 1.0) + hash2(gridUV) * 6.28);
+    // Mountain color based on height and slope
+    vec3 terrainColor(vec3 p, vec3 n) {
+      float h = p.y;
+      float slope = 1.0 - n.y;
+
+      // Base rock colors
+      vec3 rock1 = vec3(0.15, 0.12, 0.1);    // Dark rock
+      vec3 rock2 = vec3(0.25, 0.22, 0.2);    // Light rock
+      vec3 snow = vec3(0.9, 0.95, 1.0);      // Snow
+      vec3 grass = vec3(0.1, 0.15, 0.08);    // Dark vegetation
+
+      // Mix based on noise
+      float rockNoise = fbm(p.xz * 2.0);
+      vec3 rockColor = mix(rock1, rock2, rockNoise);
+
+      // Add grass at lower elevations, flatter areas
+      float grassMask = smoothstep(0.8, 0.3, h) * smoothstep(0.5, 0.2, slope);
+      vec3 col = mix(rockColor, grass, grassMask * 0.5);
+
+      // Add snow at high elevations and flat areas
+      float snowMask = smoothstep(0.6, 1.2, h) * smoothstep(0.6, 0.2, slope);
+      snowMask += smoothstep(1.0, 1.5, h) * 0.5;
+      col = mix(col, snow, clamp(snowMask, 0.0, 1.0));
+
+      return col;
+    }
+
+    // Raymarching terrain
+    float raymarchTerrain(vec3 ro, vec3 rd, out vec3 hitPos) {
+      float t = 0.0;
+      float tmax = 50.0;
+
+      for(int i = 0; i < 80; i++) {
+        vec3 p = ro + rd * t;
+        float h = terrain(p.xz);
+        float d = p.y - h;
+
+        if(d < 0.001 * t || t > tmax) break;
+
+        t += d * 0.5;
+      }
+
+      hitPos = ro + rd * t;
+      return t;
+    }
+
+    // Get terrain normal
+    vec3 getTerrainNormal(vec3 p) {
+      vec2 e = vec2(0.01, 0.0);
+      return normalize(vec3(
+        terrain(p.xz - e.xy) - terrain(p.xz + e.xy),
+        2.0 * e.x,
+        terrain(p.xz - e.yx) - terrain(p.xz + e.yx)
+      ));
+    }
+
+    // Stars
+    float stars(vec2 uv, float time) {
+      vec2 id = floor(uv * 100.0);
+      vec2 f = fract(uv * 100.0);
+
+      float star = 0.0;
+      vec3 h = hash3(id);
+
+      // Only some cells have stars
+      if(h.x > 0.97) {
+        vec2 center = vec2(h.y, h.z);
+        float d = length(f - center);
+
+        // Twinkling
+        float twinkle = sin(time * (h.x * 5.0 + 1.0) + h.y * 10.0) * 0.5 + 0.5;
+        twinkle = mix(0.5, 1.0, twinkle);
+
+        star = smoothstep(0.1, 0.0, d) * twinkle * h.x * 3.0;
+      }
+
       return star;
     }
 
-    // Milky way / galaxy
-    float galaxy(vec2 uv) {
-      // Diagonal band across the sky
-      vec2 galaxyUV = uv;
-      galaxyUV.x += galaxyUV.y * 0.3;
+    // Milky way
+    float milkyWay(vec2 uv, float time) {
+      // Diagonal band across sky
+      float band = 1.0 - abs(uv.x + uv.y * 0.5 - 0.3) * 2.0;
+      band = smoothstep(0.0, 1.0, band);
 
-      float band = exp(-pow((galaxyUV.y - 0.7) * 3.0, 2.0));
-      float detail = fbm(galaxyUV * 8.0 + uTime * 0.02) * 0.5 + 0.5;
-      float clouds = fbm(galaxyUV * 15.0) * 0.3;
+      // Noise for cloud structure
+      float n = fbm(uv * 3.0 + time * 0.02);
+      n *= fbm(uv * 6.0 - time * 0.01);
 
-      return band * detail * (0.7 + clouds);
+      return band * n * 0.5;
     }
 
-    // Grass texture on foreground hill
-    float grass(vec2 uv, float groundY) {
-      float grassHeight = 0.008;
-      float grassDensity = 150.0;
+    // Night sky
+    vec3 nightSky(vec3 rd, float time) {
+      vec2 uv = vec2(atan(rd.x, rd.z), rd.y);
 
-      float grassPattern = 0.0;
-      for (float i = 0.0; i < 3.0; i++) {
-        float offset = hash(i) * 1000.0;
-        vec2 grassUV = uv * vec2(grassDensity * (1.0 + i * 0.3), 1.0);
-        float blade = hash2(floor(grassUV) + offset);
-        float bladeHeight = blade * grassHeight * (1.0 - i * 0.2);
-        float bladeX = fract(grassUV.x);
-        float bladeCurve = sin(bladeX * 3.14159) * bladeHeight;
-        bladeCurve *= sin(uTime * 0.5 + blade * 6.28) * 0.3 + 0.7; // Wind sway
+      // Deep blue gradient
+      vec3 skyTop = vec3(0.02, 0.02, 0.08);
+      vec3 skyHorizon = vec3(0.08, 0.06, 0.15);
 
-        if (uv.y < groundY + bladeCurve && uv.y > groundY - 0.01) {
-          grassPattern = max(grassPattern, 0.3 + blade * 0.3);
-        }
-      }
-      return grassPattern;
+      float gradient = pow(max(rd.y, 0.0), 0.5);
+      vec3 sky = mix(skyHorizon, skyTop, gradient);
+
+      // Add milky way
+      float mw = milkyWay(uv, time);
+      sky += vec3(0.15, 0.12, 0.2) * mw;
+
+      // Add stars
+      float s = stars(uv, time);
+      s += stars(uv * 2.1 + 10.0, time * 1.1) * 0.5;
+      s += stars(uv * 3.7 + 20.0, time * 0.9) * 0.3;
+      sky += vec3(1.0, 0.95, 0.8) * s;
+
+      // Subtle purple nebula
+      float nebula = fbm(uv * 2.0 + time * 0.01) * 0.3;
+      nebula *= smoothstep(0.0, 0.5, rd.y);
+      sky += vec3(0.1, 0.05, 0.15) * nebula;
+
+      return sky;
+    }
+
+    // Fog/atmosphere
+    vec3 applyFog(vec3 col, vec3 fogCol, float dist) {
+      float fog = 1.0 - exp(-dist * 0.04);
+      return mix(col, fogCol, fog);
     }
 
     void main() {
-      vec2 uv = vUv;
-      float aspect = uResolution.x / uResolution.y;
+      float time = uTime;
 
-      // === SKY ===
-      // Deep night sky gradient
-      vec3 skyDark = vec3(0.02, 0.03, 0.08);
-      vec3 skyMid = vec3(0.05, 0.08, 0.15);
-      vec3 horizonColor = vec3(0.08, 0.12, 0.18);
+      // Normalized coordinates with aspect ratio
+      vec2 uv = vUv * 2.0 - 1.0;
+      uv.x *= uResolution.x / uResolution.y;
 
-      vec3 color = mix(horizonColor, skyMid, smoothstep(0.3, 0.6, uv.y));
-      color = mix(color, skyDark, smoothstep(0.6, 1.0, uv.y));
+      // Camera setup - looking at mountains
+      vec3 ro = vec3(0.0, 1.5, -5.0 + time * 0.2);
+      vec3 target = vec3(0.0, 1.0, 0.0);
 
-      // === STARS ===
-      float starLayer1 = stars(uv, 80.0);
-      float starLayer2 = stars(uv + 100.0, 150.0) * 0.6;
-      float starLayer3 = stars(uv + 200.0, 300.0) * 0.3;
-      float allStars = starLayer1 + starLayer2 + starLayer3;
-      color += vec3(0.9, 0.95, 1.0) * allStars * smoothstep(0.35, 0.7, uv.y);
+      // Camera matrix
+      vec3 forward = normalize(target - ro);
+      vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), forward));
+      vec3 up = cross(forward, right);
 
-      // === MILKY WAY / GALAXY ===
-      float galaxyIntensity = galaxy(uv);
-      vec3 galaxyColor = mix(
-        vec3(0.4, 0.3, 0.5),  // Purple
-        vec3(1.0, 0.6, 0.3),  // Orange/gold
-        fbm(uv * 5.0)
-      );
-      color += galaxyColor * galaxyIntensity * 0.25 * smoothstep(0.4, 0.8, uv.y);
+      vec3 rd = normalize(forward + uv.x * right + uv.y * up);
 
-      // Bright galaxy core
-      vec2 corePos = vec2(0.65, 0.72);
-      float coreDist = length((uv - corePos) * vec2(1.5, 1.0));
-      float coreGlow = exp(-coreDist * 4.0) * 0.4;
-      color += vec3(1.0, 0.7, 0.4) * coreGlow;
+      // Night sky as background
+      vec3 skyCol = nightSky(rd, time);
 
-      // === ATMOSPHERIC GLOW AT HORIZON ===
-      float horizonGlow = exp(-pow((uv.y - 0.32) * 5.0, 2.0)) * 0.2;
-      color += vec3(0.15, 0.12, 0.2) * horizonGlow;
+      // Atmosphere color for fog
+      vec3 fogCol = vec3(0.05, 0.05, 0.1);
 
-      // Warm light from galaxy reflecting on horizon
-      float warmGlow = exp(-pow((uv.y - 0.35) * 4.0, 2.0)) * 0.15;
-      warmGlow *= smoothstep(0.4, 0.7, uv.x); // More on the right where galaxy is
-      color += vec3(0.3, 0.15, 0.05) * warmGlow;
+      // Raymarch terrain
+      vec3 hitPos;
+      float t = raymarchTerrain(ro, rd, hitPos);
 
-      // === MOUNTAINS ===
-      // Far mountain range (misty, bluish)
-      float mountain4 = mountainShape(uv.x, 40.0, 0.3) * 0.18 + 0.28;
-      if (uv.y < mountain4) {
-        vec3 m4Color = vec3(0.12, 0.14, 0.22);
-        float fade = smoothstep(mountain4 - 0.1, mountain4, uv.y);
-        color = mix(m4Color, color, fade * 0.3 + 0.2);
+      vec3 color;
+
+      if(t < 50.0 && rd.y < 0.3) {
+        // Hit terrain
+        vec3 n = getTerrainNormal(hitPos);
+
+        // Lighting
+        vec3 lightDir = normalize(vec3(0.5, 0.3, -0.5));
+        float moonLight = max(dot(n, lightDir), 0.0) * 0.3;
+
+        // Ambient from sky
+        float skyLight = max(n.y, 0.0) * 0.2;
+
+        // Terrain color
+        vec3 terrCol = terrainColor(hitPos, n);
+
+        // Apply lighting
+        color = terrCol * (moonLight + skyLight + 0.05);
+
+        // Rim lighting
+        float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
+        color += vec3(0.1, 0.1, 0.2) * rim * 0.3;
+
+        // Apply fog
+        color = applyFog(color, fogCol, t);
+      } else {
+        // Sky
+        color = skyCol;
       }
 
-      // Mid-far mountains
-      float mountain3 = mountainShape(uv.x, 30.0, 0.5) * 0.22 + 0.22;
-      if (uv.y < mountain3) {
-        vec3 m3Color = vec3(0.08, 0.1, 0.16);
-        float fade = smoothstep(mountain3 - 0.08, mountain3, uv.y);
-        color = mix(m3Color, color, fade * 0.2);
-      }
+      // Moon
+      vec3 moonDir = normalize(vec3(-0.3, 0.4, 0.5));
+      float moonDot = max(dot(rd, moonDir), 0.0);
+      float moon = smoothstep(0.997, 0.999, moonDot);
+      float moonGlow = pow(moonDot, 32.0) * 0.3;
+      color += vec3(0.9, 0.9, 1.0) * moon;
+      color += vec3(0.2, 0.2, 0.3) * moonGlow;
 
-      // Mid mountains
-      float mountain2 = mountainShape(uv.x, 20.0, 0.7) * 0.25 + 0.15;
-      if (uv.y < mountain2) {
-        vec3 m2Color = vec3(0.05, 0.07, 0.12);
-        // Slight highlight on peaks from galaxy light
-        float highlight = smoothstep(mountain2 - 0.02, mountain2, uv.y) * 0.1;
-        highlight *= smoothstep(0.3, 0.8, uv.x);
-        color = mix(m2Color + vec3(0.1, 0.05, 0.02) * highlight, color, 0.0);
-      }
+      // Tone mapping
+      color = color / (1.0 + color);
+      color = pow(color, vec3(0.9));
 
-      // Near mountains (darkest silhouette)
-      float mountain1 = mountainShape(uv.x, 10.0, 0.9) * 0.2 + 0.08;
-      if (uv.y < mountain1) {
-        vec3 m1Color = vec3(0.02, 0.03, 0.05);
-        color = m1Color;
-      }
-
-      // === FOREGROUND HILL WITH GRASS ===
-      float hillShape = sin(uv.x * 2.5 + 1.0) * 0.03 + fbm(vec2(uv.x * 8.0, 0.0)) * 0.02;
-      float groundY = 0.08 + hillShape;
-
-      if (uv.y < groundY + 0.02) {
-        // Ground color
-        vec3 groundColor = vec3(0.04, 0.05, 0.03);
-        vec3 grassColor = vec3(0.15, 0.18, 0.08);
-
-        // Grass effect
-        float grassEffect = grass(uv, groundY);
-        if (grassEffect > 0.0) {
-          // Grass lit by warm galaxy light
-          vec3 litGrass = mix(grassColor, vec3(0.25, 0.2, 0.1), smoothstep(0.5, 0.9, uv.x) * 0.5);
-          color = mix(groundColor, litGrass, grassEffect);
-        } else if (uv.y < groundY) {
-          color = groundColor;
-        }
-      }
-
-      // === SUBTLE VIGNETTE ===
-      float vignette = 1.0 - length((uv - 0.5) * vec2(0.8, 1.0)) * 0.4;
+      // Subtle vignette
+      float vignette = 1.0 - length(vUv - 0.5) * 0.5;
       color *= vignette;
-
-      // === FILM GRAIN (very subtle) ===
-      float grain = hash2(uv * 1000.0 + uTime) * 0.02;
-      color += grain - 0.01;
 
       gl_FragColor = vec4(color, 1.0);
     }

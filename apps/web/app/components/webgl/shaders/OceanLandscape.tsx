@@ -9,7 +9,9 @@ interface OceanLandscapeProps {
   speed?: number;
 }
 
-export function OceanLandscape({ speed = 0.3 }: OceanLandscapeProps) {
+// Based on "Seascape" by TDM (Alexander Alekseev) - https://www.shadertoy.com/view/Ms2SD1
+// Adapted for React Three Fiber background use
+export function OceanLandscape({ speed = 1.0 }: OceanLandscapeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { invalidate, size } = useThree();
   const reducedMotion = useReducedMotion();
@@ -38,6 +40,7 @@ export function OceanLandscape({ speed = 0.3 }: OceanLandscapeProps) {
     }
   `;
 
+  // Seascape-inspired fragment shader with proper wave physics and lighting
   const fragmentShader = `
     precision mediump float;
 
@@ -45,244 +48,228 @@ export function OceanLandscape({ speed = 0.3 }: OceanLandscapeProps) {
     uniform float uTime;
     uniform vec2 uResolution;
 
-    // Hash functions
-    float hash(float n) { return fract(sin(n) * 43758.5453123); }
-    float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+    const float PI = 3.141592653589793;
+    const int NUM_STEPS = 8;
+    const int ITER_GEOMETRY = 3;
+    const int ITER_FRAGMENT = 5;
+
+    // Sea parameters
+    const float SEA_HEIGHT = 0.6;
+    const float SEA_CHOPPY = 4.0;
+    const float SEA_SPEED = 0.8;
+    const float SEA_FREQ = 0.16;
+    const vec3 SEA_BASE = vec3(0.0, 0.09, 0.18);
+    const vec3 SEA_WATER_COLOR = vec3(0.8, 0.9, 0.6) * 0.6;
+
+    // Rotation matrix for wave octaves
+    const mat2 octave_m = mat2(1.6, 1.2, -1.2, 1.6);
+
+    // Hash function
+    float hash(vec2 p) {
+      float h = dot(p, vec2(127.1, 311.7));
+      return fract(sin(h) * 43758.5453123);
+    }
 
     // 2D Noise
     float noise(vec2 p) {
       vec2 i = floor(p);
       vec2 f = fract(p);
-      float a = hash2(i);
-      float b = hash2(i + vec2(1.0, 0.0));
-      float c = hash2(i + vec2(0.0, 1.0));
-      float d = hash2(i + vec2(1.0, 1.0));
       vec2 u = f * f * (3.0 - 2.0 * f);
-      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+      return -1.0 + 2.0 * mix(
+        mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+        mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+        u.y
+      );
     }
 
-    // FBM for clouds
-    float fbm(vec2 p) {
-      float value = 0.0;
-      float amplitude = 0.5;
-      for (int i = 0; i < 5; i++) {
-        value += amplitude * noise(p);
-        p *= 2.0;
-        amplitude *= 0.5;
+    // Lighting
+    float diffuse(vec3 n, vec3 l, float p) {
+      return pow(dot(n, l) * 0.4 + 0.6, p);
+    }
+
+    float specular(vec3 n, vec3 l, vec3 e, float s) {
+      float nrm = (s + 8.0) / (PI * 8.0);
+      return pow(max(dot(reflect(e, n), l), 0.0), s) * nrm;
+    }
+
+    // Sky color - warm sunset tones
+    vec3 getSkyColor(vec3 e) {
+      e.y = (max(e.y, 0.0) * 0.8 + 0.2) * 0.8;
+      vec3 skyHigh = vec3(0.3, 0.5, 0.9);
+      vec3 skyMid = vec3(1.0, 0.6, 0.4);
+      vec3 skyLow = vec3(1.0, 0.8, 0.5);
+
+      vec3 col = mix(skyLow, skyMid, pow(e.y, 0.4));
+      col = mix(col, skyHigh, pow(e.y, 2.0));
+      return col;
+    }
+
+    // Sea octave - creates wave pattern
+    float sea_octave(vec2 uv, float choppy) {
+      uv += noise(uv);
+      vec2 wv = 1.0 - abs(sin(uv));
+      vec2 swv = abs(cos(uv));
+      wv = mix(wv, swv, wv);
+      return pow(1.0 - pow(wv.x * wv.y, 0.65), choppy);
+    }
+
+    // Map function for sea height
+    float map(vec3 p, float time) {
+      float freq = SEA_FREQ;
+      float amp = SEA_HEIGHT;
+      float choppy = SEA_CHOPPY;
+      vec2 uv = p.xz;
+      uv.x *= 0.75;
+
+      float seaTime = 1.0 + time * SEA_SPEED;
+      float d, h = 0.0;
+      for(int i = 0; i < ITER_GEOMETRY; i++) {
+        d = sea_octave((uv + seaTime) * freq, choppy);
+        d += sea_octave((uv - seaTime) * freq, choppy);
+        h += d * amp;
+        uv *= octave_m;
+        freq *= 1.9;
+        amp *= 0.22;
+        choppy = mix(choppy, 1.0, 0.2);
       }
-      return value;
+      return p.y - h;
     }
 
-    // Cloud function
-    float clouds(vec2 uv, float time) {
-      vec2 cloudUV = uv * vec2(2.0, 4.0);
-      cloudUV.x += time * 0.02;
+    // Detailed map for normals
+    float map_detailed(vec3 p, float time) {
+      float freq = SEA_FREQ;
+      float amp = SEA_HEIGHT;
+      float choppy = SEA_CHOPPY;
+      vec2 uv = p.xz;
+      uv.x *= 0.75;
 
-      float cloud = 0.0;
-
-      // Multiple cloud layers
-      float layer1 = fbm(cloudUV * 1.0);
-      float layer2 = fbm(cloudUV * 2.0 + 10.0);
-      float layer3 = fbm(cloudUV * 4.0 + 20.0);
-
-      cloud = layer1 * 0.5 + layer2 * 0.3 + layer3 * 0.2;
-
-      // Shape clouds
-      cloud = smoothstep(0.35, 0.65, cloud);
-
-      return cloud;
-    }
-
-    // Wave function with multiple octaves
-    float waves(vec2 uv, float time) {
-      float wave = 0.0;
-
-      // Large swells
-      wave += sin(uv.x * 8.0 + time * 0.8) * 0.04;
-      wave += sin(uv.x * 12.0 - time * 0.6 + 2.0) * 0.025;
-
-      // Medium waves
-      wave += sin(uv.x * 25.0 + time * 1.5) * 0.012;
-      wave += sin(uv.x * 35.0 - time * 1.2 + uv.y * 10.0) * 0.008;
-
-      // Small ripples
-      wave += noise(uv * 50.0 + time * 0.5) * 0.015;
-      wave += noise(uv * 80.0 - time * 0.3) * 0.008;
-
-      return wave;
-    }
-
-    // Boat silhouette
-    float boat(vec2 uv, vec2 pos, float size) {
-      vec2 p = (uv - pos) / size;
-
-      // Hull
-      float hull = smoothstep(0.0, 0.02, 0.03 - abs(p.y + 0.02));
-      hull *= smoothstep(0.15, 0.1, abs(p.x));
-      hull *= step(-0.05, p.y);
-
-      // Sail
-      float sail = 0.0;
-      if (p.x > -0.02 && p.x < 0.08 && p.y > 0.0 && p.y < 0.15) {
-        float sailShape = 1.0 - (p.y / 0.15);
-        sailShape *= 0.1;
-        sail = step(abs(p.x - 0.03), sailShape) * step(0.0, p.y) * step(p.y, 0.15);
+      float seaTime = 1.0 + time * SEA_SPEED;
+      float d, h = 0.0;
+      for(int i = 0; i < ITER_FRAGMENT; i++) {
+        d = sea_octave((uv + seaTime) * freq, choppy);
+        d += sea_octave((uv - seaTime) * freq, choppy);
+        h += d * amp;
+        uv *= octave_m;
+        freq *= 1.9;
+        amp *= 0.22;
+        choppy = mix(choppy, 1.0, 0.2);
       }
-
-      // Mast
-      float mast = step(abs(p.x - 0.0), 0.003) * step(0.0, p.y) * step(p.y, 0.12);
-
-      return max(hull, max(sail, mast));
+      return p.y - h;
     }
 
-    // Bird silhouette
-    float bird(vec2 uv, vec2 pos, float size, float wingPhase) {
-      vec2 p = (uv - pos) / size;
+    // Get sea color with Fresnel and lighting
+    vec3 getSeaColor(vec3 p, vec3 n, vec3 l, vec3 eye, vec3 dist, float time) {
+      float fresnel = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
+      fresnel = pow(fresnel, 3.0) * 0.5;
 
-      // Wing shape using sine
-      float wing = sin(abs(p.x) * 8.0 + wingPhase) * 0.3;
-      float body = smoothstep(0.02, 0.0, abs(p.y - wing)) * smoothstep(0.15, 0.0, abs(p.x));
+      vec3 reflected = getSkyColor(reflect(eye, n));
+      vec3 refracted = SEA_BASE + diffuse(n, l, 80.0) * SEA_WATER_COLOR * 0.12;
 
-      return body;
+      vec3 color = mix(refracted, reflected, fresnel);
+
+      float atten = max(1.0 - dot(dist, dist) * 0.001, 0.0);
+      color += SEA_WATER_COLOR * (p.y - SEA_HEIGHT) * 0.18 * atten;
+
+      color += vec3(specular(n, l, eye, 60.0));
+
+      return color;
+    }
+
+    // Get normal
+    vec3 getNormal(vec3 p, float eps, float time) {
+      vec3 n;
+      n.y = map_detailed(p, time);
+      n.x = map_detailed(vec3(p.x + eps, p.y, p.z), time) - n.y;
+      n.z = map_detailed(vec3(p.x, p.y, p.z + eps), time) - n.y;
+      n.y = eps;
+      return normalize(n);
+    }
+
+    // Height map tracing
+    float heightMapTracing(vec3 ori, vec3 dir, out vec3 p, float time) {
+      float tm = 0.0;
+      float tx = 1000.0;
+      float hx = map(ori + dir * tx, time);
+      if(hx > 0.0) {
+        p = ori + dir * tx;
+        return tx;
+      }
+      float hm = map(ori + dir * tm, time);
+      float tmid = 0.0;
+      for(int i = 0; i < NUM_STEPS; i++) {
+        tmid = mix(tm, tx, hm / (hm - hx));
+        p = ori + dir * tmid;
+        float hmid = map(p, time);
+        if(hmid < 0.0) {
+          tx = tmid;
+          hx = hmid;
+        } else {
+          tm = tmid;
+          hm = hmid;
+        }
+      }
+      return tmid;
+    }
+
+    // Rotation matrix from euler angles
+    mat3 fromEuler(vec3 ang) {
+      vec2 a1 = vec2(sin(ang.x), cos(ang.x));
+      vec2 a2 = vec2(sin(ang.y), cos(ang.y));
+      vec2 a3 = vec2(sin(ang.z), cos(ang.z));
+      mat3 m;
+      m[0] = vec3(a1.y*a3.y+a1.x*a2.x*a3.x, a1.y*a2.x*a3.x+a3.y*a1.x, -a2.y*a3.x);
+      m[1] = vec3(-a2.y*a1.x, a1.y*a2.y, a2.x);
+      m[2] = vec3(a3.y*a1.x*a2.x+a1.y*a3.x, a1.x*a3.x-a1.y*a3.y*a2.x, a2.y*a3.y);
+      return m;
     }
 
     void main() {
-      vec2 uv = vUv;
       float time = uTime;
 
-      // Horizon position
-      float horizon = 0.42;
+      // Normalized coordinates
+      vec2 uv = vUv * 2.0 - 1.0;
+      uv.x *= uResolution.x / uResolution.y;
 
-      // === SKY ===
-      // Multi-color sunset gradient
-      vec3 skyTop = vec3(0.15, 0.25, 0.45);      // Deep blue
-      vec3 skyMid = vec3(0.85, 0.45, 0.35);      // Orange-pink
-      vec3 skyLow = vec3(1.0, 0.7, 0.4);         // Golden yellow
-      vec3 skyHorizon = vec3(1.0, 0.85, 0.6);    // Bright horizon
+      // Camera animation - slow gentle movement
+      float camTime = time * 0.1;
+      vec3 ang = vec3(
+        sin(camTime * 2.0) * 0.1,
+        sin(camTime) * 0.2 + 0.3,
+        camTime * 0.5
+      );
 
-      float skyY = (uv.y - horizon) / (1.0 - horizon);
-      vec3 skyColor = mix(skyHorizon, skyLow, smoothstep(0.0, 0.15, skyY));
-      skyColor = mix(skyColor, skyMid, smoothstep(0.15, 0.4, skyY));
-      skyColor = mix(skyColor, skyTop, smoothstep(0.4, 1.0, skyY));
+      // Camera position and ray
+      vec3 ori = vec3(0.0, 3.5, time * 3.0);
+      vec3 dir = normalize(vec3(uv.xy, -2.0));
+      dir.z += length(uv) * 0.14;
+      dir = normalize(dir) * fromEuler(ang);
 
-      // === SUN ===
-      vec2 sunPos = vec2(0.5, horizon + 0.12);
-      float sunDist = length((uv - sunPos) * vec2(1.0, 1.3));
+      // Sun/light position
+      vec3 light = normalize(vec3(0.0, 1.0, 0.8));
 
-      // Sun disc
-      float sun = smoothstep(0.09, 0.085, sunDist);
+      // Trace
+      vec3 p;
+      heightMapTracing(ori, dir, p, time);
+      vec3 dist = p - ori;
 
-      // Sun glow layers
-      float innerGlow = exp(-sunDist * 8.0) * 0.8;
-      float outerGlow = exp(-sunDist * 3.0) * 0.4;
-      float wideGlow = exp(-sunDist * 1.5) * 0.2;
+      // Normal calculation
+      float eps = 0.001;
+      vec3 n = getNormal(p, dot(dist, dist) * eps, time);
 
-      vec3 sunColor = vec3(1.0, 0.95, 0.8);
-      vec3 glowColor = vec3(1.0, 0.6, 0.3);
+      // Mix sky and sea
+      vec3 color = mix(
+        getSkyColor(dir),
+        getSeaColor(p, n, light, dir, dist, time),
+        pow(smoothstep(0.0, -0.02, dir.y), 0.3)
+      );
 
-      skyColor = mix(skyColor, sunColor, sun);
-      skyColor += sunColor * innerGlow;
-      skyColor += glowColor * outerGlow;
-      skyColor += vec3(1.0, 0.4, 0.2) * wideGlow;
+      // Add sun glow
+      float sunDot = max(dot(dir, light), 0.0);
+      color += vec3(1.0, 0.8, 0.6) * pow(sunDot, 8.0) * 0.5;
+      color += vec3(1.0, 0.9, 0.7) * pow(sunDot, 64.0) * 1.0;
 
-      // === CLOUDS ===
-      float cloudLayer = clouds(uv, time);
-      float cloudY = smoothstep(horizon, horizon + 0.35, uv.y) * smoothstep(1.0, 0.6, uv.y);
-
-      // Cloud color - lit by sun
-      vec3 cloudColorBright = vec3(1.0, 0.9, 0.85);
-      vec3 cloudColorDark = vec3(0.7, 0.4, 0.5);
-      vec3 cloudColor = mix(cloudColorDark, cloudColorBright, smoothstep(0.3, 0.7, cloudLayer));
-
-      // Apply clouds with sun influence
-      float sunInfluence = exp(-length(uv - sunPos) * 2.0);
-      cloudColor = mix(cloudColor, vec3(1.0, 0.8, 0.6), sunInfluence * 0.5);
-
-      skyColor = mix(skyColor, cloudColor, cloudLayer * cloudY * 0.7);
-
-      // === BIRDS ===
-      float birds = 0.0;
-      for (float i = 0.0; i < 5.0; i++) {
-        vec2 birdPos = vec2(
-          mod(0.1 + i * 0.18 + time * 0.015 * (0.8 + hash(i) * 0.4), 1.2) - 0.1,
-          0.65 + hash(i + 10.0) * 0.2 + sin(time * 0.5 + i) * 0.02
-        );
-        float wingPhase = time * 8.0 + i * 2.0;
-        birds = max(birds, bird(uv, birdPos, 0.015 + hash(i + 5.0) * 0.01, wingPhase));
-      }
-      skyColor = mix(skyColor, vec3(0.1, 0.1, 0.15), birds * 0.8);
-
-      // === WATER ===
-      float waterY = (horizon - uv.y) / horizon;
-
-      // Base water color
-      vec3 waterDeep = vec3(0.05, 0.15, 0.25);
-      vec3 waterMid = vec3(0.1, 0.25, 0.35);
-      vec3 waterSurface = vec3(0.15, 0.35, 0.45);
-
-      vec3 waterColor = mix(waterSurface, waterMid, smoothstep(0.0, 0.3, waterY));
-      waterColor = mix(waterColor, waterDeep, smoothstep(0.3, 1.0, waterY));
-
-      // Reflect sky color into water
-      vec3 skyReflection = mix(skyHorizon, skyLow, waterY * 0.5);
-      waterColor = mix(waterColor, skyReflection, 0.3);
-
-      // Wave displacement and foam
-      float waveHeight = waves(uv, time);
-      float foam = smoothstep(0.02, 0.035, waveHeight);
-
-      // Wave shading
-      float waveShade = waveHeight * 15.0;
-      waterColor += vec3(0.1, 0.15, 0.2) * waveShade;
-      waterColor = mix(waterColor, vec3(0.9, 0.95, 1.0), foam * 0.3 * (1.0 - waterY));
-
-      // === SUN REFLECTION PATH ===
-      float reflectX = abs(uv.x - 0.5);
-      float reflectPath = exp(-reflectX * reflectX * 30.0);
-
-      // Broken reflection due to waves
-      float reflectWave = noise(vec2(uv.x * 30.0 + time, uv.y * 50.0)) * 0.5 + 0.5;
-      reflectWave *= noise(vec2(uv.x * 50.0 - time * 0.5, uv.y * 80.0)) * 0.5 + 0.5;
-
-      float reflection = reflectPath * reflectWave;
-      reflection *= smoothstep(horizon, 0.0, uv.y); // Fade with distance
-      reflection *= 1.0 - waterY * 0.7; // Stronger near horizon
-
-      // Golden sun reflection
-      vec3 reflectionColor = mix(vec3(1.0, 0.7, 0.4), vec3(1.0, 0.9, 0.7), reflectWave);
-      waterColor += reflectionColor * reflection * 0.6;
-
-      // Sparkles on water
-      float sparkle = noise(uv * 200.0 + time * 2.0);
-      sparkle = pow(sparkle, 8.0) * reflectPath * 2.0;
-      waterColor += vec3(1.0, 0.95, 0.9) * sparkle * (1.0 - waterY);
-
-      // === BOATS ===
-      float boatSilhouette = 0.0;
-      boatSilhouette = max(boatSilhouette, boat(uv, vec2(0.15, horizon - 0.02), 0.08));
-      boatSilhouette = max(boatSilhouette, boat(uv, vec2(0.78, horizon - 0.015), 0.05));
-      boatSilhouette = max(boatSilhouette, boat(uv, vec2(0.55, horizon - 0.025), 0.04));
-
-      waterColor = mix(waterColor, vec3(0.05, 0.08, 0.12), boatSilhouette * 0.9);
-
-      // === COMBINE ===
-      vec3 color = uv.y > horizon ? skyColor : waterColor;
-
-      // Smooth horizon transition
-      float horizonBlend = smoothstep(horizon - 0.008, horizon + 0.008, uv.y);
-      color = mix(waterColor, skyColor, horizonBlend);
-
-      // === POST PROCESSING ===
-      // Subtle vignette
-      float vignette = 1.0 - length((uv - 0.5) * vec2(0.7, 1.0)) * 0.3;
-      color *= vignette;
-
-      // Warm color grade
-      color = pow(color, vec3(0.95, 1.0, 1.05));
-
-      // Film grain
-      float grain = hash2(uv * 500.0 + time) * 0.015;
-      color += grain - 0.0075;
+      // Post-processing
+      color = pow(color, vec3(0.65)); // Tone mapping
 
       gl_FragColor = vec4(color, 1.0);
     }
