@@ -1,547 +1,753 @@
-# Redis Archive for DAP Notes - Product Requirement Document
+# Redis Archive System for DAP and Intake Data - Product Requirement Document
 
 ## Purpose
 
-Add Redis-based persistence to save DAP note inputs and results, enabling users to review their history at `/archive/dap`. This includes anonymous user identification via localStorage and session tracking to tie inputs with their generated results.
+This PRD defines the implementation of a Redis-based archival system for storing and retrieving DAP (Disclosure, Assessment, Plan) outputs and Intake questionnaire data. The system will persist generated clinical documents, track user interactions throughout the intake flow, and enable future analytics and audit trails. This addresses the need for data persistence beyond ephemeral session storage, enabling review of historical outputs, user journey analysis, and compliance with potential future data retention requirements.
 
-## Background
+The scope includes:
+- Redis Cloud integration with environment-based configuration
+- DAP output archival with metadata and retrieval capabilities
+- Intake questionnaire progress tracking (save after each question)
+- Contact information storage (email/phone) with session association
+- User interaction tracking (ChatGPT button clicks)
+- Tailwind CSS + shadcn/ui components for any UI additions
 
-Currently, the `/dap` page is stateless - each request is independent with no persistence. Users cannot review previously generated DAP notes. This PRD adds:
-1. Anonymous user identification (stored in localStorage)
-2. Session tracking to correlate inputs with outputs
-3. Redis storage for persistence
-4. Archive page to review historical DAP notes
+The scope explicitly excludes:
+- User authentication/authorization (future enhancement)
+- Multi-user access controls (documented for future implementation)
+- Data backup/replication strategies (relies on Redis Cloud)
+- Real-time analytics dashboards (data structure supports future addition)
 
 ## Constraints
 
 ### Technical Constraints
-- POC - no authentication required
-- Redis for storage (simple key-value, good for POC)
-- Anonymous user ID via localStorage (client-side)
-- Session ID generated server-side per DAP generation request
-- Next.js 15 App Router patterns
-- Plain CSS styling (consistent with existing pages)
+- Must use Redis Cloud hosted instance (credentials in .env)
+- Must use redis npm package (v5.10.0+) for Node.js/Bun compatibility
+- Must use Tailwind CSS for all styling (already in project)
+- Must use shadcn/ui components for UI elements (to be installed)
+- Must follow monorepo workspace patterns (@cw-hackathon/web)
+- Must support both CLI (packages/data) and web app (apps/web) access patterns
+- Cannot rely on local Redis instance for development
+- Must handle connection failures gracefully (Redis Cloud may have downtime)
 
-### Design Constraints
-- Minimal UI changes to existing `/dap` page
-- Simple archive listing with ability to view details
-- No editing/deleting of archived records (read-only)
+### Business/Timeline Constraints
+- Development environment does NOT require data preservation between sessions
+- No data migration strategy needed (greenfield implementation)
+- Hackathon timeline - prioritize core functionality over optimization
 
 ### Dependencies
-- Redis server (local or cloud)
-- `ioredis` package for Redis client
-- Existing `/dap` infrastructure
+- Redis Cloud instance must be accessible and authenticated
+- Existing intake flow types and interfaces (apps/web/app/intake/types.ts)
+- Existing DAP generation CLI (packages/data)
+- Environment variable configuration system
 
-## Data Model
-
-### Anonymous User ID
-```typescript
-// Generated client-side, stored in localStorage
-type AnonymousUserId = string; // UUID v4
-// localStorage key: "dap_anonymous_user_id"
-```
-
-### Session Record
-```typescript
-interface DAPSession {
-  id: string;                    // UUID v4 - session ID
-  userId: string;                // Anonymous user ID
-  createdAt: string;             // ISO timestamp
-  input: {
-    sessionDescription: string;  // Original input
-  };
-  output: {
-    mode: "generated" | "prompt-only";
-    dapNote?: DAPNote;           // Generated DAP note (if mode === "generated")
-    prompt?: {                   // Prompt data (if mode === "prompt-only")
-      system: string;
-      user: string;
-    };
-  };
-  metadata: {
-    tokensUsed?: number;
-    executionTime?: number;
-    model?: string;
-  };
-}
-```
-
-### Redis Key Structure
-```
-# User's session list (sorted set, score = timestamp)
-dap:user:{userId}:sessions -> ZSET of sessionIds
-
-# Individual session data
-dap:session:{sessionId} -> JSON string of DAPSession
-
-# Optional: Global recent sessions for admin view
-dap:recent:sessions -> ZSET of sessionIds (limited to last 100)
-```
+### Compatibility Requirements
+- Must work with Bun runtime (packages/data CLI)
+- Must work with Next.js 15 App Router (apps/web)
+- Must support Server Actions for data persistence from web app
+- Must maintain backward compatibility with existing intake flow
 
 ## Technical Requirements
 
 ### Files to Create
 
-1. **`apps/web/lib/redis.ts`** - Redis client singleton
-   ```typescript
-   import Redis from "ioredis";
+1. **`apps/web/lib/redis/client.ts`** - Redis client singleton for web app
+   - Exports `getRedisClient()` function that returns connected client
+   - Handles connection pooling and reconnection logic
+   - Implements graceful error handling for connection failures
+   - Uses environment variables for configuration
 
-   const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-   export default redis;
-   ```
+2. **`apps/web/lib/redis/archive.ts`** - DAP archival functions for web app
+   - `archiveDAPOutput(sessionId, dapData, metadata)` - Store DAP output
+   - `getDAPOutput(sessionId)` - Retrieve DAP output by session ID
+   - `listDAPOutputs(filters)` - List archived outputs with pagination
+   - Uses JSON serialization for complex objects
 
-2. **`apps/web/lib/archive.ts`** - Archive service functions
-   - `saveSession(session: DAPSession): Promise<void>`
-   - `getUserSessions(userId: string, limit?: number): Promise<DAPSession[]>`
-   - `getSession(sessionId: string): Promise<DAPSession | null>`
+3. **`apps/web/lib/redis/intake.ts`** - Intake persistence functions
+   - `saveIntakeProgress(sessionId, questionId, answer, reflection)` - Save after each question
+   - `getIntakeProgress(sessionId)` - Retrieve all answers for session
+   - `saveIntakeCompletion(sessionId, outputs)` - Save final completion data
+   - `saveContactInfo(sessionId, email, phone)` - Store contact info separately
+   - `trackChatGPTClick(sessionId, timestamp)` - Track button interactions
+   - `getSessionData(sessionId)` - Get complete session data (answers + contact + interactions)
 
-3. **`apps/web/app/archive/dap/page.tsx`** - Archive listing page
-   - Server component that fetches sessions for user
-   - Lists sessions with date, truncated input, and link to detail
+4. **`apps/web/actions/intake.ts`** - Server Actions for intake persistence
+   - Wraps Redis persistence functions as Next.js Server Actions
+   - Handles session ID generation (UUID v4)
+   - Provides error handling and logging
+   - Exports typed Server Actions for use in Client Components
 
-4. **`apps/web/app/archive/dap/[id]/page.tsx`** - Session detail page
-   - Server component that fetches single session
-   - Displays full input and output
+5. **`packages/data/src/lib/redis/client.ts`** - Redis client for CLI
+   - Same interface as web client but optimized for CLI usage
+   - Handles connection lifecycle for short-lived CLI commands
+   - Uses same environment variables as web app
 
-5. **`apps/web/app/archive/dap/archive.module.css`** - Archive styling
+6. **`packages/data/src/lib/redis/archive.ts`** - DAP archival for CLI
+   - Same functions as web archive but for CLI context
+   - Integrates with existing DAP generation commands
+   - Supports optional archival flag on CLI commands
 
-6. **`apps/web/hooks/useAnonymousUser.ts`** - Client hook for user ID
-   - Generates UUID if not exists in localStorage
-   - Returns stable user ID
+7. **`apps/web/components/ui/button.tsx`** - shadcn Button component
+   - Standard shadcn/ui button with variants
+   - Used in intake flow and archive UI
 
-7. **`apps/web/app/api/archive/sessions/route.ts`** - API for fetching sessions
-   - GET: Returns sessions for anonymous user ID (via header)
+8. **`apps/web/components/ui/card.tsx`** - shadcn Card component
+   - Used for displaying archived data
+   - Supports CardHeader, CardTitle, CardDescription, CardContent, CardFooter
+
+9. **`apps/web/components/ui/input.tsx`** - shadcn Input component
+   - Used for contact form fields
+   - Styled with Tailwind
+
+10. **`apps/web/lib/utils.ts`** - Utility functions for shadcn
+    - `cn()` helper for class name merging
+    - Standard shadcn utility file
 
 ### Files to Modify
 
-1. **`apps/web/package.json`** - Add Redis dependency
-   ```json
-   "dependencies": {
-     "ioredis": "^5.4.1",
-     "uuid": "^10.0.0"
-   }
-   ```
+1. **`apps/web/.env.example`** - Add Redis configuration
+   - Add REDIS_HOST, REDIS_PORT, REDIS_PASSWORD placeholders
+   - Document connection string format
+   - Add comments about Redis Cloud usage
 
-2. **`apps/web/app/api/dap/generate/route.ts`** - Save to Redis after generation
-   - Accept `userId` from request header
-   - Generate `sessionId`
-   - Save complete session to Redis after successful generation
-   - Return `sessionId` in response
+2. **`packages/data/.env.example`** - Add Redis configuration
+   - Same Redis environment variables as web app
+   - Ensure consistency across workspaces
 
-3. **`apps/web/app/dap/dap-form.tsx`** - Add user ID handling
-   - Use `useAnonymousUser` hook
-   - Send `userId` header with requests
-   - Optionally show link to archive
+3. **`apps/web/app/intake/hooks/useIntakeForm.ts`** - Add persistence calls
+   - Import Server Actions from actions/intake.ts
+   - Call `saveIntakeProgress` after each successful answer submission
+   - Call `saveIntakeCompletion` when flow completes
+   - Generate session ID on mount (use crypto.randomUUID())
+   - Store session ID in component state
 
-4. **`apps/web/.env.example`** - Add Redis URL variable
-   ```env
-   REDIS_URL=redis://localhost:6379
-   ```
+4. **`apps/web/app/intake/components/IntakeContactForm.tsx`** - Add persistence
+   - Call `saveContactInfo` Server Action on form submission
+   - Pass session ID from parent component
+   - Add success feedback to user
 
-## Architecture
+5. **`apps/web/app/intake/components/IntakeCompletionSection.tsx`** - Track ChatGPT clicks
+   - Add `trackChatGPTClick` Server Action call on "Open in ChatGPT" button
+   - Pass session ID from parent component
+   - No UI feedback needed (silent tracking)
 
-### Data Flow - Generation
+6. **`apps/web/package.json`** - Add dependencies
+   - Add redis: ^5.10.0
+   - Add shadcn dependencies if not present: class-variance-authority, clsx, tailwind-merge
 
+7. **`packages/data/package.json`** - Add dependencies
+   - Add redis: ^5.10.0
+
+8. **`packages/data/src/commands/dap.ts`** - Add archival integration
+   - Add optional --archive flag to generate command
+   - Call archive function after successful generation
+   - Display archive confirmation message
+
+### Architecture Decisions
+
+**Redis Key Design:**
+- DAP outputs: `dap:{sessionId}` - Hash containing DAP data and metadata
+- Intake progress: `intake:{sessionId}:progress` - List of question/answer pairs
+- Intake completion: `intake:{sessionId}:completion` - Hash with final outputs
+- Contact info: `intake:{sessionId}:contact` - Hash with email/phone
+- Interactions: `intake:{sessionId}:interactions` - List of interaction events
+- Session metadata: `intake:{sessionId}:meta` - Hash with session-level data
+
+**Why this design:**
+- Namespaced keys prevent collisions
+- Session ID as primary key enables easy retrieval
+- Separate keys for different data types allow independent TTLs
+- Hash data types for structured data (efficient for key-value pairs)
+- List data types for ordered collections (progress, interactions)
+
+**Session ID Strategy:**
+- Use UUID v4 (crypto.randomUUID()) for client-side generation
+- No server-side session tracking needed (stateless)
+- Session ID stored in component state (not persisted in browser)
+- Future: Could add session cookies for cross-device continuity
+
+**Connection Management:**
+- Singleton pattern for web app (shared across Server Actions)
+- Short-lived connections for CLI (connect/disconnect per command)
+- No connection pooling in initial implementation (Redis Cloud handles concurrency)
+- Graceful degradation if Redis unavailable (log error, continue without persistence)
+
+**Data Retention:**
+- No TTL in initial implementation (data persists indefinitely)
+- Future: Add configurable TTL per data type (e.g., 30 days for intake progress)
+- Document cleanup strategy for production use
+
+### Tech Stack
+
+- **redis** (5.10.0+) - Official Redis client for Node.js
+  - Chosen for: Native Promise support, TypeScript types, Bun compatibility
+  - Alternative considered: ioredis (more features but heavier)
+
+- **shadcn/ui** (latest) - Copy-paste React component library
+  - Chosen for: Tailwind-native, accessible, customizable
+  - Components needed: Button, Card, Input
+  - Installation: `npx shadcn@latest init` then `npx shadcn@latest add button card input`
+
+- **Tailwind CSS** (already installed) - Utility-first CSS framework
+  - Already in project, no additional setup needed
+
+### Data Models
+
+```typescript
+// DAP Archive Entry
+interface DAPArchiveEntry {
+  sessionId: string;
+  timestamp: string; // ISO 8601
+  intakeType: string;
+  dap: {
+    disclosure: string;
+    assessment: string;
+    plan: string;
+  };
+  metadata: {
+    model?: string;
+    tokensUsed?: number;
+    generationTimeMs?: number;
+  };
+}
+
+// Intake Progress Entry (single question/answer)
+interface IntakeProgressEntry {
+  questionId: string;
+  questionPrompt: string;
+  answer: string | string[];
+  reflection: string;
+  timestamp: string; // ISO 8601
+}
+
+// Intake Completion Data
+interface IntakeCompletionData {
+  sessionId: string;
+  timestamp: string; // ISO 8601
+  outputs: {
+    personalizedBrief: string;
+    firstSessionGuide: string;
+    experiments: string[];
+  };
+}
+
+// Contact Information
+interface ContactInfo {
+  sessionId: string;
+  email?: string;
+  phone?: string;
+  timestamp: string; // ISO 8601
+}
+
+// Interaction Event
+interface InteractionEvent {
+  type: 'chatgpt_click' | 'other_future_events';
+  timestamp: string; // ISO 8601
+  metadata?: Record<string, unknown>;
+}
+
+// Complete Session Data (for retrieval)
+interface SessionData {
+  sessionId: string;
+  progress: IntakeProgressEntry[];
+  completion: IntakeCompletionData | null;
+  contact: ContactInfo | null;
+  interactions: InteractionEvent[];
+  metadata: {
+    intakeType: string;
+    createdAt: string;
+    completedAt?: string;
+  };
+}
 ```
-User enters session description
-        ↓
-dap-form.tsx gets userId from localStorage (or creates new)
-        ↓
-POST /api/dap/generate
-  Header: X-Anonymous-User-Id: {userId}
-        ↓
-API generates DAP note (existing flow)
-        ↓
-API creates DAPSession record
-        ↓
-saveSession() to Redis
-        ↓
-Return response with sessionId
-        ↓
-Display results (existing flow)
-```
 
-### Data Flow - Archive View
+### Environment Variables
 
-```
-User visits /archive/dap
-        ↓
-Page reads userId from cookie/header
-        ↓
-getUserSessions(userId)
-        ↓
-Display session list
-        ↓
-User clicks session
-        ↓
-/archive/dap/[id]
-        ↓
-getSession(sessionId)
-        ↓
-Display full session details
+```bash
+# Redis Cloud Configuration
+# All values are secrets - do not commit actual values to git
+REDIS_HOST=your-redis-host.cloud.redislabs.com
+REDIS_PORT=12345
+REDIS_PASSWORD=your-redis-password-here
+
+# Optional: Connection timeout (milliseconds)
+REDIS_CONNECT_TIMEOUT=5000
+
+# Optional: Disable Redis (for testing)
+REDIS_ENABLED=true
 ```
 
 ## Steps
 
-### Step 1: Add Dependencies
+### Step 1: Environment Configuration and Redis Client Setup
 
-**Action**: Add ioredis and uuid packages to web app
+**Action**: Set up environment variables and create Redis client singletons for both web and CLI.
+
+**Requirements**:
+- Add Redis configuration to .env.example files in both apps/web and packages/data
+- Create redis client modules with connection management
+- Test connection on both web and CLI side
+- Implement error handling for connection failures
+- Use verified connection parameters from testing
 
 **Verification**:
 ```bash
-cd apps/web && pnpm add ioredis uuid && pnpm add -D @types/uuid
+# Verify environment files updated
+cat apps/web/.env.example | grep REDIS_HOST
+cat packages/data/.env.example | grep REDIS_HOST
+
+# Create local .env files (credentials already set up)
+cat apps/web/.env.local | grep REDIS_HOST
+cat packages/data/.env | grep REDIS_HOST
+
+# Test web client (create a test script)
+bun run test-redis-web.ts
+
+# Expected output:
+# ✅ Connected to Redis Cloud
+# ✅ Write/Read test passed
 ```
 
-### Step 2: Create Redis Client
+**Implementation Log**:
+- [ ] Add REDIS_* variables to apps/web/.env.example
+- [ ] Add REDIS_* variables to packages/data/.env.example
+- [ ] Create apps/web/lib/redis/client.ts with getRedisClient()
+- [ ] Create packages/data/src/lib/redis/client.ts
+- [ ] Add redis dependency to apps/web/package.json
+- [ ] Add redis dependency to packages/data/package.json
+- [ ] Test web client connection
+- [ ] Test CLI client connection
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: set up Redis client and environment configuration"`
 
-**Action**: Create Redis client singleton at `apps/web/lib/redis.ts`
+### Step 2: Install shadcn/ui Components
+
+**Action**: Install shadcn/ui and add required components (Button, Card, Input).
 
 **Requirements**:
-- Lazy connection (connect on first use)
-- Handle connection errors gracefully
-- Support REDIS_URL environment variable
+- Run shadcn init to set up configuration
+- Add Button component for interactions
+- Add Card component for displaying data
+- Add Input component for forms
+- Verify Tailwind integration works
+- Create lib/utils.ts with cn() helper
 
 **Verification**:
 ```bash
-# Start Redis locally
-docker run -d -p 6379:6379 redis:alpine
+# Check shadcn configuration
+cat apps/web/components.json
 
-# Test connection via API
-curl http://localhost:3000/api/health
+# Check components exist
+ls apps/web/components/ui/button.tsx
+ls apps/web/components/ui/card.tsx
+ls apps/web/components/ui/input.tsx
+ls apps/web/lib/utils.ts
+
+# Verify Tailwind classes work
+cd apps/web && pnpm dev
+# Visit localhost:3000 and inspect button styling
+
+# Expected output:
+# ✅ All component files created
+# ✅ Tailwind classes applied correctly
 ```
 
-### Step 3: Create Archive Service
+**Implementation Log**:
+- [ ] Run `npx shadcn@latest init` in apps/web
+- [ ] Add Button: `npx shadcn@latest add button`
+- [ ] Add Card: `npx shadcn@latest add card`
+- [ ] Add Input: `npx shadcn@latest add input`
+- [ ] Verify lib/utils.ts created with cn() helper
+- [ ] Test component rendering in dev environment
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: install shadcn/ui components (Button, Card, Input)"`
 
-**Action**: Create archive helper functions at `apps/web/lib/archive.ts`
+### Step 3: Implement DAP Archival Functions
 
-**Requirements**:
-- Type-safe session operations
-- Efficient pagination support
-- Error handling
-
-**Verification**:
-```typescript
-// Unit test or manual verification via API
-```
-
-### Step 4: Create Anonymous User Hook
-
-**Action**: Create client hook at `apps/web/hooks/useAnonymousUser.ts`
+**Action**: Create Redis functions for storing and retrieving DAP outputs in both web and CLI contexts.
 
 **Requirements**:
-- Generate UUID v4 on first visit
-- Store in localStorage
-- Return consistent ID across sessions
-- Handle SSR (return null during SSR, ID after hydration)
-
-**Verification**:
-- Open browser, check localStorage for `dap_anonymous_user_id`
-- Refresh page, verify same ID
-- Different browser/incognito gets different ID
-
-### Step 5: Modify DAP Generation API
-
-**Action**: Update `/api/dap/generate/route.ts` to save sessions
-
-**Requirements**:
-- Read `X-Anonymous-User-Id` header
-- Generate session ID (UUID v4)
-- Save complete session after successful generation
-- Return sessionId in response
-- Handle Redis errors gracefully (don't fail generation if save fails)
+- Implement archiveDAPOutput() to store DAP with metadata
+- Implement getDAPOutput() to retrieve by session ID
+- Implement listDAPOutputs() with pagination support
+- Use Redis Hash data type for DAP entries
+- Include timestamp, intakeType, and optional metadata
+- Mirror implementation across web and CLI modules
 
 **Verification**:
 ```bash
-curl -X POST http://localhost:3000/api/dap/generate \
-  -H "Content-Type: application/json" \
-  -H "X-Anonymous-User-Id: test-user-123" \
-  -d '{"sessionDescription": "Patient presented with anxiety symptoms..."}'
+# Create test script for DAP archival
+cat > apps/web/test-dap-archive.ts << 'EOF'
+import { archiveDAPOutput, getDAPOutput } from './lib/redis/archive';
 
-# Check Redis for saved session
-redis-cli KEYS "dap:*"
+const testData = {
+  sessionId: 'test-session-123',
+  timestamp: new Date().toISOString(),
+  intakeType: 'therapy_readiness',
+  dap: {
+    disclosure: 'Test disclosure',
+    assessment: 'Test assessment',
+    plan: 'Test plan'
+  },
+  metadata: { model: 'gpt-4', tokensUsed: 1000 }
+};
+
+await archiveDAPOutput(testData.sessionId, testData.dap, testData.metadata);
+const retrieved = await getDAPOutput(testData.sessionId);
+console.log('✅ Archive/Retrieve test passed:', retrieved);
+EOF
+
+bun apps/web/test-dap-archive.ts
+
+# Expected output:
+# ✅ Archive/Retrieve test passed: { sessionId: 'test-session-123', ... }
 ```
 
-### Step 6: Update DAP Form
+**Implementation Log**:
+- [ ] Create apps/web/lib/redis/archive.ts
+- [ ] Implement archiveDAPOutput()
+- [ ] Implement getDAPOutput()
+- [ ] Implement listDAPOutputs() with pagination
+- [ ] Create packages/data/src/lib/redis/archive.ts (mirror)
+- [ ] Add TypeScript interfaces for DAP data
+- [ ] Write and run test script
+- [ ] Verify data persists in Redis Cloud
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: implement DAP archival functions for web and CLI"`
 
-**Action**: Modify `dap-form.tsx` to send user ID
+### Step 4: Implement Intake Persistence Functions
+
+**Action**: Create Redis functions for tracking intake questionnaire progress, completion, contact info, and interactions.
 
 **Requirements**:
-- Use `useAnonymousUser` hook
-- Add `X-Anonymous-User-Id` header to fetch request
-- Optionally display link to archive after generation
-- Handle case where user ID not yet available (loading state)
+- Implement saveIntakeProgress() to store each question/answer
+- Implement getIntakeProgress() to retrieve all answers for session
+- Implement saveIntakeCompletion() for final outputs
+- Implement saveContactInfo() for email/phone
+- Implement trackChatGPTClick() for interaction tracking
+- Implement getSessionData() to retrieve complete session
+- Use appropriate Redis data types (List for progress, Hash for completion/contact)
+- Associate all data with session ID
 
 **Verification**:
-- Submit form on /dap page
-- Check network request has user ID header
-- Verify session saved to Redis
+```bash
+# Create comprehensive test script
+cat > apps/web/test-intake-persistence.ts << 'EOF'
+import { saveIntakeProgress, getIntakeProgress, saveIntakeCompletion, saveContactInfo, trackChatGPTClick, getSessionData } from './lib/redis/intake';
 
-### Step 7: Create Archive List Page
+const sessionId = 'test-intake-session';
 
-**Action**: Create `/archive/dap/page.tsx`
+// Test progress tracking
+await saveIntakeProgress(sessionId, 'q1', 'answer1', 'reflection1');
+await saveIntakeProgress(sessionId, 'q2', 'answer2', 'reflection2');
+const progress = await getIntakeProgress(sessionId);
+console.log('✅ Progress:', progress.length === 2);
+
+// Test completion
+await saveIntakeCompletion(sessionId, { personalizedBrief: 'brief', firstSessionGuide: 'guide', experiments: [] });
+
+// Test contact
+await saveContactInfo(sessionId, 'test@example.com', '555-1234');
+
+// Test interaction
+await trackChatGPTClick(sessionId, new Date().toISOString());
+
+// Test full retrieval
+const fullData = await getSessionData(sessionId);
+console.log('✅ Full session data:', fullData);
+EOF
+
+bun apps/web/test-intake-persistence.ts
+
+# Expected output:
+# ✅ Progress: true
+# ✅ Full session data: { sessionId: 'test-intake-session', progress: [...], ... }
+```
+
+**Implementation Log**:
+- [ ] Create apps/web/lib/redis/intake.ts
+- [ ] Implement saveIntakeProgress() with List data type
+- [ ] Implement getIntakeProgress()
+- [ ] Implement saveIntakeCompletion() with Hash data type
+- [ ] Implement saveContactInfo() with Hash data type
+- [ ] Implement trackChatGPTClick() with List data type
+- [ ] Implement getSessionData() aggregating all keys
+- [ ] Add TypeScript interfaces for intake data
+- [ ] Write and run comprehensive test script
+- [ ] Verify data structure in Redis Cloud
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: implement intake persistence functions"`
+
+### Step 5: Create Server Actions for Intake Persistence
+
+**Action**: Wrap Redis persistence functions in Next.js Server Actions for use in Client Components.
 
 **Requirements**:
-- Read user ID from cookie or query param
-- Fetch user's sessions from Redis
-- Display as list with:
-  - Date/time
-  - Truncated input (first 100 chars)
-  - Link to detail page
-- Empty state for no sessions
-- Pagination (show last 20, "Load more" button)
-
-**UI Mockup**:
-```
-┌─────────────────────────────────────────────────────────┐
-│  DAP Notes Archive                                      │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Your Generated Notes                                   │
-│                                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ Jan 31, 2026 - 3:45 PM                          │   │
-│  │ "Patient presented with anxiety symptoms and    │   │
-│  │ reported difficulty sleeping..."                │   │
-│  │                                    [View →]      │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ Jan 30, 2026 - 10:15 AM                         │   │
-│  │ "Follow-up session with John regarding his      │   │
-│  │ progress on coping strategies..."              │   │
-│  │                                    [View →]      │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-│  [Load More]                                            │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+- Create apps/web/actions/intake.ts with 'use server' directive
+- Export Server Action wrappers for all intake persistence functions
+- Handle session ID generation (crypto.randomUUID())
+- Implement error handling and logging
+- Ensure type safety with TypeScript
+- Follow Next.js 15 Server Actions best practices
 
 **Verification**:
-- Navigate to /archive/dap
-- Verify sessions display
-- Click "View" to go to detail
+```bash
+# Check Server Actions file exists and has correct structure
+cat apps/web/actions/intake.ts | grep "'use server'"
 
-### Step 8: Create Session Detail Page
+# Verify TypeScript compilation
+cd apps/web && pnpm type-check
 
-**Action**: Create `/archive/dap/[id]/page.tsx`
+# Expected output:
+# ✅ No TypeScript errors
+# ✅ Server Actions properly typed
+```
+
+**Implementation Log**:
+- [ ] Create apps/web/actions/intake.ts with 'use server'
+- [ ] Wrap saveIntakeProgress as Server Action
+- [ ] Wrap saveIntakeCompletion as Server Action
+- [ ] Wrap saveContactInfo as Server Action
+- [ ] Wrap trackChatGPTClick as Server Action
+- [ ] Add error handling with try/catch
+- [ ] Add console logging for debugging
+- [ ] Run type-check to verify
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: create Server Actions for intake persistence"`
+
+### Step 6: Integrate Persistence into Intake Flow
+
+**Action**: Modify intake flow components to call persistence Server Actions after each interaction.
 
 **Requirements**:
-- Fetch session by ID
-- Verify session belongs to user (security check)
-- Display full input
-- Display full output (DAP note formatted nicely)
-- Display metadata (tokens, time, model)
-- Back link to archive list
-- Handle not found state
-
-**UI Mockup**:
-```
-┌─────────────────────────────────────────────────────────┐
-│  ← Back to Archive                                      │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  DAP Note - Jan 31, 2026                               │
-│                                                         │
-│  ┌─ Input ──────────────────────────────────────────┐  │
-│  │ Patient presented with anxiety symptoms and       │  │
-│  │ reported difficulty sleeping over the past two    │  │
-│  │ weeks. They described work-related stress...      │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                         │
-│  ┌─ Generated DAP Note ─────────────────────────────┐  │
-│  │                                                   │  │
-│  │ DATA                                              │  │
-│  │ Subjective: Patient reports increased anxiety... │  │
-│  │ Objective: Patient appeared restless...          │  │
-│  │                                                   │  │
-│  │ ASSESSMENT                                        │  │
-│  │ Clinical Impression: Generalized anxiety...      │  │
-│  │                                                   │  │
-│  │ PLAN                                              │  │
-│  │ Interventions: ...                                │  │
-│  │ Homework: ...                                     │  │
-│  │ Next Session: ...                                 │  │
-│  │                                                   │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                         │
-│  ┌─ Metadata ───────────────────────────────────────┐  │
-│  │ Tokens: 1,234 | Time: 2.3s | Model: sonnet       │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+- Generate session ID in useIntakeForm hook on mount
+- Call saveIntakeProgress after each answer submission
+- Call saveIntakeCompletion when flow completes
+- Pass session ID to IntakeContactForm and call saveContactInfo
+- Pass session ID to IntakeCompletionSection and call trackChatGPTClick
+- Handle persistence errors gracefully (log but don't block UX)
+- Maintain existing intake flow behavior
 
 **Verification**:
-- Click session from archive list
-- Verify all data displays correctly
-- Test with non-existent ID (404 page)
+```bash
+# Start dev server
+cd apps/web && pnpm dev
 
-### Step 9: Add Styling
+# Visit http://localhost:3000/intake/demo
+# Complete one question, check Redis:
+bun -e "
+import { createClient } from 'redis';
+const client = createClient({ socket: { host: process.env.REDIS_HOST, port: Number(process.env.REDIS_PORT) }, password: process.env.REDIS_PASSWORD });
+await client.connect();
+const keys = await client.keys('intake:*');
+console.log('Keys:', keys);
+await client.disconnect();
+"
 
-**Action**: Create CSS module for archive pages
+# Expected output:
+# Keys: ['intake:UUID:progress', 'intake:UUID:meta']
+# ✅ Progress saved after question answered
+```
+
+**Implementation Log**:
+- [ ] Add session ID state to useIntakeForm hook
+- [ ] Generate session ID on mount with crypto.randomUUID()
+- [ ] Import Server Actions into useIntakeForm
+- [ ] Call saveIntakeProgress in submitAnswer function
+- [ ] Call saveIntakeCompletion when isComplete
+- [ ] Pass session ID prop to IntakeContactForm
+- [ ] Add saveContactInfo call to IntakeContactForm
+- [ ] Pass session ID prop to IntakeCompletionSection
+- [ ] Add trackChatGPTClick to "Open in ChatGPT" button
+- [ ] Test full intake flow with Redis persistence
+- [ ] Verify all data types saved correctly
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: integrate Redis persistence into intake flow"`
+
+### Step 7: Integrate Archival into DAP CLI Command
+
+**Action**: Add optional archival functionality to DAP generation CLI command.
 
 **Requirements**:
-- Consistent with existing /dap styling
-- Responsive layout
-- Clear typography
-- Card-based session items
-
-### Step 10: Update Environment
-
-**Action**: Update `.env.example` with Redis configuration
+- Add --archive flag to dap generate command
+- Generate session ID for CLI invocations
+- Call archive function after successful DAP generation
+- Display confirmation message when archived
+- Maintain backward compatibility (archival is optional)
+- Use CLI Redis client module
 
 **Verification**:
-- Check file exists with REDIS_URL variable
-- Update documentation in CLAUDE.md if needed
+```bash
+# Generate DAP without archival (existing behavior)
+cd packages/data
+bun run src/bin/cli.ts dap generate demo-data.json
 
-## API Endpoints
+# Generate DAP with archival
+bun run src/bin/cli.ts dap generate demo-data.json --archive
 
-### GET /api/archive/sessions
+# Expected output:
+# ✅ DAP generated successfully
+# ✅ Archived with session ID: abc-123-def
+#
+# Check Redis:
+bun -e "
+import { createClient } from 'redis';
+const client = createClient({ socket: { host: process.env.REDIS_HOST, port: Number(process.env.REDIS_PORT) }, password: process.env.REDIS_PASSWORD });
+await client.connect();
+const keys = await client.keys('dap:*');
+console.log('DAP Keys:', keys);
+await client.disconnect();
+"
 
-Fetch sessions for the current anonymous user.
-
-**Headers**:
-- `X-Anonymous-User-Id`: string (required)
-
-**Query Parameters**:
-- `limit`: number (default: 20, max: 100)
-- `offset`: number (default: 0)
-
-**Response**:
-```json
-{
-  "sessions": [
-    {
-      "id": "uuid",
-      "createdAt": "2026-01-31T15:45:00Z",
-      "inputPreview": "Patient presented with anxiety...",
-      "mode": "generated"
-    }
-  ],
-  "total": 42,
-  "hasMore": true
-}
+# Expected:
+# DAP Keys: ['dap:abc-123-def']
 ```
 
-### GET /api/archive/sessions/[id]
+**Implementation Log**:
+- [ ] Modify packages/data/src/commands/dap.ts
+- [ ] Add --archive boolean flag to command definition
+- [ ] Import archive functions from lib/redis/archive
+- [ ] Generate session ID with crypto.randomUUID()
+- [ ] Call archiveDAPOutput after successful generation
+- [ ] Add confirmation message to console output
+- [ ] Test with and without --archive flag
+- [ ] Verify Redis data saved correctly
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: add archival support to DAP CLI command"`
 
-Fetch single session details.
+### Step 8: Documentation and Future Enhancements
 
-**Headers**:
-- `X-Anonymous-User-Id`: string (required)
+**Action**: Document the Redis data structure, access patterns, and future enhancement paths (including read restrictions).
 
-**Response**:
-```json
-{
-  "session": {
-    "id": "uuid",
-    "userId": "user-uuid",
-    "createdAt": "2026-01-31T15:45:00Z",
-    "input": {
-      "sessionDescription": "Full input text..."
-    },
-    "output": {
-      "mode": "generated",
-      "dapNote": { ... }
-    },
-    "metadata": {
-      "tokensUsed": 1234,
-      "executionTime": 2300,
-      "model": "sonnet"
-    }
-  }
-}
+**Requirements**:
+- Create docs/redis-data-structure.md documenting key design
+- Document session ID format and generation
+- Document Redis Cloud connection details (without password in git)
+- Add comments about future read restrictions (ACLs, user roles)
+- Document data retention strategy considerations
+- Add troubleshooting guide for connection issues
+- Note design decisions made during implementation
+
+**Verification**:
+```bash
+# Check documentation exists
+cat docs/redis-data-structure.md | grep "Key Design"
+cat docs/redis-data-structure.md | grep "Access Control"
+
+# Verify no passwords in git
+git grep "REDIS_PASSWORD" -- ':!.env*' ':!*.md'
+
+# Expected output:
+# (only references in code, no actual passwords)
 ```
 
-**Errors**:
-- 404: Session not found or doesn't belong to user
-- 400: Missing user ID header
+**Implementation Log**:
+- [ ] Create docs/redis-data-structure.md
+- [ ] Document key naming conventions
+- [ ] Document data types for each key pattern
+- [ ] Add section on future read restrictions (Redis ACLs)
+- [ ] Document connection configuration
+- [ ] Add troubleshooting section
+- [ ] Document design decisions and rationale
+- [ ] Review and ensure no secrets committed
+- [ ] **COMMIT**: `git add -A && git commit -m "docs: add Redis data structure and access control documentation"`
 
 ## Completion Criteria
 
-- [ ] Redis client configured and connecting
-- [ ] Anonymous user ID generated and persisted in localStorage
-- [ ] DAP generation saves sessions to Redis
-- [ ] /archive/dap page lists user's sessions
-- [ ] /archive/dap/[id] page shows session details
-- [ ] User can only see their own sessions
-- [ ] Empty states handled gracefully
-- [ ] Redis connection errors don't break generation
-
-## Security Considerations
-
-### For POC (Current Scope)
-- Anonymous user ID provides minimal separation between users
-- No real security - anyone with session ID could access it
-- No rate limiting
-- No data encryption
-
-### Future Enhancements (Not in Scope)
-- Real authentication (OAuth, email magic link)
-- Session ownership verification via signed tokens
-- Rate limiting per user
-- Data encryption at rest
-- Session expiration/TTL
-- GDPR compliance (data export, deletion)
-
-## Redis Setup Options
-
-### Local Development
-```bash
-# Docker
-docker run -d --name redis -p 6379:6379 redis:alpine
-
-# Or Homebrew (macOS)
-brew install redis
-brew services start redis
-```
-
-### Cloud Options (for deployment)
-- Upstash (serverless, free tier)
-- Redis Cloud
-- AWS ElastiCache
-- Railway
-
-**Recommended for POC**: Upstash - free tier, serverless, no management needed
-
-## TTL Strategy
-
-For POC, sessions persist indefinitely. Consider adding TTL for production:
-- Session data: 90 days
-- User session index: No TTL (references cleaned up when sessions expire)
-
-```typescript
-// Optional: Set expiry when saving
-await redis.setex(`dap:session:${sessionId}`, 90 * 24 * 60 * 60, JSON.stringify(session));
-```
+- [ ] Redis connection working in both web app and CLI
+- [ ] DAP outputs successfully archived and retrievable
+- [ ] Intake progress tracked after each question answered
+- [ ] Final completion outputs saved to Redis
+- [ ] Contact information (email/phone) stored separately but associated with session
+- [ ] ChatGPT button clicks tracked
+- [ ] All TypeScript type checks passing
+- [ ] Dev environment tested with full intake flow
+- [ ] Documentation complete with future enhancement paths
+- [ ] No secrets committed to git
 
 ## Notes
 
-### Why Redis?
-- Simple key-value storage perfect for POC
-- Fast reads for archive listing
-- Built-in sorted sets for chronological ordering
-- Easy to set up locally and deploy
-- Can migrate to proper database later if needed
+### Design Decisions
 
-### Why Anonymous User ID?
-- No authentication required (POC constraint)
-- Users can still see their own history
-- Simple localStorage implementation
-- Natural upgrade path to real auth later
+**Redis Cloud vs Local Redis:**
+- Using Redis Cloud eliminates local setup complexity
+- Simplifies deployment (same endpoint for dev/prod)
+- Acceptable for hackathon timeline
+- Trade-off: External dependency but verified working
 
-### Migration Path
-When adding real authentication:
-1. Keep anonymous ID system for unauthenticated users
-2. Add user account linking (merge anonymous sessions into account)
-3. Add session ownership claims signed by auth system
+**Session ID Generation:**
+- Client-side UUID v4 generation chosen for simplicity
+- No server-side session tracking needed
+- Trade-off: Can't prevent duplicate session IDs (extremely unlikely with UUID v4)
+- Future: Could use Redis INCR for sequential IDs or server-side UUID generation
 
-## Resources
+**Data Structure Choices:**
+- Hash for structured single-value data (completion, contact, metadata)
+- List for ordered collections (progress, interactions)
+- Separate keys for different data types enables independent TTLs
+- Trade-off: More keys per session vs single key with nested JSON
+- Chose multiple keys for flexibility and Redis-native data type usage
 
-- [Redis AI Resources](https://github.com/redis-developer/redis-ai-resources) - Collection of patterns for Redis + AI applications, including session management and message history examples
+**Graceful Degradation:**
+- Persistence failures should not break user experience
+- Log errors but continue intake flow
+- Future: Add user-visible feedback for persistence failures
+- Future: Add retry logic with exponential backoff
+
+### Redis Connection Verified
+
+During planning, we verified connectivity to the Redis Cloud instance:
+- Connection: Redis Cloud (credentials in .env)
+- Authentication: Required (password-based)
+- Tests passed: Write, Read, TTL, Delete, Keys listing
+- Client library: redis v5.10.0 (confirmed Bun compatible)
+
+### Future Enhancement: Read Restrictions
+
+Redis Cloud supports Access Control Lists (ACLs) for restricting read/write permissions. To implement read restrictions in the future:
+
+1. **Create Redis Users with Limited Permissions:**
+   ```bash
+   # In Redis Cloud console, create users with specific ACLs
+   # Example: read-only user
+   ACL SETUSER readonly on >password ~* -@all +@read
+
+   # Example: write-only user for intake
+   ACL SETUSER intake_writer on >password ~intake:* +set +hset +lpush
+
+   # Example: read/write for DAP
+   ACL SETUSER dap_rw on >password ~dap:* +@all
+   ```
+
+2. **Update Environment Variables:**
+   ```bash
+   # Different credentials per use case
+   REDIS_USER_READONLY=readonly
+   REDIS_PASSWORD_READONLY=readonly_password
+
+   REDIS_USER_INTAKE_WRITER=intake_writer
+   REDIS_PASSWORD_INTAKE_WRITER=writer_password
+   ```
+
+3. **Modify Redis Client:**
+   - Add username parameter to client configuration
+   - Select appropriate credentials based on operation type
+   - Example: Use read-only credentials for listDAPOutputs()
+
+4. **Security Benefits:**
+   - Limit blast radius of credential compromise
+   - Enforce least-privilege access
+   - Enable audit logging per user
+   - Support compliance requirements
+
+**Note:** Current implementation uses default user with full access. ACL implementation should be done before production deployment.
+
+### Gotchas & Surprises
+
+[To be added during implementation]
+
+### Demo Instructions
+
+**How to Demo:**
+[To be added during implementation]
 
 ---
 
 **Status**: Draft
-**Created**: 2026-02-01
+**Created**: 2026-02-04
+**Last Updated**: 2026-02-04
+**Implementation Started**: N/A
+**Completed**: N/A
