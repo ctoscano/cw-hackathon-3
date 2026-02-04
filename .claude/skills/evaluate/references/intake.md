@@ -39,7 +39,21 @@ cd packages/data && bun run src/bin/cli.ts intake evaluate
 **Options**:
 - `--input FILE`: Path to synthetic intake JSON (uses latest if not specified)
 - `--scenario TYPE`: Scenario to evaluate
+- `--version VERSION`: Prompt version to use (v1, v2, etc. - defaults to v2)
 - `--model MODEL`: Model to use for evaluation (opus, sonnet, haiku)
+
+**Examples**:
+```bash
+# Evaluate with default version (v2)
+bun run src/bin/cli.ts intake evaluate --scenario ambivalent
+
+# Evaluate with specific version
+bun run src/bin/cli.ts intake evaluate --version v1 --scenario ambivalent
+
+# Compare two versions
+bun run src/bin/cli.ts intake evaluate --version v1 --scenario ambivalent
+bun run src/bin/cli.ts intake evaluate --version v2 --scenario ambivalent
+```
 
 ## Alternative Testing Methods
 
@@ -94,14 +108,145 @@ console.log(JSON.stringify(result, null, 2));
 "
 ```
 
+## Prompt Versioning
+
+The intake questionnaire uses folder-based prompt versioning for iterative improvement:
+
+### Version Structure
+```
+packages/data/src/prompts/intake/
+├── v1/                          # Original version (longer reflections)
+│   ├── reflection-system.md
+│   ├── reflection-user.md
+│   ├── completion-system.md
+│   ├── completion-user.md
+│   └── manifest.md              # Version documentation
+├── v2/                          # Current version (concise reflections)
+│   ├── reflection-system.md
+│   ├── reflection-user.md
+│   ├── completion-system.md
+│   ├── completion-user.md
+│   └── manifest.md
+└── v3/                          # Future iterations
+    └── ...
+```
+
+### Version Manifests
+
+Each version directory contains a `manifest.md` file that documents:
+- **Purpose**: Why this version exists
+- **Motivation**: What problems it solves
+- **Changes from previous**: Specific differences from prior version
+- **Known tradeoffs**: What was sacrificed for improvements
+- **Evaluation focus**: What to pay attention to when testing
+- **Comparison workflow**: How to compare with other versions
+
+**How to use manifests**:
+1. Read `manifest.md` before evaluating to understand version goals
+2. Reference motivation when analyzing evaluation results
+3. Check "Changes from previous" to know what improved
+4. Consider "Known tradeoffs" when interpreting scores
+5. Use "Comparison workflow" to run side-by-side tests
+
+### Output Organization
+
+Outputs are organized by version for easy comparison:
+
+```
+packages/data/output/intake/
+├── synthetic/                   # Shared test inputs (version-agnostic)
+│   └── intake-synthetic-ambivalent-*.json
+├── v1/                          # v1 outputs
+│   ├── generated/
+│   │   └── intake-generated-ambivalent-*.json
+│   └── evaluations/
+│       ├── intake-eval-ambivalent-*.json
+│       └── intake-eval-ambivalent-*.md
+├── v2/                          # v2 outputs
+│   ├── generated/
+│   │   └── intake-generated-ambivalent-*.json
+│   └── evaluations/
+│       ├── intake-eval-ambivalent-*.json
+│       └── intake-eval-ambivalent-*.md
+└── v3/
+    └── ...
+```
+
+**Key insight**: Synthetic inputs in `synthetic/` are shared across all versions, ensuring fair comparison when evaluating different prompt versions.
+
+### Version Comparison Workflow
+
+To compare two versions:
+
+```bash
+cd packages/data
+
+# Step 1: Run both versions on same scenario
+bun run src/bin/cli.ts intake evaluate --version v1 --scenario ambivalent
+bun run src/bin/cli.ts intake evaluate --version v2 --scenario ambivalent
+
+# Step 2: Compare evaluation scores
+jq '.overallScore' output/intake/v1/evaluations/intake-eval-*.json
+jq '.overallScore' output/intake/v2/evaluations/intake-eval-*.json
+
+# Step 3: Compare specific dimensions
+jq '.reflectionScores.appropriateBrevity' output/intake/v1/evaluations/intake-eval-*.json
+jq '.reflectionScores.appropriateBrevity' output/intake/v2/evaluations/intake-eval-*.json
+
+# Step 4: Visual diff of markdown evaluations
+code --diff output/intake/v1/evaluations/intake-eval-ambivalent-*.md \
+             output/intake/v2/evaluations/intake-eval-ambivalent-*.md
+
+# Step 5: Compare actual generated reflections
+diff output/intake/v1/generated/intake-generated-*.json \
+     output/intake/v2/generated/intake-generated-*.json
+```
+
+### Creating a New Version
+
+When evaluation identifies areas for improvement:
+
+```bash
+cd packages/data/src/prompts/intake
+
+# 1. Copy previous version
+cp -r v2 v3
+
+# 2. Edit prompts based on evaluation feedback
+vim v3/reflection-system.md
+
+# 3. Update version in frontmatter
+# Change: version: "v2" → version: "v3"
+
+# 4. Create/update manifest
+vim v3/manifest.md
+# Document:
+# - What changed from v2
+# - Why (based on evaluation results)
+# - Expected improvements
+# - Known tradeoffs
+
+# 5. Test new version
+bun run src/bin/cli.ts intake evaluate --version v3 --scenario ambivalent
+
+# 6. Compare with previous
+bun run src/bin/cli.ts intake evaluate --version v2 --scenario ambivalent
+```
+
 ## File Paths
 
 | Purpose | Path |
 |---------|------|
-| Reflection System Prompt | `packages/data/src/prompts/intake/reflection-system.md` |
-| Reflection User Prompt | `packages/data/src/prompts/intake/reflection-user.md` |
-| Completion System Prompt | `packages/data/src/prompts/intake/completion-system.md` |
-| Completion User Prompt | `packages/data/src/prompts/intake/completion-user.md` |
+| Reflection System Prompt (v1) | `packages/data/src/prompts/intake/v1/reflection-system.md` |
+| Reflection System Prompt (v2) | `packages/data/src/prompts/intake/v2/reflection-system.md` |
+| Reflection User Prompt (v1) | `packages/data/src/prompts/intake/v1/reflection-user.md` |
+| Reflection User Prompt (v2) | `packages/data/src/prompts/intake/v2/reflection-user.md` |
+| Completion System Prompt (v1) | `packages/data/src/prompts/intake/v1/completion-system.md` |
+| Completion System Prompt (v2) | `packages/data/src/prompts/intake/v2/completion-system.md` |
+| Completion User Prompt (v1) | `packages/data/src/prompts/intake/v1/completion-user.md` |
+| Completion User Prompt (v2) | `packages/data/src/prompts/intake/v2/completion-user.md` |
+| Version Manifest (v1) | `packages/data/src/prompts/intake/v1/manifest.md` |
+| Version Manifest (v2) | `packages/data/src/prompts/intake/v2/manifest.md` |
 | Intake Definitions | `packages/data/src/lib/intake/definitions.ts` |
 | Intake Builder | `packages/data/src/lib/intake/builder.ts` |
 | Web UI | `apps/web/app/intake/` |
@@ -283,7 +428,13 @@ When logging iterations for intake evaluation, use this format:
 ```markdown
 ## Iteration N - YYYY-MM-DD
 
-### Evaluation Scores (Before → After)
+**Version**: v1 → v2
+**Scenario Tested**: ambivalent
+**Evaluation Files**:
+- v1: `output/intake/v1/evaluations/intake-eval-ambivalent-YYYY-MM-DD.md`
+- v2: `output/intake/v2/evaluations/intake-eval-ambivalent-YYYY-MM-DD.md`
+
+### Evaluation Scores (v1 → v2)
 - Overall: X/10 → Y/10
 
 #### Reflection Quality
@@ -298,7 +449,7 @@ When logging iterations for intake evaluation, use this format:
 - Appropriate Boundaries: X/10 → Y/10
 - Empowerment Over Pressure: X/10 → Y/10
 
-### Changes Made
+### Changes Made (see v2/manifest.md for full details)
 1. [Prompt file]: [Specific change]
 2. [Prompt file]: [Specific change]
 
@@ -309,7 +460,13 @@ When logging iterations for intake evaluation, use this format:
 [Which dimensions should improve and why]
 
 ### Actual Impact
-[To be filled after re-evaluation]
+[Actual changes observed in scores and quality]
+
+### Tradeoffs Observed
+[What degraded or became more challenging with the changes]
+
+### Next Steps
+[Potential v3 improvements based on v2 results]
 ```
 
 ## Good Output Examples

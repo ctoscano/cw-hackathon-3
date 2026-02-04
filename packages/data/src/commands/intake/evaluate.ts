@@ -104,6 +104,11 @@ export const evaluateCommand = defineCommand({
         "Scenario to evaluate: ambivalent, ready, pastNegative, externalPressure, notRightTime",
       default: "ambivalent",
     },
+    version: {
+      type: "string",
+      description: "Prompt version to use (v1, v2, etc.)",
+      default: "v2",
+    },
     model: {
       type: "string",
       description: "AI model to use for evaluation: opus, sonnet, haiku",
@@ -118,6 +123,7 @@ export const evaluateCommand = defineCommand({
   },
   async run({ args }) {
     console.log("\n🔍 Intake Questionnaire Evaluator\n");
+    console.log(`📌 Prompt Version: ${args.version}\n`);
 
     // Get synthetic flow data
     let syntheticFlow: {
@@ -169,10 +175,13 @@ export const evaluateCommand = defineCommand({
 
       try {
         const result = await processIntakeStep({
-          intakeType: "therapy_readiness",
-          stepIndex: i,
-          priorAnswers: generatedAnswers,
-          currentAnswer: answer.answer,
+          request: {
+            intakeType: "therapy_readiness",
+            stepIndex: i,
+            priorAnswers: generatedAnswers,
+            currentAnswer: answer.answer,
+          },
+          version: args.version,
         });
 
         generatedAnswers.push({
@@ -205,12 +214,17 @@ export const evaluateCommand = defineCommand({
       scenario: syntheticFlow.scenario,
       answers: generatedAnswers,
       completionOutputs,
-      generatedAt: new Date().toISOString(),
+      metadata: {
+        promptVersion: args.version,
+        scenario: syntheticFlow.scenario,
+        generatedAt: new Date().toISOString(),
+      },
     };
     const generatedPath = saveJsonOutput(
       "intake/generated",
       `intake-generated-${syntheticFlow.scenario}`,
       generatedOutput,
+      args.version,
     );
     console.log(`📁 Saved generated outputs: ${generatedPath}`);
 
@@ -228,11 +242,20 @@ export const evaluateCommand = defineCommand({
       },
     });
 
-    // Save evaluation results
+    // Save evaluation results with version metadata
+    const evalData = {
+      ...result.data,
+      metadata: {
+        promptVersion: args.version,
+        scenario: syntheticFlow.scenario,
+        evaluatedAt: new Date().toISOString(),
+      },
+    };
     const evalJsonPath = saveJsonOutput(
       "intake/evaluations",
       `intake-eval-${syntheticFlow.scenario}`,
-      result.data,
+      evalData,
+      args.version,
     );
     const evalMarkdownPath = saveMarkdownOutput(
       "intake/evaluations",
@@ -242,7 +265,9 @@ export const evaluateCommand = defineCommand({
         syntheticFlow.scenario,
         generatedAnswers,
         completionOutputs,
+        args.version,
       ),
+      args.version,
     );
 
     console.log("✅ Evaluation complete!\n");
@@ -433,6 +458,7 @@ function formatEvaluationAsMarkdown(
   scenario: string,
   answers: IntakeAnswer[],
   completionOutputs: IntakeCompletionOutputs,
+  promptVersion?: string,
 ): string {
   const reflectionAvg =
     (evaluation.reflectionScores.empathicAccuracy +
@@ -453,6 +479,7 @@ function formatEvaluationAsMarkdown(
     "",
     `Generated: ${new Date().toISOString()}`,
     `Scenario: ${scenario}`,
+    `Prompt Version: ${promptVersion || "unknown"}`,
     "",
     "---",
     "",
