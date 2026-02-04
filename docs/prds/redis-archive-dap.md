@@ -352,12 +352,12 @@ cd apps/web && pnpm dev
 ```
 
 **Implementation Log**:
-- [ ] Run `npx shadcn@latest init` in apps/web
-- [ ] Add Button: `npx shadcn@latest add button`
-- [ ] Add Card: `npx shadcn@latest add card`
-- [ ] Add Input: `npx shadcn@latest add input`
-- [ ] Verify lib/utils.ts created with cn() helper
-- [ ] Test component rendering in dev environment
+- [x] Run `npx shadcn@latest init` in apps/web (2026-02-04 04:16) - already configured
+- [x] Add Button: `npx shadcn@latest add button` (2026-02-04 04:16)
+- [x] Add Card: `npx shadcn@latest add card` (2026-02-04 04:16) - already exists
+- [x] Add Input: `npx shadcn@latest add input` (2026-02-04 04:16)
+- [x] Verify lib/utils.ts created with cn() helper (2026-02-04 04:16)
+- [x] Test component rendering in dev environment (2026-02-04 04:16) - components verified
 - [ ] **COMMIT**: `git add -A && git commit -m "feat: install shadcn/ui components (Button, Card, Input)"`
 
 ### Step 3: Implement DAP Archival Functions
