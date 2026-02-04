@@ -81,13 +81,13 @@ export function BorderBeam({
           zIndex: -2,
         }}
       />
-      {/* Inner layer to create border effect - inherits parent background */}
+      {/* Inner white layer to create border effect */}
       <div
         style={{
           position: "absolute",
           inset: `${borderWidth}px`,
           borderRadius: "inherit",
-          background: "inherit",
+          background: "white",
           pointerEvents: "none",
           zIndex: -1,
         }}
