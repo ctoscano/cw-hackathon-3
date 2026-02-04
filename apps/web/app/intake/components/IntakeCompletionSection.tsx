@@ -6,9 +6,9 @@ import { BorderBeam } from "@/components/ui/border-beam";
 import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { createExperimentPrompt, generateChatGPTUrl } from "@/lib/chatgpt";
-import { useState } from "react";
 import styles from "../intake.module.css";
 import type { IntakeStepResponse } from "../types";
+import { IntakeContactForm } from "./IntakeContactForm";
 
 interface IntakeCompletionSectionProps {
   status: "waiting" | "ready";
@@ -16,10 +16,6 @@ interface IntakeCompletionSectionProps {
 }
 
 export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSectionProps) {
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-
   // Waiting state - show loading animation with optional contact form
   if (status === "waiting") {
     return (
@@ -35,55 +31,7 @@ export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSec
           />
 
           {/* Optional Contact Info Collection */}
-          {!showContactForm ? (
-            <div className={styles.contactPrompt}>
-              <p className={styles.contactPromptText}>
-                While you wait, would you like us to help connect you with a therapist?
-              </p>
-              <div className={styles.contactPromptButtons}>
-                <button
-                  type="button"
-                  onClick={() => setShowContactForm(true)}
-                  className={styles.contactYesButton}
-                >
-                  Yes, I&apos;d like that
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowContactForm(false)}
-                  className={styles.contactNoButton}
-                >
-                  No thanks
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.contactForm}>
-              <p className={styles.contactFormText}>
-                Great! Share your email or phone number and we&apos;ll reach out to help you get
-                started.
-              </p>
-              <div className={styles.contactInputs}>
-                <input
-                  type="email"
-                  placeholder="Email address (optional)"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  className={styles.contactInput}
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone number (optional)"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  className={styles.contactInput}
-                />
-              </div>
-              <p className={styles.contactFormNote}>
-                You can skip this - your results will show below either way.
-              </p>
-            </div>
-          )}
+          <IntakeContactForm variant="waiting" />
         </div>
       </div>
     );
@@ -93,6 +41,9 @@ export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSec
   if (status === "ready" && outputs) {
     return (
       <div className={styles.completion}>
+        {/* Contact form - shown above title */}
+        <IntakeContactForm variant="afterResults" />
+
         <h2 className={styles.completionTitle}>Your Personalized Results</h2>
 
         <section className={styles.completionSection}>

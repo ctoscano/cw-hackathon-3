@@ -25,7 +25,7 @@ export interface FormInput {
 export type ChatMessageItem =
   | { id: string; type: "question"; questionNumber: number; question: Question }
   | { id: string; type: "answer"; content: string | string[] }
-  | { id: string; type: "reflection"; content: string | null }; // null = loading
+  | { id: string; type: "reflection"; content: string | null; questionId?: string }; // null = loading
 
 // Message ID generator
 let messageIdCounter = 0;
@@ -108,6 +108,70 @@ export function validateAnswer(question: Question, input: FormInput): boolean {
 }
 
 /**
+ * LOADING MESSAGE UTILITIES
+ */
+
+/**
+ * Get context-aware loading messages for a specific question
+ * These messages appear while the reflection is being generated
+ */
+export function getLoadingMessagesForQuestion(questionId: string): string[] {
+  const loadingMessages: Record<string, string[]> = {
+    q1_considering_therapy: [
+      "Thinking about your timing...",
+      "Considering what brought you here...",
+      "Reflecting on this moment...",
+    ],
+    q2_areas_affected: [
+      "Noticing what's connected...",
+      "Seeing the bigger picture...",
+      "Tracking what's shifting...",
+    ],
+    q3_patterns: [
+      "Looking at the pattern...",
+      "Tracking what happens...",
+      "Following the thread...",
+    ],
+    q4_tried_already: [
+      "Looking at what you've learned...",
+      "Thinking about what's worked...",
+      "Considering your experience...",
+    ],
+    q5_worry_if_unchanged: [
+      "Thinking about what matters...",
+      "Considering the stakes...",
+      "Looking ahead...",
+    ],
+    q6_hopes_for_therapy: [
+      "Thinking about possibilities...",
+      "Considering what could change...",
+      "Looking at what matters to you...",
+    ],
+    q7_hesitations: [
+      "Thinking through your questions...",
+      "Considering what's uncertain...",
+      "Making room for doubt...",
+    ],
+    q8_therapy_style: [
+      "Thinking about what fits...",
+      "Considering your preferences...",
+      "Looking at what works for you...",
+    ],
+    q9_readiness: [
+      "Checking in on where you are...",
+      "Thinking about next steps...",
+      "Considering your readiness...",
+    ],
+  };
+
+  return loadingMessages[questionId] || [
+    "Reflecting...",
+    "Considering your response...",
+    "Gathering thoughts...",
+  ];
+}
+
+/**
  * MESSAGE UTILITIES
  */
 
@@ -137,11 +201,15 @@ export function createAnswerMessage(answer: string | string[]): ChatMessageItem 
 /**
  * Creates a reflection message for the chat (with optional content)
  */
-export function createReflectionMessage(content: string | null = null): ChatMessageItem {
+export function createReflectionMessage(
+  content: string | null = null,
+  questionId?: string,
+): ChatMessageItem {
   return {
     id: generateMessageId(),
     type: "reflection",
     content,
+    questionId,
   };
 }
 

@@ -85,8 +85,13 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
       if (question) {
         msgs.push(createQuestionMessage(question, i + 1));
         msgs.push(createAnswerMessage(answer.answer));
-        // Show loading reflection if empty, actual content if present
-        msgs.push(createReflectionMessage(answer.reflection || null));
+
+        // Don't show reflection for the last question (too much on the page)
+        const isLastQuestion = metadata ? i === metadata.totalSteps - 1 : false;
+        if (!isLastQuestion) {
+          // Always show reflection (even if empty/loading) for non-last questions
+          msgs.push(createReflectionMessage(answer.reflection || null, answer.questionId));
+        }
       }
     }
 

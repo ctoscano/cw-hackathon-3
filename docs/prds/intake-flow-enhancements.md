@@ -951,6 +951,80 @@ The race condition occurred when users answered questions faster than API respon
 - ✅ Confetti animation triggers on completion
 - ✅ Contact form works during completion wait
 
+### UI/UX Enhancements (2026-02-04)
+
+**Objective**: Improve user experience with context-aware loading messages, better contact form UI, cleaner completion page, and polished animations.
+
+**1. Context-Aware Loading Messages**
+
+Replaced generic loading messages with question-specific phrases that feel more natural and less therapy-speak:
+
+- **Q1** (Why therapy now): "Thinking about your timing...", "Considering what brought you here...", "Reflecting on this moment..."
+- **Q2** (Areas affected): "Noticing what's connected...", "Seeing the bigger picture...", "Tracking what's shifting..."
+- **Q3** (Patterns): "Looking at the pattern...", "Tracking what happens...", "Following the thread..."
+- **Q4** (What you've tried): "Looking at what you've learned...", "Thinking about what's worked...", "Considering your experience..."
+- **Q5** (Worries): "Thinking about what matters...", "Considering the stakes...", "Looking ahead..."
+- **Q6** (Hopes): "Thinking about possibilities...", "Considering what could change...", "Looking at what matters to you..."
+- **Q7** (Hesitations): "Thinking through your questions...", "Considering what's uncertain...", "Making room for doubt..."
+- **Q8** (Therapy style): "Thinking about what fits...", "Considering your preferences...", "Looking at what works for you..."
+- **Q9** (Readiness): "Checking in on where you are...", "Thinking about next steps...", "Considering your readiness..."
+
+**Implementation**:
+- Created `getLoadingMessagesForQuestion()` utility function mapping question IDs to context-aware messages
+- Updated `ChatMessage` component to accept optional `loadingMessages` prop
+- Enhanced `IntakeChatSection` to pass question-specific messages based on `questionId`
+- Fixed typing animation box width to prevent visual "breathing" (calculates width based on longest message)
+
+**2. Contact Form Improvements**
+
+Extracted contact form into dedicated `IntakeContactForm` component with improved UI:
+
+- **Better positioning**: Appears ABOVE "Your Personalized Results" title (not below)
+- **Improved design**:
+  - Light blue gradient background (`#f8fbff` to `#f0f7ff`)
+  - Subtle border and rounded corners
+  - Horizontal layout (inputs + submit button) on desktop
+  - Stacks vertically on mobile
+  - Nice hover effects with elevation
+- **Reusable component**: Supports both "waiting" and "afterResults" variants
+- **Clean separation**: No longer duplicated between waiting and ready states
+
+**3. Cleaner Completion Page**
+
+- **No reflection for Q9**: Last question's reflection is hidden to reduce visual clutter on completion page
+- **Fixed regression**: Ensured loading reflections still appear for Q1-Q8 (empty string was being treated as falsy)
+
+**4. Polished Animations**
+
+Added smooth `fadeInUp` animations for completion sections:
+
+- **Contact form**: Fades in with upward motion (0.6s)
+- **Title**: "Your Personalized Results" fades in (0.6s)
+- **Sections**: Staggered fade-in for each completion section:
+  - Section 1: 0.1s delay
+  - Section 2: 0.2s delay
+  - Section 3: 0.3s delay
+  - Section 4: 0.4s delay
+
+Result: Professional, polished reveal that guides user's eye through content naturally.
+
+**Files modified:**
+- `intake-utils.ts`: Added `getLoadingMessagesForQuestion()` utility
+- `chat-message.tsx`: Added `loadingMessages` prop with dynamic width calculation
+- `IntakeChatSection.tsx`: Pass context-aware messages to reflections
+- `IntakeContactForm.tsx`: New component for reusable contact form
+- `IntakeCompletionSection.tsx`: Simplified using new contact form component
+- `useIntakeForm.ts`: Skip reflection for last question, fixed loading state condition
+- `intake.module.css`: Added animations and improved contact form styles
+
+**Results:**
+- ✅ Loading messages feel natural and contextual to each question
+- ✅ Contact form has polished, professional appearance
+- ✅ Completion page is cleaner without Q9 reflection
+- ✅ Smooth animations create delightful user experience
+- ✅ No visual jitter in typing animations
+- ✅ All functionality preserved with improved UX
+
 ---
 
 **Status**: Complete

@@ -367,6 +367,18 @@
 }
 
 /* Completion Section */
+/* Keyframe animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .completion {
   display: flex;
   flex-direction: column;
@@ -380,6 +392,7 @@
   color: #222;
   text-align: center;
   margin: 0 0 0.5rem 0;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .completionSection {
@@ -388,6 +401,25 @@
   border: 1px solid #e5e5e5;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  animation: fadeInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+/* Stagger animations for each section */
+.completionSection:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.completionSection:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.completionSection:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.completionSection:nth-child(5) {
+  animation-delay: 0.4s;
 }
 
 .completionSection h3 {
@@ -648,6 +680,155 @@
   margin: 0;
   text-align: center;
   line-height: 1.4;
+}
+
+/* Contact form above results - improved UI */
+.contactPromptAboveResults {
+  background: linear-gradient(135deg, #f8fbff 0%, #f0f7ff 100%);
+  border: 1px solid #d6e8f7;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.contactPromptTextAbove {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2c5282;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.contactPromptButtonsAbove {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.contactYesButtonAbove,
+.contactNoButtonAbove {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  color: #444;
+}
+
+.contactYesButtonAbove {
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+  border-color: #4a90d9;
+  box-shadow: 0 2px 4px rgba(74, 144, 217, 0.2);
+}
+
+.contactYesButtonAbove:hover {
+  background: linear-gradient(135deg, #357abd 0%, #2a6199 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+}
+
+.contactNoButtonAbove:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.contactFormAboveResults {
+  background: linear-gradient(135deg, #f8fbff 0%, #f0f7ff 100%);
+  border: 1px solid #d6e8f7;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.contactFormTextAbove {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #2c5282;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.contactInputsAbove {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 600px;
+  align-items: flex-end;
+}
+
+.contactInputAbove {
+  flex: 1;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  border: 1px solid #d6e8f7;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.contactInputAbove:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.contactInputAbove::placeholder {
+  color: #aaa;
+}
+
+.contactSubmitButtonAbove {
+  padding: 0.75rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+  border: 1px solid #4a90d9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(74, 144, 217, 0.2);
+}
+
+.contactSubmitButtonAbove:hover:not(:disabled) {
+  background: linear-gradient(135deg, #357abd 0%, #2a6199 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+}
+
+.contactSubmitButtonAbove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive for contact form above */
+@media (max-width: 600px) {
+  .contactInputsAbove {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .contactSubmitButtonAbove {
+    width: 100%;
+  }
 }
 
 /* Responsive */

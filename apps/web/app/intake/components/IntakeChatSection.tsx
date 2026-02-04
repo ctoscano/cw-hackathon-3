@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
-import type { ChatMessageItem } from "../intake-utils";
+import { getLoadingMessagesForQuestion, type ChatMessageItem } from "../intake-utils";
 import styles from "../intake.module.css";
 import type { IntakeQuestion, IntakeState } from "../types";
 
@@ -69,8 +69,18 @@ export function IntakeChatSection({
         }
 
         if (msg.type === "reflection") {
+          const isLoading = msg.content === null || msg.content === "";
+          const loadingMessages = msg.questionId
+            ? getLoadingMessagesForQuestion(msg.questionId)
+            : undefined;
+
           return (
-            <ChatMessage key={msg.id} type="reflection" isLoading={msg.content === null || msg.content === ""}>
+            <ChatMessage
+              key={msg.id}
+              type="reflection"
+              isLoading={isLoading}
+              loadingMessages={loadingMessages}
+            >
               {msg.content}
             </ChatMessage>
           );

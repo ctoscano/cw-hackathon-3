@@ -14,6 +14,7 @@ interface ChatMessageProps {
   questionNumber?: number;
   animate?: boolean;
   typeAnimation?: boolean; // Enable typing animation for content
+  loadingMessages?: string[]; // Context-aware messages for loading state
 }
 
 /**
@@ -30,6 +31,7 @@ export function ChatMessage({
   questionNumber,
   animate = false,
   typeAnimation = false,
+  loadingMessages,
 }: ChatMessageProps) {
   const isLeft = type === "question" || type === "reflection";
 
@@ -37,11 +39,19 @@ export function ChatMessage({
   const renderContent = () => {
     if (isLoading && type === "reflection") {
       // Show rotating words for reflection loading
-      // Wrap in container to prevent height jitter during animation
+      // Use context-aware messages if provided, otherwise use defaults
+      const messages = loadingMessages || ["Reflecting...", "Processing...", "Thinking..."];
+
+      // Calculate min width based on longest message to prevent box from growing/shrinking
+      // Approximate: ~8px per character (accounting for varying character widths)
+      const longestMessage = messages.reduce((a, b) => (a.length > b.length ? a : b), "");
+      const estimatedWidth = Math.max(longestMessage.length * 8, 120);
+
+      // Wrap in container to prevent width/height jitter during animation
       return (
-        <span style={{ display: "inline-block", minWidth: "120px" }}>
+        <span style={{ display: "inline-block", minWidth: `${estimatedWidth}px` }}>
           <TypingAnimation
-            words={["Reflecting...", "Processing...", "Thinking..."]}
+            words={messages}
             loop
             duration={80}
             showCursor={false}
