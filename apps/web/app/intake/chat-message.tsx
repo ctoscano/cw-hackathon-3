@@ -67,6 +67,7 @@ export function ChatMessage({
           ${styles[`${type}Bubble`]}
           ${animate ? styles.animate : ""}
         `}
+        data-loading={isLoading ? "true" : undefined}
       >
         {type === "question" && questionNumber !== undefined && (
           <span className={styles.questionNumber}>{questionNumber}.</span>

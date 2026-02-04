@@ -118,12 +118,21 @@ export function IntakeForm() {
   // Ref for auto-scrolling
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change or reflection content loads
   const messagesLength = messages.length;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally trigger scroll on message count change
+  const lastReflectionContent = messages
+    .filter((m) => m.type === "reflection")
+    .map((m) => m.content)
+    .join(",");
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally trigger scroll on message count or reflection content change
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messagesLength]);
+    // Small delay to let DOM update with new content height
+    const timer = setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [messagesLength, lastReflectionContent]);
 
   // Load intake on mount
   useEffect(() => {
@@ -180,10 +189,17 @@ export function IntakeForm() {
     }
 
     // For multiselect/singleselect with "Other" option
-    const hasOther = selectedOptions.includes("Other");
-    if (hasOther && otherText.trim()) {
-      // Replace "Other" with "Other: <custom text>"
-      return selectedOptions.map((opt) => (opt === "Other" ? `Other: ${otherText.trim()}` : opt));
+    // Check for any option that indicates "other" (case insensitive)
+    const otherOption = selectedOptions.find((opt) =>
+      opt.toLowerCase().includes("other") ||
+      opt.toLowerCase().includes("something else")
+    );
+
+    if (otherOption && otherText.trim()) {
+      // Replace the "Other"/"Something else" option with the custom text
+      return selectedOptions.map((opt) =>
+        opt === otherOption ? `${otherOption}: ${otherText.trim()}` : opt
+      );
     }
 
     return selectedOptions;
@@ -199,8 +215,12 @@ export function IntakeForm() {
     // For multiselect/singleselect
     if (selectedOptions.length === 0) return false;
 
-    // If "Other" is selected, require the otherText field to be filled
-    if (selectedOptions.includes("Other") && !otherText.trim()) {
+    // If any "Other" variant is selected, require the otherText field to be filled
+    const hasOtherOption = selectedOptions.some((opt) =>
+      opt.toLowerCase().includes("other") ||
+      opt.toLowerCase().includes("something else")
+    );
+    if (hasOtherOption && !otherText.trim()) {
       return false;
     }
 
@@ -208,10 +228,14 @@ export function IntakeForm() {
   }
 
   function handleOptionToggle(option: string) {
+    const isOtherVariant = (opt: string) =>
+      opt.toLowerCase().includes("other") ||
+      opt.toLowerCase().includes("something else");
+
     if (currentQuestion?.type === "singleselect") {
       setSelectedOptions([option]);
-      // Clear otherText if switching away from "Other"
-      if (option !== "Other") {
+      // Clear otherText if switching away from any "Other" variant
+      if (!isOtherVariant(option)) {
         setOtherText("");
       }
     } else {
@@ -220,8 +244,8 @@ export function IntakeForm() {
           ? prev.filter((o) => o !== option)
           : [...prev, option];
 
-        // Clear otherText if "Other" is deselected
-        if (option === "Other" && !newSelection.includes("Other")) {
+        // Clear otherText if an "Other" variant is deselected
+        if (isOtherVariant(option) && !newSelection.includes(option)) {
           setOtherText("");
         }
 
@@ -257,22 +281,37 @@ export function IntakeForm() {
       newMessages.push({ id: reflectionId, type: "reflection", content: null }); // Loading state
     }
 
-    // If not the last question, immediately show the next question
-    // This is the key to perceived performance - user can start reading/answering
+    // Store next question info for deduplication check
+    let nextQuestionToAdd: ChatMessageItem | null = null;
     if (!isLastQuestion && allQuestions[nextStepIndex]) {
       const nextQuestion = allQuestions[nextStepIndex];
-      newMessages.push({
+      nextQuestionToAdd = {
         id: generateMessageId(),
         type: "question",
         questionNumber: nextStepIndex + 1,
         question: nextQuestion,
-      });
+      };
       // Update current question immediately so user can start answering
       setCurrentQuestion(nextQuestion);
       setCurrentStep(nextStepIndex);
     }
 
-    setMessages((prev) => [...prev, ...newMessages]);
+    // Add messages with deduplication check using current state
+    setMessages((prev) => {
+      const messagesToAdd = [...newMessages];
+
+      // Only add next question if it doesn't already exist (prevents race condition)
+      if (nextQuestionToAdd) {
+        const questionExists = prev.some(
+          (msg) => msg.type === "question" && msg.question.id === nextQuestionToAdd.question.id
+        );
+        if (!questionExists) {
+          messagesToAdd.push(nextQuestionToAdd);
+        }
+      }
+
+      return [...prev, ...messagesToAdd];
+    });
     if (reflectionId) {
       setPendingReflectionId(reflectionId);
     }
@@ -298,6 +337,13 @@ export function IntakeForm() {
       });
 
       const data: IntakeStepResponse = await response.json();
+
+      // Guard: Ignore stale responses if user has already moved forward
+      // Example: Q8's response arrives after Q9 was already submitted
+      if (submittingStepIndex < currentStep) {
+        console.log(`Ignoring stale response for step ${submittingStepIndex}, already at step ${currentStep}`);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error((data as unknown as { error: string }).error || "Failed to submit answer");
@@ -455,12 +501,18 @@ export function IntakeForm() {
         {messages.map((msg) => {
           if (msg.type === "question") {
             // Only show as chat bubble if it's a past question (not the current active one)
+            // Special case: When generating completion or complete, the last question should not be shown
             const isCurrentQuestion =
               currentQuestion &&
               msg.question.id === currentQuestion.id &&
               state !== "complete" &&
               !isGeneratingCompletion;
-            if (isCurrentQuestion) return null;
+
+            const isLastQuestionDuringCompletion =
+              (isGeneratingCompletion || state === "complete") &&
+              msg.questionNumber === totalSteps;
+
+            if (isCurrentQuestion || isLastQuestionDuringCompletion) return null;
 
             return (
               <ChatMessage key={msg.id} type="question" questionNumber={msg.questionNumber}>
@@ -614,7 +666,10 @@ export function IntakeForm() {
                     </label>
                   ))}
                 </div>
-                {selectedOptions.includes("Other") && (
+                {selectedOptions.some((opt) =>
+                  opt.toLowerCase().includes("other") ||
+                  opt.toLowerCase().includes("something else")
+                ) && (
                   <div className={styles.otherInputWrapper}>
                     <input
                       type="text"
@@ -646,7 +701,10 @@ export function IntakeForm() {
                     </label>
                   ))}
                 </div>
-                {selectedOptions.includes("Other") && (
+                {selectedOptions.some((opt) =>
+                  opt.toLowerCase().includes("other") ||
+                  opt.toLowerCase().includes("something else")
+                ) && (
                   <div className={styles.otherInputWrapper}>
                     <input
                       type="text"

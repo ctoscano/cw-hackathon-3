@@ -559,9 +559,51 @@ Document unexpected challenges, edge cases, and surprises encountered.
    - Fix applied: Added `min-height: 1.6875rem` to `.completionWaitingText` (calculated from font-size × line-height)
    - Files modified: [intake.module.css](apps/web/app/intake/intake.module.css#L531-L539)
 
+**Bugs Discovered During Testing (2026-02-04):**
+
+5. **"Other" Option Text Input Not Working for "Something else"** ✅ FIXED
+   - Issue: Q2 has "Something else" option but text input doesn't appear when selected
+   - Root cause: Code only checked for option text exactly matching "Other", not variations like "Something else"
+   - Expected: Any option containing "other" or "something else" (case insensitive) should trigger text input
+   - Fix applied: Made detection flexible to catch any "other" variant in all functions:
+     - `getCurrentAnswer()`: Find any option with "other"/"something else" and replace with custom text
+     - `isAnswerValid()`: Require text for any "other" variant
+     - `handleOptionToggle()`: Clear text when deselecting any "other" variant
+     - UI rendering: Show text input for any "other" variant (both multiselect and singleselect)
+   - Result: Custom text is properly included in answer as `"Something else: [user text]"` and sent to LLM
+   - Files modified:
+     - [intake-form.tsx](apps/web/app/intake/intake-form.tsx#L175-L232)
+     - [intake-form.tsx](apps/web/app/intake/intake-form.tsx#L637-L683)
+
+6. **Q9 Shows Up Again After Submission (Race Condition)** ✅ FIXED
+   - Issue: After answering Q9, it briefly appears as a duplicate chat bubble before results load
+   - Root cause: Race condition when user submits Q9 before Q8's API response returns. Q8's optimistic UI tries to add Q9 to messages even though Q9 was already added and possibly even submitted
+   - Expected: Q9 should only appear once in messages, never duplicated
+   - Fix applied (2-part):
+     1. Added `isLastQuestionDuringCompletion` check that hides the last question from chat messages when generating completion or complete
+     2. Added `nextQuestionExists` check before adding next question optimistically to prevent duplicates from race conditions
+   - Files modified:
+     - [intake-form.tsx](apps/web/app/intake/intake-form.tsx#L260-L277) - Added duplicate check
+     - [intake-form.tsx](apps/web/app/intake/intake-form.tsx#L489-L493) - Added completion state check
+
+7. **Scroll Jump When Reflection Loads** ✅ FIXED
+   - Issue: Page "jumps" when loading reflection ("Thinking...") is replaced with actual reflection text
+   - Root cause: Loading state and loaded state have different heights, causing layout shift without re-scrolling
+   - Expected: Smooth transition without visible jump
+   - Fix applied (3-part solution):
+     - Reserved space: Added `min-height: 60px` to loading reflections to prevent vertical layout shift
+     - Pass loading state: Added `data-loading` attribute to bubble element for CSS targeting
+     - Smart scroll: Track reflection content changes (not just message count) and scroll after DOM updates with 50ms delay
+   - Result: Page stays stable during load, then smoothly scrolls to keep user at bottom
+   - Files modified:
+     - [chat-message.module.css](apps/web/app/intake/chat-message.module.css#L54-L58)
+     - [chat-message.tsx](apps/web/app/intake/chat-message.tsx#L73)
+     - [intake-form.tsx](apps/web/app/intake/intake-form.tsx#L122-L133)
+
 **Missing Features Identified:**
 
-3. **No "Other" Option Support** ✅ IMPLEMENTED
+3. **No "Other" Option Support** ✅ IMPLEMENTED (2026-02-03)
+   **Enhanced** ✅ (2026-02-04)
    - Issue: Multiple choice questions don't support free-text "Other" responses
    - Current: User can only select from predefined options
    - Implementation: Added conditional text input that appears when "Other" is selected
@@ -577,6 +619,12 @@ Document unexpected challenges, edge cases, and surprises encountered.
      - [intake-form.tsx](apps/web/app/intake/intake-form.tsx#L102-L589)
      - [intake.module.css](apps/web/app/intake/intake.module.css#L310-L343)
      - [intake-demo.tsx](apps/web/app/intake/demo/intake-demo.tsx#L350-L390)
+   - **Enhancement (2026-02-04)**: Improved "Other" option detection to work with any variant
+     - Made detection case-insensitive and flexible to match "Other", "Something else", etc.
+     - Added "Something else" option to Q4 (what they've tried) and Q7 (hesitations)
+     - Q2 already had "Something else" - now fully functional with text input
+     - Custom text properly included in LLM prompts as `"Something else: [user text]"`
+     - Files modified: [definitions.ts](packages/data/src/lib/intake/definitions.ts#L63-L122)
 
 4. **No Wait-State Engagement** ✅ IMPLEMENTED
    - Issue: User has nothing to do while completion generates (even with Q9 optimization)
