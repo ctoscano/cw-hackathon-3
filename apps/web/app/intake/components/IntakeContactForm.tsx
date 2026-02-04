@@ -26,15 +26,19 @@ export function IntakeContactForm({ variant = "afterResults", onSubmit }: Intake
   };
 
   // Choose styles based on variant
-  const promptClass = variant === "waiting" ? styles.contactPrompt : styles.contactPromptAboveResults;
+  const promptClass =
+    variant === "waiting" ? styles.contactPrompt : styles.contactPromptAboveResults;
   const promptTextClass =
     variant === "waiting" ? styles.contactPromptText : styles.contactPromptTextAbove;
   const buttonsClass =
     variant === "waiting" ? styles.contactPromptButtons : styles.contactPromptButtonsAbove;
-  const yesButtonClass = variant === "waiting" ? styles.contactYesButton : styles.contactYesButtonAbove;
-  const noButtonClass = variant === "waiting" ? styles.contactNoButton : styles.contactNoButtonAbove;
+  const yesButtonClass =
+    variant === "waiting" ? styles.contactYesButton : styles.contactYesButtonAbove;
+  const noButtonClass =
+    variant === "waiting" ? styles.contactNoButton : styles.contactNoButtonAbove;
   const formClass = variant === "waiting" ? styles.contactForm : styles.contactFormAboveResults;
-  const formTextClass = variant === "waiting" ? styles.contactFormText : styles.contactFormTextAbove;
+  const formTextClass =
+    variant === "waiting" ? styles.contactFormText : styles.contactFormTextAbove;
   const inputsClass = variant === "waiting" ? styles.contactInputs : styles.contactInputsAbove;
   const inputClass = variant === "waiting" ? styles.contactInput : styles.contactInputAbove;
   const submitButtonClass = variant === "waiting" ? undefined : styles.contactSubmitButtonAbove;
