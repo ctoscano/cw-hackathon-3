@@ -495,3 +495,110 @@ pnpm --filter @cw-hackathon/web dev
 See `docs/` directory for:
 - PRDs (Product Requirement Documents) in `docs/prds/`
 - Additional documentation in `docs/README.md`
+
+## Chrome DevTools Debugging
+
+### Overview
+
+The `/chrome-devtools` skill enables real-time browser debugging with Claude Code through the Chrome DevTools Protocol. This allows you to inspect actual Chrome browser tabs, capture console errors, inspect DOM, monitor network requests, and debug issues without screenshots or copy-pasting.
+
+### What This Enables
+
+- ✅ Connect to actual Chrome browser tabs
+- ✅ Capture console errors automatically
+- ✅ Inspect DOM elements and network requests
+- ✅ Take screenshots of current state
+- ✅ Execute JavaScript in page context
+- ✅ Real-time debugging with Claude Code
+
+### When to Use
+
+Use the `/chrome-devtools` skill when:
+- You see errors in the browser console that need investigation
+- You need to debug rendering issues or hydration errors
+- You want to inspect network requests and responses
+- You're testing the web app and need Claude to see what's happening
+- You want to avoid taking screenshots and copying error messages manually
+
+### Quick Start
+
+```bash
+# 1. Set up Chrome debugging (run once, or after closing debug Chrome)
+/chrome-devtools setup
+
+# 2. Navigate to your app in the debug Chrome window
+# Example: http://localhost:3000/intake/demo
+
+# 3. Restart Claude Code to load the MCP server
+
+# 4. Debug the current tab
+/chrome-devtools debug
+```
+
+### Available Commands
+
+- `/chrome-devtools setup` - Configure and launch debug Chrome automatically
+- `/chrome-devtools debug` - Inspect current Chrome tab and debug errors
+- `/chrome-devtools info` - Display status and usage information
+
+### Example Usage
+
+**Debugging a page:**
+```
+/chrome-devtools setup
+[Navigate to http://localhost:3000/intake/demo]
+[Restart Claude Code]
+/chrome-devtools debug
+```
+
+Claude will automatically:
+- List available Chrome tabs
+- Find your localhost tab
+- Inspect console errors
+- Analyze the DOM
+- Suggest fixes
+
+**Investigating an error:**
+```
+User: "There's an error on the intake demo page"
+Assistant: /chrome-devtools debug
+[Claude inspects the tab and reports exact errors with line numbers]
+[Claude suggests specific fixes based on the error]
+```
+
+### How It Works
+
+1. **Debug Chrome runs on port 9222** with DevTools Protocol enabled
+2. **MCP Server connects** to the debug endpoint at http://localhost:9222
+3. **Claude Code uses MCP tools** to inspect tabs, read console, execute JS, etc.
+4. **Separate profile** (`~/.chrome-debug-profile`) keeps your debugging isolated
+
+### Requirements
+
+- Chrome browser installed
+- Node.js 22+ (for MCP server)
+- Port 9222 available (close regular Chrome before launching debug Chrome)
+
+### Troubleshooting
+
+**Port already in use:**
+- Debug Chrome is already running - use the existing instance
+- Or close it and run setup again
+
+**MCP not loading:**
+- Ensure debug Chrome is running: visit http://localhost:9222/json
+- Restart Claude Code after running setup
+- Check Claude Code logs for MCP connection errors
+
+**Can't find tabs:**
+- Make sure you navigated to your app in the debug Chrome window (not regular Chrome)
+- The MCP server only sees tabs in the debug Chrome instance
+
+### Documentation
+
+For comprehensive details, see [docs/chrome-devtools-mcp.md](./docs/chrome-devtools-mcp.md):
+- Detailed setup instructions
+- MCP tool reference
+- Security considerations
+- Comparison with other browser tools
+- Best practices

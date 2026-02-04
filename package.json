@@ -8,7 +8,8 @@
     "lint": "turbo run lint",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "debug:chrome": "./scripts/chrome-debug.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

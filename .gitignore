@@ -42,6 +42,9 @@ coverage/
 # Misc
 .cache/
 
+# Chrome Debug Profile
+.chrome-debug-profile/
+
 # Skills (local installations)
 .agents/
 .claude/skills/
