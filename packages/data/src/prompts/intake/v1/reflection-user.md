@@ -1,7 +1,7 @@
 ---
 name: intake-reflection-user
 description: User prompt template for generating a reflection after an intake answer
-version: "1.0.0"
+version: "v1"
 variables:
   - questionNumber
   - totalQuestions

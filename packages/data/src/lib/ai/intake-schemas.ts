@@ -103,6 +103,7 @@ export const IntakeStepResponseSchema = z.object({
     currentStep: z.number().describe("The step that was just completed"),
     totalSteps: z.number().describe("Total number of steps in this intake"),
     intakeType: z.string().describe("The type of intake being processed"),
+    promptVersion: z.string().optional().describe("Version of prompts used (e.g., v1, v2)"),
   }),
 });
 export type IntakeStepResponse = z.infer<typeof IntakeStepResponseSchema>;

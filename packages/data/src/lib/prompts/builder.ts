@@ -11,6 +11,7 @@ export interface BuiltPrompt {
     parts: string[];
     variables: PromptVariables;
     builtAt: Date;
+    promptVersion?: string;
   };
   savedPath?: string;
   /** Additional paths when multiple formats are saved */
@@ -39,6 +40,8 @@ export interface PromptBuilderOptions {
   outputFormat?: PromptOutputFormat;
   /** Optional schema description to include in output */
   schemaDescription?: string;
+  /** Prompt version to use (e.g., "v1", "v2") */
+  version?: string;
 }
 
 /**
@@ -62,12 +65,13 @@ export function buildPrompt(options: PromptBuilderOptions): BuiltPrompt {
     outputPrefix = "prompt",
     outputFormat = "markdown",
     schemaDescription,
+    version,
   } = options;
 
   // Load and concatenate system prompt parts
   const systemContents: string[] = [];
   for (const part of systemParts) {
-    const prompt = loadPrompt(part);
+    const prompt = loadPrompt(part, { version });
     systemContents.push(prompt.content);
   }
   const systemRaw = systemContents.join("\n\n---\n\n");
@@ -76,7 +80,7 @@ export function buildPrompt(options: PromptBuilderOptions): BuiltPrompt {
   // Load and concatenate user prompt parts
   const userContents: string[] = [];
   for (const part of userParts) {
-    const prompt = loadPrompt(part);
+    const prompt = loadPrompt(part, { version });
     userContents.push(prompt.content);
   }
   const userRaw = userContents.join("\n\n---\n\n");
@@ -89,6 +93,7 @@ export function buildPrompt(options: PromptBuilderOptions): BuiltPrompt {
       parts: [...systemParts, ...userParts],
       variables,
       builtAt: new Date(),
+      promptVersion: version,
     },
     savedPaths: {},
   };

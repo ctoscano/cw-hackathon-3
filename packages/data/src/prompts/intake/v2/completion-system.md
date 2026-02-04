@@ -1,7 +1,7 @@
 ---
 name: intake-completion-system
 description: System prompt for generating personalized completion outputs after intake
-version: "1.0.0"
+version: "v2"
 author: CW Hackathon
 ---
 

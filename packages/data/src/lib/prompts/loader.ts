@@ -10,6 +10,7 @@ export interface LoadedPrompt {
   meta: PromptMetadata;
   content: string;
   filePath: string;
+  promptVersion?: string;
 }
 
 /**
@@ -50,9 +51,14 @@ function findPromptsDir(): string {
  * Load a prompt file and parse its frontmatter
  *
  * @param filePath - Path to the markdown file (absolute or relative to prompts directory)
+ * @param options - Optional configuration including version
  * @returns Loaded prompt with metadata and content
  */
-export function loadPrompt(filePath: string): LoadedPrompt {
+export function loadPrompt(
+  filePath: string,
+  options?: { version?: string },
+): LoadedPrompt {
+  const version = options?.version ?? "v3"; // Default to v3 (highest quality: 9.3/10)
   let absolutePath: string;
 
   if (filePath.startsWith("/")) {
@@ -60,7 +66,18 @@ export function loadPrompt(filePath: string): LoadedPrompt {
   } else {
     // Try as relative to prompts directory
     const promptsDir = findPromptsDir();
-    absolutePath = join(promptsDir, filePath);
+
+    // If filePath contains a category (e.g., "intake/reflection-system.md"),
+    // inject the version into the path (e.g., "intake/v1/reflection-system.md")
+    let versionedPath = filePath;
+    const parts = filePath.split("/");
+    if (parts.length > 1 && !parts.includes(version)) {
+      // Insert version after the category (first part)
+      parts.splice(1, 0, version);
+      versionedPath = parts.join("/");
+    }
+
+    absolutePath = join(promptsDir, versionedPath);
 
     // If not found, try as relative to cwd
     if (!existsSync(absolutePath)) {
@@ -87,6 +104,7 @@ export function loadPrompt(filePath: string): LoadedPrompt {
     meta,
     content: content.trim(),
     filePath: absolutePath,
+    promptVersion: version,
   };
 }
 
@@ -122,8 +140,9 @@ export function substituteVariables(content: string, variables: PromptVariables)
 export function loadAndSubstitutePrompt(
   filePath: string,
   variables: PromptVariables = {},
+  options?: { version?: string },
 ): LoadedPrompt {
-  const prompt = loadPrompt(filePath);
+  const prompt = loadPrompt(filePath, options);
   const substitutedContent = substituteVariables(prompt.content, variables);
 
   return {
