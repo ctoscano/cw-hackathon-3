@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { triggerConfetti } from "@/lib/confetti";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
@@ -31,6 +32,47 @@ export function IntakeDemo() {
           <span>Enable animations</span>
         </label>
       </div>
+
+      {/* Section: Border Beam Animation */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Border Beam Animation</h2>
+        <p className={styles.sectionDescription}>
+          Elegant animated gradient that travels around the border of an element. From Magic UI.
+        </p>
+        <div className={styles.demo}>
+          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
+            {/* Default */}
+            <Card className="relative w-[200px] overflow-hidden">
+              <CardHeader>
+                <CardTitle className="text-center text-4xl">✨</CardTitle>
+                <CardDescription className="text-center">Default</CardDescription>
+              </CardHeader>
+              <BorderBeam size={200} duration={6} />
+            </Card>
+
+            {/* Fast */}
+            <Card className="relative w-[200px] overflow-hidden">
+              <CardHeader>
+                <CardTitle className="text-center text-4xl">⚡</CardTitle>
+                <CardDescription className="text-center">Fast</CardDescription>
+              </CardHeader>
+              <BorderBeam size={200} duration={3} colorFrom="#00ff88" colorTo="#00ccff" />
+            </Card>
+
+            {/* Slow */}
+            <Card className="relative w-[200px] overflow-hidden">
+              <CardHeader>
+                <CardTitle className="text-center text-4xl">🌙</CardTitle>
+                <CardDescription className="text-center">Slow</CardDescription>
+              </CardHeader>
+              <BorderBeam size={200} duration={12} colorFrom="#ff6b9d" colorTo="#c06bff" />
+            </Card>
+          </div>
+        </div>
+        <p className={styles.sectionNote}>
+          The beam travels smoothly around the border with a gradient effect. Customize colors, size, and speed.
+        </p>
+      </section>
 
       {/* Section: Typing Indicator */}
       <section className={styles.section}>
