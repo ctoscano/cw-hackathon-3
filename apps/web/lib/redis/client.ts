@@ -3,7 +3,8 @@
  * Provides connection to Redis Cloud for data persistence
  */
 
-import { createClient, type RedisClientType } from "redis";
+import { createClient } from "redis";
+import type { RedisClientType } from "redis";
 
 let client: RedisClientType | null = null;
 let connecting: Promise<RedisClientType> | null = null;
@@ -36,7 +37,7 @@ export async function getRedisClient(): Promise<RedisClientType> {
 /**
  * Internal function to create and connect Redis client
  */
-async function connectRedis(): Promise<RedisClientType> {
+async function connectRedis() {
   const host = process.env.REDIS_HOST;
   const port = process.env.REDIS_PORT;
   const password = process.env.REDIS_PASSWORD;
@@ -72,7 +73,7 @@ async function connectRedis(): Promise<RedisClientType> {
   });
 
   await newClient.connect();
-  return newClient;
+  return newClient as RedisClientType;
 }
 
 /**
