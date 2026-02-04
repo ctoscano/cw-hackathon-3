@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.25",
     "ai": "^6.0.0",
     "ai-sdk-provider-claude-code": "^3.3.5",
     "citty": "^0.1.6",
