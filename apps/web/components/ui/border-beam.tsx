@@ -1,107 +1,60 @@
-"use client"
+"use client";
 
-import { motion, MotionStyle, Transition } from "motion/react"
-
-import { cn } from "@/lib/utils"
+/**
+ * BorderBeam component - creates an animated gradient border effect
+ * Uses CSS animations and conic gradients for a smooth rotating beam
+ */
 
 interface BorderBeamProps {
-  /**
-   * The size of the border beam.
-   */
-  size?: number
-  /**
-   * The duration of the border beam.
-   */
-  duration?: number
-  /**
-   * The delay of the border beam.
-   */
-  delay?: number
-  /**
-   * The color of the border beam from.
-   */
-  colorFrom?: string
-  /**
-   * The color of the border beam to.
-   */
-  colorTo?: string
-  /**
-   * The motion transition of the border beam.
-   */
-  transition?: Transition
-  /**
-   * The class name of the border beam.
-   */
-  className?: string
-  /**
-   * The style of the border beam.
-   */
-  style?: React.CSSProperties
-  /**
-   * Whether to reverse the animation direction.
-   */
-  reverse?: boolean
-  /**
-   * The initial offset position (0-100).
-   */
-  initialOffset?: number
-  /**
-   * The border width of the beam.
-   */
-  borderWidth?: number
+  size?: number;
+  duration?: number;
+  delay?: number;
+  colorFrom?: string;
+  colorTo?: string;
+  borderWidth?: number;
 }
 
-export const BorderBeam = ({
-  className,
-  size = 50,
+export function BorderBeam({
+  size = 250,
+  duration = 12,
   delay = 0,
-  duration = 6,
-  colorFrom = "#ffaa40",
+  colorFrom = "#4a90d9",
   colorTo = "#9c40ff",
-  transition,
-  style,
-  reverse = false,
-  initialOffset = 0,
-  borderWidth = 1,
-}: BorderBeamProps) => {
+  borderWidth = 2,
+}: BorderBeamProps) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 rounded-[inherit] border-(length:--border-beam-width) border-transparent mask-[linear-gradient(transparent,transparent),linear-gradient(#000,#000)] mask-intersect [mask-clip:padding-box,border-box]"
-      style={
-        {
-          "--border-beam-width": `${borderWidth}px`,
-        } as React.CSSProperties
-      }
+      className="pointer-events-none absolute inset-0"
+      style={{
+        borderRadius: "inherit",
+        padding: `${borderWidth}px`,
+        background: `conic-gradient(
+          from 0deg,
+          transparent 0%,
+          transparent 30%,
+          ${colorFrom} 50%,
+          ${colorTo} 70%,
+          transparent 90%,
+          transparent 100%
+        )`,
+        WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+        WebkitMaskComposite: "xor",
+        mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+        maskComposite: "exclude",
+        animation: `border-beam-spin ${duration}s linear infinite`,
+        animationDelay: `${delay}s`,
+      }}
     >
-      <motion.div
-        className={cn(
-          "absolute aspect-square",
-          "bg-linear-to-l from-(--color-from) via-(--color-to) to-transparent",
-          className
-        )}
-        style={
-          {
-            width: size,
-            offsetPath: `rect(0 auto auto 0 round ${size}px)`,
-            "--color-from": colorFrom,
-            "--color-to": colorTo,
-            ...style,
-          } as MotionStyle
+      <style jsx>{`
+        @keyframes border-beam-spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
-        initial={{ offsetDistance: `${initialOffset}%` }}
-        animate={{
-          offsetDistance: reverse
-            ? [`${100 - initialOffset}%`, `${-initialOffset}%`]
-            : [`${initialOffset}%`, `${100 + initialOffset}%`],
-        }}
-        transition={{
-          repeat: Infinity,
-          ease: "linear",
-          duration,
-          delay: -delay,
-          ...transition,
-        }}
-      />
+      `}</style>
     </div>
-  )
+  );
 }
