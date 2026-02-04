@@ -9,7 +9,7 @@ import { createClient, type RedisClientType } from "redis";
  * Create and connect Redis client for CLI usage
  * Designed for short-lived connections (connect/disconnect per command)
  */
-export async function createRedisClient(): Promise<RedisClientType> {
+export async function createRedisClient() {
   const host = process.env.REDIS_HOST;
   const port = process.env.REDIS_PORT;
   const password = process.env.REDIS_PASSWORD;
@@ -35,7 +35,7 @@ export async function createRedisClient(): Promise<RedisClientType> {
   });
 
   await client.connect();
-  return client;
+  return client as RedisClientType;
 }
 
 /**

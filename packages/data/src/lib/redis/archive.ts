@@ -3,8 +3,11 @@
  * Stores and retrieves DAP outputs with metadata
  */
 
-import { createRedisClient, withRedisClient } from "./client.ts";
+import { createRedisClient, withRedisClient, isRedisEnabled } from "./client.js";
 import type { RedisClientType } from "redis";
+
+// Re-export for convenience
+export { isRedisEnabled };
 
 /**
  * DAP Archive Entry structure
