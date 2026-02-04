@@ -110,6 +110,30 @@ pnpm check
 pnpm type-check
 ```
 
+### Quality Gates (Automated Checks)
+
+The project uses automated quality gates to prevent broken code from being committed or pushed.
+
+**Pre-Commit (Tier 1)** - Runs automatically before every commit:
+- Formats and lints staged files with Biome
+- Fast checks (~5-10 seconds)
+- Auto-fixes most issues
+
+**Pre-Push (Tier 2)** - Runs automatically before every push:
+- Type checks all workspaces
+- Builds all workspaces for production
+- Catches build failures and type errors (~30-60 seconds)
+
+**Bypass hooks (emergency only):**
+```bash
+git commit --no-verify  # Skip pre-commit
+git push --no-verify    # Skip pre-push
+```
+
+⚠️ **Important:** Only bypass hooks in emergencies. They prevent broken builds from reaching the repository.
+
+**See:** [docs/quality-gates.md](./docs/quality-gates.md) for detailed documentation.
+
 ### Running Individual Commands
 
 ```bash

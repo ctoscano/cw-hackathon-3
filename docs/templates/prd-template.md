@@ -261,6 +261,12 @@ OPTIONAL SECTION - Include for complex projects.
 - Must be objectively verifiable
 - Typically 3-5 criteria
 
+REQUIRED QUALITY CHECKS:
+- ALWAYS include: TypeScript type checks passing (pnpm type-check)
+- ALWAYS include: Production build succeeds (pnpm build)
+- Include if applicable: Linting passes (pnpm check)
+- Include if applicable: Tests passing (pnpm test)
+
 EXAMPLES:
 - All unit tests passing (pnpm test)
 - Feature deployed to staging environment
@@ -269,6 +275,8 @@ EXAMPLES:
 - Security audit passed
 -->
 
+- [ ] All TypeScript type checks passing (`pnpm type-check`)
+- [ ] Production build succeeds (`pnpm build`)
 - [ ] [Overall completion criterion 1]
 - [ ] [Overall completion criterion 2]
 - [ ] [Overall completion criterion 3]
