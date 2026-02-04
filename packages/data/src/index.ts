@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { dapCommand } from "./commands/dap/index.js";
 import { helloCommand } from "./commands/hello.js";
+import { intakeCommand } from "./commands/intake/index.js";
 
 export const main = defineCommand({
   meta: {
@@ -11,6 +12,7 @@ export const main = defineCommand({
   subCommands: {
     hello: helloCommand,
     dap: dapCommand,
+    intake: intakeCommand,
   },
 });
 
