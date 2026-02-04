@@ -39,5 +39,16 @@ pnpm-debug.log*
 # Testing
 coverage/
 
+# Generated outputs (CLI tool outputs)
+packages/data/output/
+
 # Misc
 .cache/
+
+# Chrome Debug Profile
+.chrome-debug-profile/
+
+# Skills (local installations)
+.agents/
+.claude/skills/
+.opencode/
