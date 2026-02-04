@@ -151,6 +151,22 @@ function sanitizeQuestionForClient(
 }
 
 /**
+ * Get reflection for a question - always uses LLM for personalized responses
+ */
+async function getReflectionForQuestion(options: {
+  question: IntakeQuestion;
+  answer: string | string[];
+  priorAnswers: IntakeAnswer[];
+  stepIndex: number;
+  totalSteps: number;
+  version?: string;
+}): Promise<string> {
+  // Always use LLM for personalized, context-aware reflections
+  const reflectionResult = await generateReflection(options);
+  return reflectionResult.data;
+}
+
+/**
  * Options for processing an intake step
  */
 export interface ProcessIntakeStepOptions {
@@ -164,7 +180,7 @@ export interface ProcessIntakeStepOptions {
  * This is the main orchestration function that:
  * 1. Validates the request
  * 2. Gets the current question
- * 3. Generates a reflection for the answer
+ * 3. Generates a reflection for the answer (strategy varies by question type)
  * 4. Determines the next question or completion
  * 5. Generates completion outputs if done
  */
@@ -191,8 +207,8 @@ export async function processIntakeStep(
     throw new Error(`Invalid step index: ${stepIndex}`);
   }
 
-  // Generate reflection for the current answer
-  const reflectionResult = await generateReflection({
+  // Get reflection using appropriate strategy based on question type
+  const reflection = await getReflectionForQuestion({
     question: currentQuestion,
     answer: currentAnswer,
     priorAnswers,
@@ -200,8 +216,6 @@ export async function processIntakeStep(
     totalSteps,
     version,
   });
-
-  const reflection = reflectionResult.data;
 
   // Build the complete answer record
   const completeAnswer: IntakeAnswer = {
