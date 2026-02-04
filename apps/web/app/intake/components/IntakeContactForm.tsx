@@ -4,24 +4,44 @@
  */
 
 import { useState } from "react";
+import { saveContactInfo } from "@/actions/intake";
 import styles from "../intake.module.css";
 
 interface IntakeContactFormProps {
   variant?: "waiting" | "afterResults";
+  sessionId: string | null;
   onSubmit?: (email: string, phone: string) => void;
 }
 
-export function IntakeContactForm({ variant = "afterResults", onSubmit }: IntakeContactFormProps) {
+export function IntakeContactForm({ variant = "afterResults", sessionId, onSubmit }: IntakeContactFormProps) {
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (onSubmit) {
       onSubmit(contactEmail, contactPhone);
-    } else {
-      // TODO: Submit contact info to backend
-      console.log("Contact info:", { contactEmail, contactPhone });
+      return;
+    }
+
+    // Save to Redis
+    if (sessionId && (contactEmail || contactPhone)) {
+      setIsSubmitting(true);
+      try {
+        const result = await saveContactInfo(sessionId, contactEmail || undefined, contactPhone || undefined);
+        if (result.success) {
+          setSubmitSuccess(true);
+          console.log("Contact info saved successfully");
+        } else {
+          console.error("Failed to save contact info:", result.error);
+        }
+      } catch (error) {
+        console.error("Error saving contact info:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -59,6 +79,17 @@ export function IntakeContactForm({ variant = "afterResults", onSubmit }: Intake
     );
   }
 
+  // Show success message after submit
+  if (submitSuccess) {
+    return (
+      <div className={formClass}>
+        <p className={formTextClass} style={{ color: "var(--color-success, #22c55e)" }}>
+          ✓ Thank you! We&apos;ll be in touch soon.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={formClass}>
       <p className={formTextClass}>
@@ -71,6 +102,7 @@ export function IntakeContactForm({ variant = "afterResults", onSubmit }: Intake
           value={contactEmail}
           onChange={(e) => setContactEmail(e.target.value)}
           className={inputClass}
+          disabled={isSubmitting}
         />
         <input
           type="tel"
@@ -78,15 +110,16 @@ export function IntakeContactForm({ variant = "afterResults", onSubmit }: Intake
           value={contactPhone}
           onChange={(e) => setContactPhone(e.target.value)}
           className={inputClass}
+          disabled={isSubmitting}
         />
         {variant === "afterResults" && (
           <button
             type="button"
             className={submitButtonClass}
-            disabled={!contactEmail && !contactPhone}
+            disabled={(!contactEmail && !contactPhone) || isSubmitting}
             onClick={handleSubmit}
           >
-            Submit
+            {isSubmitting ? "Submitting..." : "Submit"}
           </button>
         )}
       </div>

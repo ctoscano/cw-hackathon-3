@@ -5,6 +5,10 @@
 
 import { triggerConfetti } from "@/lib/confetti";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  saveIntakeProgress,
+  saveIntakeCompletion,
+} from "@/actions/intake";
 import type { ChatMessageItem } from "../intake-utils";
 import {
   buildAnswerPayload,
@@ -47,6 +51,7 @@ interface UseIntakeFormReturn {
   currentQuestion: IntakeQuestion | null;
   isLastQuestion: boolean;
   completion: CompletionState | null;
+  sessionId: string | null;
   submitAnswer: (questionId: string, answer: string | string[]) => Promise<void>;
 }
 
@@ -63,6 +68,9 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
   });
   const [answers, setAnswers] = useState<IntakeAnswer[]>([]);
   const [completion, setCompletion] = useState<CompletionState | null>(null);
+
+  // Session ID for Redis persistence (generated once on mount)
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // State for tracking early completion generation
   const [earlyCompletionPromise, setEarlyCompletionPromise] = useState<Promise<
@@ -102,6 +110,11 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
 
     return msgs;
   }, [answers, currentQuestion, flow.currentStep, flow.status, metadata?.allQuestions]);
+
+  // Generate session ID on mount
+  useEffect(() => {
+    setSessionId(crypto.randomUUID());
+  }, []);
 
   // Load intake on mount
   useEffect(() => {
@@ -223,6 +236,14 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
           return updated;
         });
 
+        // Save progress to Redis (graceful - don't block UX on failure)
+        if (sessionId && !wasStale) {
+          saveIntakeProgress(sessionId, questionId, answer, data.reflection).catch((err) => {
+            console.error("Failed to save intake progress to Redis:", err);
+            // Continue - persistence failure shouldn't block user
+          });
+        }
+
         // If this was a stale response, don't process completion logic
         if (wasStale) {
           return;
@@ -257,11 +278,22 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
           });
 
           // Check if we have early completion ready
+          let finalOutputs;
           if (earlyCompletionPromise) {
             const outputs = await earlyCompletionPromise;
-            setCompletion({ outputs: outputs || data.completionOutputs });
+            finalOutputs = outputs || data.completionOutputs;
+            setCompletion({ outputs: finalOutputs });
           } else {
-            setCompletion({ outputs: data.completionOutputs });
+            finalOutputs = data.completionOutputs;
+            setCompletion({ outputs: finalOutputs });
+          }
+
+          // Save completion to Redis (graceful - don't block UX on failure)
+          if (sessionId && finalOutputs) {
+            saveIntakeCompletion(sessionId, finalOutputs).catch((err) => {
+              console.error("Failed to save intake completion to Redis:", err);
+              // Continue - persistence failure shouldn't block user
+            });
           }
 
           setFlow({ status: "complete", currentStep: submittingStepIndex, error: null });
@@ -293,6 +325,7 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
     currentQuestion,
     isLastQuestion,
     completion,
+    sessionId,
     submitAnswer,
   };
 }

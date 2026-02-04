@@ -21,7 +21,7 @@ import styles from "./intake.module.css";
 
 export function IntakeForm() {
   // Use custom hooks (all state logic extracted!)
-  const { metadata, flow, messages, currentQuestion, isLastQuestion, completion, submitAnswer } =
+  const { metadata, flow, messages, currentQuestion, isLastQuestion, completion, sessionId, submitAnswer } =
     useIntakeForm("therapy_readiness");
 
   const input = useIntakeInput(currentQuestion);
@@ -92,6 +92,7 @@ export function IntakeForm() {
         <IntakeCompletionSection
           status={isComplete ? "ready" : "waiting"}
           outputs={completion?.outputs ?? null}
+          sessionId={sessionId}
         />
       )}
 
