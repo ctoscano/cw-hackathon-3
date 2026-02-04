@@ -1,4 +1,4 @@
-import { generateCompletionOutputs, type IntakeAnswer } from "@cw-hackathon/data";
+import { type IntakeAnswer, generateCompletionOutputs } from "@cw-hackathon/data";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 

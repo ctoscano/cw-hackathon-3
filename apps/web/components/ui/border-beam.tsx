@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { motion, MotionStyle, Transition } from "motion/react";
+import { type MotionStyle, type Transition, motion } from "motion/react";
 
 interface BorderBeamProps {
   /**
@@ -67,32 +67,30 @@ export const BorderBeam = ({
     <div
       className={cn(
         "pointer-events-none absolute inset-0 rounded-[inherit] border border-transparent",
-        className
+        className,
       )}
       style={{
         borderWidth: borderWidth,
         // Mask to only show the border area
         maskClip: "padding-box, border-box",
         maskComposite: "intersect",
-        maskImage:
-          "linear-gradient(transparent, transparent), linear-gradient(#000, #000)",
+        maskImage: "linear-gradient(transparent, transparent), linear-gradient(#000, #000)",
         // Webkit prefix for compatibility (Chrome, Safari, Edge)
         WebkitMaskClip: "padding-box, border-box",
-        WebkitMaskComposite: "source-in", // 'source-in' is roughly equivalent to 'intersect' for this use case in Webkit? actually 'xor' is commonly used for borders but here we want intersection of two masks? 
+        WebkitMaskComposite: "source-in", // 'source-in' is roughly equivalent to 'intersect' for this use case in Webkit? actually 'xor' is commonly used for borders but here we want intersection of two masks?
         // Wait, the standard "border mask" technique usually uses 'exclude' (xor) with content-box vs border-box.
         // But the Magic UI implementation specifically used `mask-intersect` (composite: intersect).
         // Let's stick to the Magic UI logic but with prefixes.
         // For WebKit, `destination-in` or just standard `mask-composite` might vary.
         // Safest is standard syntax + Webkit prefix.
-        WebkitMaskImage:
-          "linear-gradient(transparent, transparent), linear-gradient(#000, #000)",
+        WebkitMaskImage: "linear-gradient(transparent, transparent), linear-gradient(#000, #000)",
         ...style,
       }}
     >
       <motion.div
         className={cn(
           "absolute aspect-square bg-gradient-to-l from-[var(--color-from)] via-[var(--color-to)] to-transparent",
-          className
+          className,
         )}
         style={
           {
@@ -109,7 +107,7 @@ export const BorderBeam = ({
             : [`${initialOffset}%`, `${100 + initialOffset}%`],
         }}
         transition={{
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           ease: "linear",
           duration,
           delay: -delay,

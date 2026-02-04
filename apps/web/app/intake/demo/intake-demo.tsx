@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { triggerConfetti } from "@/lib/confetti";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
+import { triggerConfetti } from "@/lib/confetti";
+import { useState } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
+import intakeStyles from "../intake.module.css";
 import { TypingIndicator } from "../typing-indicator";
 import styles from "./demo.module.css";
-import intakeStyles from "../intake.module.css";
 
 export function IntakeDemo() {
   const [showAnimations, setShowAnimations] = useState(true);
@@ -70,7 +70,8 @@ export function IntakeDemo() {
           </div>
         </div>
         <p className={styles.sectionNote}>
-          The beam travels smoothly around the border with a gradient effect. Customize colors, size, and speed.
+          The beam travels smoothly around the border with a gradient effect. Customize colors,
+          size, and speed.
         </p>
       </section>
 
@@ -246,8 +247,8 @@ export function IntakeDemo() {
           </div>
         </div>
         <p className={styles.sectionNote}>
-          Border beam animates around the card edge while messages cycle through. More elegant than a
-          spinning circle.
+          Border beam animates around the card edge while messages cycle through. More elegant than
+          a spinning circle.
         </p>
       </section>
 
@@ -255,8 +256,8 @@ export function IntakeDemo() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Optional Contact Info Collection (During Wait)</h2>
         <p className={styles.sectionDescription}>
-          While results are generating, users can optionally share contact info to connect with a therapist.
-          Completely skippable with warm, inviting copy - no pressure.
+          While results are generating, users can optionally share contact info to connect with a
+          therapist. Completely skippable with warm, inviting copy - no pressure.
         </p>
         <div className={styles.demo}>
           <div className={intakeStyles.completionWaiting}>
@@ -266,7 +267,8 @@ export function IntakeDemo() {
 
               <div className={intakeStyles.contactForm}>
                 <p className={intakeStyles.contactFormText}>
-                  Great! Share your email or phone number and we&apos;ll reach out to help you get started.
+                  Great! Share your email or phone number and we&apos;ll reach out to help you get
+                  started.
                 </p>
                 <div className={intakeStyles.contactInputs}>
                   <input
@@ -289,8 +291,8 @@ export function IntakeDemo() {
           </div>
         </div>
         <p className={styles.sectionNote}>
-          Form appears after user clicks &quot;Yes, I&apos;d like that&quot; button. No backend integration
-          (placeholder only). Emphasizes optional nature and shows results regardless.
+          Form appears after user clicks &quot;Yes, I&apos;d like that&quot; button. No backend
+          integration (placeholder only). Emphasizes optional nature and shows results regardless.
         </p>
       </section>
 
@@ -479,8 +481,8 @@ This isn't about eliminating overthinking entirely—it's about building flexibi
           </div>
         </div>
         <p className={styles.sectionNote}>
-          Submit button is disabled until the &quot;Other&quot; text field is filled when &quot;Other&quot;
-          is selected. Answer submitted as &quot;Other: [custom text]&quot;.
+          Submit button is disabled until the &quot;Other&quot; text field is filled when
+          &quot;Other&quot; is selected. Answer submitted as &quot;Other: [custom text]&quot;.
         </p>
       </section>
     </div>

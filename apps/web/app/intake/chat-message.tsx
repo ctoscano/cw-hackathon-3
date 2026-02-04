@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { TypingAnimation } from "@/components/ui/typing-animation";
+import type { ReactNode } from "react";
 import styles from "./chat-message.module.css";
 import { TypingIndicator } from "./typing-indicator";
 
