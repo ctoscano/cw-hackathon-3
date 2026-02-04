@@ -1,6 +1,11 @@
 "use client";
 
-import { motion, type MotionStyle, type Transition } from "motion/react";
+import { useEffect, useState } from "react";
+
+/**
+ * BorderBeam component - creates an animated rotating gradient border
+ * Uses conic-gradient with CSS animation for broad browser compatibility
+ */
 
 interface BorderBeamProps {
   size?: number;
@@ -8,67 +13,69 @@ interface BorderBeamProps {
   delay?: number;
   colorFrom?: string;
   colorTo?: string;
-  transition?: Transition;
-  className?: string;
-  style?: React.CSSProperties;
-  reverse?: boolean;
-  initialOffset?: number;
   borderWidth?: number;
 }
 
-export const BorderBeam = ({
-  className,
-  size = 50,
+export function BorderBeam({
+  size = 250,
+  duration = 8,
   delay = 0,
-  duration = 6,
-  colorFrom = "#ffaa40",
-  colorTo = "#9c40ff",
-  transition,
-  style,
-  reverse = false,
-  initialOffset = 0,
-  borderWidth = 1.5,
-}: BorderBeamProps) => {
+  colorFrom = "#4a90d9",
+  colorTo = "#a78bfa",
+  borderWidth = 2,
+}: BorderBeamProps) {
+  const [animationId] = useState(() => `beam-${Math.random().toString(36).slice(2, 9)}`);
+
+  useEffect(() => {
+    // Inject keyframes animation
+    const styleId = `border-beam-keyframes-${animationId}`;
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        @keyframes ${animationId} {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, [animationId]);
+
   return (
     <div
-      className="pointer-events-none absolute inset-0 rounded-[inherit]"
       style={{
-        borderWidth: `${borderWidth}px`,
-        borderStyle: "solid",
-        borderColor: "transparent",
+        position: "absolute",
+        inset: 0,
+        borderRadius: "inherit",
+        padding: `${borderWidth}px`,
+        background: `conic-gradient(
+          from 90deg,
+          transparent 0deg,
+          ${colorFrom} 90deg,
+          ${colorTo} 180deg,
+          transparent 270deg,
+          transparent 360deg
+        )`,
         WebkitMask:
-          "linear-gradient(transparent, transparent), " + "linear-gradient(#000, #000)",
-        WebkitMaskClip: "padding-box, border-box",
-        WebkitMaskComposite: "intersect",
-        mask: "linear-gradient(transparent, transparent), " + "linear-gradient(#000, #000)",
-        maskClip: "padding-box, border-box",
-        maskComposite: "intersect",
+          "linear-gradient(#fff 0 0) content-box, " +
+          "linear-gradient(#fff 0 0)",
+        WebkitMaskComposite: "xor",
+        mask:
+          "linear-gradient(#fff 0 0) content-box, " +
+          "linear-gradient(#fff 0 0)",
+        maskComposite: "exclude",
+        pointerEvents: "none",
+        animation: `${animationId} ${duration}s linear infinite`,
+        animationDelay: `${delay}s`,
       }}
-    >
-      <motion.div
-        className={`absolute aspect-square ${className || ""}`}
-        style={
-          {
-            width: size,
-            offsetPath: `rect(0 auto auto 0 round ${size}px)`,
-            background: `linear-gradient(to left, ${colorFrom}, ${colorTo}, transparent)`,
-            ...style,
-          } as MotionStyle
-        }
-        initial={{ offsetDistance: `${initialOffset}%` }}
-        animate={{
-          offsetDistance: reverse
-            ? [`${100 - initialOffset}%`, `${-initialOffset}%`]
-            : [`${initialOffset}%`, `${100 + initialOffset}%`],
-        }}
-        transition={{
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "linear",
-          duration,
-          delay: -delay,
-          ...transition,
-        }}
-      />
-    </div>
+    />
   );
-};
+}
