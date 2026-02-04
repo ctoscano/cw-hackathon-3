@@ -39,6 +39,9 @@ pnpm-debug.log*
 # Testing
 coverage/
 
+# Generated outputs (CLI tool outputs)
+packages/data/output/
+
 # Misc
 .cache/
 

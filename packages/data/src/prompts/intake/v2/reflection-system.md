@@ -1,7 +1,7 @@
 ---
 name: intake-reflection-system
 description: System prompt for generating supportive reflections after each intake answer
-version: "1.0.0"
+version: "v2"
 author: CW Hackathon
 ---
 

@@ -298,3 +298,113 @@ This eliminates the need to wait for the API to know the next question.
 1. Should the header (title, description, progress) remain fixed at top or scroll with content?
 2. Should there be a "scroll to bottom" button if user scrolls up?
 3. For text questions, should next question appear before or after reflection? (Current plan: after)
+
+---
+
+## Implementation Notes
+
+### Demo Page
+
+**Created:** `apps/web/app/intake/demo/` (February 2026)
+
+A comprehensive component demo page has been created to showcase all UI components and patterns used in the intake flow:
+
+- **Location:** `http://localhost:3000/intake/demo`
+- **Main files:**
+  - `apps/web/app/intake/demo/page.tsx` - Next.js page wrapper
+  - `apps/web/app/intake/demo/intake-demo.tsx` - Main demo component
+  - `apps/web/app/intake/demo/demo.module.css` - Demo-specific styles
+
+**Sections included:**
+1. Border Beam Animation - Magic UI component examples
+2. Typing Indicator - SVG animation component
+3. Question Bubbles - Left-aligned system messages
+4. Answer Bubbles - Right-aligned user responses
+5. Reflection Bubbles - Personalized acknowledgments
+6. Loading State - Reflection pending with typing animation
+7. Complete Conversation Flow - Full Q&A cycle
+8. Optimistic UI Pattern - Next question appears immediately
+9. Completion Waiting State - Border beam animation during final processing
+10. Contact Info Collection - Optional form during wait time
+11. Before/After Comparison - Perceived performance improvement
+12. Value Proposition Header - Pre-question expectations
+13. Confetti Celebration - Completion animation
+14. ChatGPT Button - First experiment continuation
+15. Markdown Rendering - Formatted completion outputs
+16. "Other" Option Support - Custom multiselect responses
+
+### BorderBeam Component
+
+**Source:** Magic UI (Magic UI community components)
+**Location:** `apps/web/components/ui/border-beam.tsx`
+
+- Animated gradient that travels around element borders
+- Used in completion waiting state for visual delight
+- Requires parent to have `position: relative` and `overflow: hidden`
+- Component must be placed as **last child** of parent container
+- Customizable properties:
+  - `size` - Size of the beam (default: 50)
+  - `duration` - Animation speed in seconds (default: 6)
+  - `delay` - Initial delay before animation starts
+  - `colorFrom` - Starting gradient color (default: `#ffaa40`)
+  - `colorTo` - Ending gradient color (default: `#9c40ff`)
+  - `reverse` - Reverse animation direction
+  - `borderWidth` - Width of the beam (default: 1.5px)
+
+**Usage pattern:**
+```tsx
+<Card className="relative w-[350px] overflow-hidden">
+  <CardHeader>
+    <CardTitle>Login</CardTitle>
+  </CardHeader>
+  <CardContent>
+    {/* content */}
+  </CardContent>
+  <BorderBeam duration={8} size={100} />
+</Card>
+```
+
+### shadcn/ui Integration
+
+**Configuration:** `apps/web/components.json`
+- Style: `new-york`
+- RSC enabled: `true`
+- Base color: `neutral`
+- CSS variables: `true`
+
+**Installed components:**
+- Card (`components/ui/card.tsx`) - Used in demo page for BorderBeam examples
+
+The shadcn Card component provides:
+- `Card` - Container with border, rounded corners, and shadow
+- `CardHeader` - Header section with padding
+- `CardTitle` - Styled title text
+- `CardDescription` - Muted description text
+- `CardContent` - Main content area
+- `CardFooter` - Footer section for actions
+
+### Component Architecture Decisions
+
+1. **BorderBeam positioning:** Following Magic UI guidelines, BorderBeam is always placed as the last child to ensure proper z-index layering and visual appearance.
+
+2. **Demo structure:** Separated demo logic into its own module to keep the actual intake form clean and production-ready while providing comprehensive examples for development.
+
+3. **Animation controls:** Added animation toggle in demo page to allow testing both animated and static states, useful for accessibility testing and performance evaluation.
+
+4. **Card usage:** Standardized on shadcn Card components for consistent styling and reduced custom CSS, making the codebase more maintainable.
+
+### Dependencies Added
+
+```json
+{
+  "@shadcn/ui": "latest",
+  "motion/react": "^11.x" // For BorderBeam animations
+}
+```
+
+### Future Enhancements
+
+1. **Virtualization:** If chat history exceeds 20+ messages, consider adding virtual scrolling for performance
+2. **Animation presets:** Create predefined BorderBeam color schemes matching brand colors
+3. **A11y improvements:** Add more comprehensive ARIA labels and keyboard navigation
+4. **Mobile optimization:** Test and optimize touch interactions for mobile chat experience

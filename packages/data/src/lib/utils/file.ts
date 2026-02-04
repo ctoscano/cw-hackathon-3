@@ -55,6 +55,7 @@ export function generateFilename(prefix: string, extension: string): string {
  * @param prefix - Filename prefix
  * @param content - Content to write
  * @param extension - File extension (without dot)
+ * @param version - Optional version string (e.g., "v1", "v2") to add as a subdirectory
  * @returns The full path to the saved file
  */
 export function saveOutput(
@@ -62,9 +63,18 @@ export function saveOutput(
   prefix: string,
   content: string,
   extension: string,
+  version?: string,
 ): string {
   const outputDir = getOutputDir();
-  const targetDir = join(outputDir, subdir);
+
+  // Build path with version subdirectory if provided and not in "synthetic" subdir
+  // Synthetic inputs are shared across versions
+  let targetDir: string;
+  if (version && !subdir.includes("synthetic")) {
+    targetDir = join(outputDir, subdir, version);
+  } else {
+    targetDir = join(outputDir, subdir);
+  }
 
   ensureDirectory(targetDir);
 
@@ -79,16 +89,26 @@ export function saveOutput(
 /**
  * Save JSON content with pretty formatting
  */
-export function saveJsonOutput<T>(subdir: string, prefix: string, data: T): string {
+export function saveJsonOutput<T>(
+  subdir: string,
+  prefix: string,
+  data: T,
+  version?: string,
+): string {
   const content = JSON.stringify(data, null, 2);
-  return saveOutput(subdir, prefix, content, "json");
+  return saveOutput(subdir, prefix, content, "json", version);
 }
 
 /**
  * Save markdown content
  */
-export function saveMarkdownOutput(subdir: string, prefix: string, content: string): string {
-  return saveOutput(subdir, prefix, content, "md");
+export function saveMarkdownOutput(
+  subdir: string,
+  prefix: string,
+  content: string,
+  version?: string,
+): string {
+  return saveOutput(subdir, prefix, content, "md", version);
 }
 
 /**

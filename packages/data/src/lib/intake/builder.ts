@@ -58,8 +58,9 @@ export function buildReflectionPrompt(options: {
   priorAnswers: IntakeAnswer[];
   stepIndex: number;
   totalSteps: number;
+  version?: string;
 }): BuiltPrompt {
-  const { question, answer, priorAnswers, stepIndex, totalSteps } = options;
+  const { question, answer, priorAnswers, stepIndex, totalSteps, version } = options;
 
   return buildPrompt({
     systemParts: ["intake/reflection-system.md"],
@@ -73,13 +74,17 @@ export function buildReflectionPrompt(options: {
     },
     saveToFile: false,
     outputPrefix: "intake-reflection",
+    version,
   });
 }
 
 /**
  * Build a prompt for generating completion outputs
  */
-export function buildCompletionPrompt(allAnswers: IntakeAnswer[]): BuiltPrompt {
+export function buildCompletionPrompt(
+  allAnswers: IntakeAnswer[],
+  version?: string,
+): BuiltPrompt {
   return buildPrompt({
     systemParts: ["intake/completion-system.md"],
     userParts: ["intake/completion-user.md"],
@@ -88,6 +93,7 @@ export function buildCompletionPrompt(allAnswers: IntakeAnswer[]): BuiltPrompt {
     },
     saveToFile: false,
     outputPrefix: "intake-completion",
+    version,
   });
 }
 
@@ -100,6 +106,7 @@ export async function generateReflection(options: {
   priorAnswers: IntakeAnswer[];
   stepIndex: number;
   totalSteps: number;
+  version?: string;
 }): Promise<AIResult<string>> {
   const prompt = buildReflectionPrompt(options);
 
@@ -121,8 +128,9 @@ export async function generateReflection(options: {
  */
 export async function generateCompletionOutputs(
   allAnswers: IntakeAnswer[],
+  version?: string,
 ): Promise<AIResult<IntakeCompletionOutputs>> {
-  const prompt = buildCompletionPrompt(allAnswers);
+  const prompt = buildCompletionPrompt(allAnswers, version);
 
   return generateStructuredOutput({
     schema: IntakeCompletionOutputsSchema,
@@ -151,10 +159,19 @@ async function getReflectionForQuestion(options: {
   priorAnswers: IntakeAnswer[];
   stepIndex: number;
   totalSteps: number;
+  version?: string;
 }): Promise<string> {
   // Always use LLM for personalized, context-aware reflections
   const reflectionResult = await generateReflection(options);
   return reflectionResult.data;
+}
+
+/**
+ * Options for processing an intake step
+ */
+export interface ProcessIntakeStepOptions {
+  request: IntakeStepRequest;
+  version?: string;
 }
 
 /**
@@ -167,7 +184,13 @@ async function getReflectionForQuestion(options: {
  * 4. Determines the next question or completion
  * 5. Generates completion outputs if done
  */
-export async function processIntakeStep(request: IntakeStepRequest): Promise<IntakeStepResponse> {
+export async function processIntakeStep(
+  requestOrOptions: IntakeStepRequest | ProcessIntakeStepOptions,
+): Promise<IntakeStepResponse> {
+  // Handle both old signature (request) and new signature (options)
+  const request = "request" in requestOrOptions ? requestOrOptions.request : requestOrOptions;
+  const version = "request" in requestOrOptions ? requestOrOptions.version : undefined;
+
   const { intakeType, stepIndex, priorAnswers, currentAnswer } = request;
 
   // Validate intake exists
@@ -191,6 +214,7 @@ export async function processIntakeStep(request: IntakeStepRequest): Promise<Int
     priorAnswers,
     stepIndex,
     totalSteps,
+    version,
   });
 
   // Build the complete answer record
@@ -207,7 +231,7 @@ export async function processIntakeStep(request: IntakeStepRequest): Promise<Int
   if (isComplete) {
     // Generate completion outputs
     const allAnswers = [...priorAnswers, completeAnswer];
-    const completionResult = await generateCompletionOutputs(allAnswers);
+    const completionResult = await generateCompletionOutputs(allAnswers, version);
 
     return {
       reflection,
@@ -218,6 +242,7 @@ export async function processIntakeStep(request: IntakeStepRequest): Promise<Int
         currentStep: stepIndex,
         totalSteps,
         intakeType,
+        promptVersion: version,
       },
     };
   }
@@ -237,6 +262,7 @@ export async function processIntakeStep(request: IntakeStepRequest): Promise<Int
       currentStep: stepIndex,
       totalSteps,
       intakeType,
+      promptVersion: version,
     },
   };
 }
