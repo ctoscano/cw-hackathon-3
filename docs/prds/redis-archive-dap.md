@@ -737,17 +737,101 @@ Redis Cloud supports Access Control Lists (ACLs) for restricting read/write perm
 
 ### Gotchas & Surprises
 
-[To be added during implementation]
+**1. TypeScript Redis Client Types**
+- Issue: `RedisClientType` incompatibility between packages
+- Solution: Use type assertion `as RedisClientType` in return statements
+- Affects: Both web and CLI client modules
+
+**2. Import Extensions in CLI**
+- Issue: TypeScript doesn't allow `.ts` extensions in imports
+- Solution: Use `.js` extensions (TypeScript convention for ESM)
+- Example: `import { foo } from "./module.js"` not `"./module.ts"`
+
+**3. Environment Variables in Bun**
+- Issue: `bun test-file.ts` doesn't auto-load .env files
+- Solution: Use `bun --env-file=.env test-file.ts` or export vars manually
+- Affects: Test scripts only (not production)
+
+**4. Graceful Error Handling is Critical**
+- Finding: Redis connection can fail for many reasons (network, config, etc.)
+- Solution: Always wrap persistence in try/catch and log errors
+- Result: Application continues normally even when Redis is down
+
+**5. Session ID Generation Timing**
+- Issue: Need session ID before first Server Action call
+- Solution: Generate in useEffect on mount, not in handler
+- Result: Single session ID persists for entire intake flow
+
+**6. Contact Form Success State**
+- Finding: Users want confirmation that contact info was saved
+- Solution: Show success message after successful save
+- Alternative considered: Silent save (rejected - no user feedback)
+
+**7. DAP Data Structure Conversion**
+- Finding: DAP note schema doesn't match archive schema exactly
+- Solution: Transform on save (subjective+objective → disclosure, etc.)
+- Trade-off: Slightly verbose but maintains clean archive interface
+
+**8. No Password Rotation Implemented**
+- Current: Single Redis password in .env files
+- Risk: If leaked, requires manual password change
+- Future: Implement password rotation script and ACLs
 
 ### Demo Instructions
 
 **How to Demo:**
-[To be added during implementation]
+
+**1. Demo Intake Flow with Redis Persistence:**
+```bash
+# Start web dev server
+cd apps/web && pnpm dev
+
+# Visit intake demo page
+open http://localhost:3000/intake/demo
+
+# Complete the intake questionnaire:
+# - Answer all 9 questions
+# - Submit contact info (email/phone)
+# - Click "Explore with ChatGPT" button
+# - All data is automatically persisted to Redis
+
+# Verify data in Redis (optional):
+export REDIS_HOST=<your-host> REDIS_PORT=<your-port> REDIS_PASSWORD=<your-password>
+redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD KEYS "intake:*"
+```
+
+**2. Demo DAP CLI Archival:**
+```bash
+# Navigate to CLI package
+cd packages/data
+
+# Generate DAP note WITH archival
+bun run src/bin/cli.ts dap synthetic
+bun run src/bin/cli.ts dap generate --archive
+
+# Output will show:
+# ✅ DAP note generated successfully!
+# 💾 Archiving to Redis...
+#    ✅ Archived with session ID: <uuid>
+
+# Verify in Redis (optional):
+redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD KEYS "dap:*"
+redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD HGETALL dap:<session-id>
+```
+
+**3. Key Features Demonstrated:**
+- ✅ Session ID auto-generation (UUID v4)
+- ✅ Progress saved after each question
+- ✅ Completion outputs persisted
+- ✅ Contact info saved with success message
+- ✅ ChatGPT click tracking
+- ✅ DAP archival with metadata (model, tokens, time)
+- ✅ Graceful error handling (logs but doesn't block UX)
 
 ---
 
-**Status**: In Progress
+**Status**: Completed
 **Created**: 2026-02-04
 **Last Updated**: 2026-02-04
 **Implementation Started**: 2026-02-04
-**Completed**: N/A
+**Completed**: 2026-02-04
