@@ -318,6 +318,20 @@ Include URLs to visit or CLI commands to run.
 **How to Demo:**
 [To be added during implementation]
 
+## Quality Checks
+
+<!--
+AUTO-POPULATED BY /prd end - do not edit manually.
+These checks are run automatically when marking PRD as pending review.
+-->
+
+- [ ] Type check passed (`pnpm type-check`)
+- [ ] Build passed (`pnpm build`)
+- [ ] Demo instructions provided
+- [ ] All completion criteria met
+
+**Last Verified**: N/A
+
 ---
 
 **Status**: Draft
@@ -325,3 +339,5 @@ Include URLs to visit or CLI commands to run.
 **Last Updated**: [YYYY-MM-DD]
 **Implementation Started**: [YYYY-MM-DD or N/A]
 **Completed**: [YYYY-MM-DD or N/A]
+**Accepted**: [YYYY-MM-DD or N/A]
+**Rejected**: [YYYY-MM-DD or N/A]

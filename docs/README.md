@@ -36,7 +36,31 @@ Use the [PRD template](./templates/prd-template.md) to create new PRDs. The temp
 - Implementation steps with verification criteria
 - Meta-instructions to guide LLMs in proper PRD creation
 
-Create new PRDs using the `/prd plan` skill command, which will copy the template and set up the initial structure.
+#### PRD Workflow
+
+Create and manage PRDs using the `/prd` skill commands:
+
+1. **Create** - `/prd plan` - Create new PRD from template
+2. **Implement** - `/prd start` - Add implementation notes and track progress
+3. **Complete** - `/prd end` - Mark as pending review (runs quality checks)
+4. **Review** - User verifies the implementation works
+5. **Accept/Reject** - `/prd accept` or `/prd reject [reason]`
+6. **Check Status** - `/prd status` - View current PRD state
+
+#### PRD States
+
+- **Draft** - Just created, not started
+- **In Progress** - Implementation underway
+- **Pending Review** - Implementation complete, awaiting user verification
+- **Accepted** - User verified and approved
+
+#### Quality Gates
+
+Before a PRD can be marked "Pending Review", it must pass:
+- TypeScript type checks (`pnpm type-check`)
+- Production build (`pnpm build`)
+- Demo instructions must be provided
+- All completion criteria should be met
 
 PRDs should include:
 - Overview and goals
@@ -44,6 +68,7 @@ PRDs should include:
 - Implementation details
 - Verification steps
 - Dependencies and tech stack
+- Quality checks section (auto-populated by `/prd end`)
 
 ### General Documentation
 

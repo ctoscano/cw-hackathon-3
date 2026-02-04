@@ -6,12 +6,12 @@
  */
 
 import {
-  saveIntakeProgress as saveIntakeProgressLib,
-  saveIntakeCompletion as saveIntakeCompletionLib,
-  saveContactInfo as saveContactInfoLib,
-  trackChatGPTClick as trackChatGPTClickLib,
-  getSessionData as getSessionDataLib,
   type SessionData,
+  getSessionData as getSessionDataLib,
+  saveContactInfo as saveContactInfoLib,
+  saveIntakeCompletion as saveIntakeCompletionLib,
+  saveIntakeProgress as saveIntakeProgressLib,
+  trackChatGPTClick as trackChatGPTClickLib,
 } from "@/lib/redis/intake";
 
 /**
@@ -145,6 +145,6 @@ export async function getSessionData(
  * Generate a new session ID
  * Uses crypto.randomUUID() for client-side generation
  */
-export function generateSessionId(): string {
+export async function generateSessionId(): Promise<string> {
   return crypto.randomUUID();
 }
