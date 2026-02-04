@@ -1,9 +1,6 @@
 "use client";
 
-/**
- * BorderBeam component - creates an animated gradient border effect
- * Uses CSS animations and conic gradients for a smooth rotating beam
- */
+import { motion, type MotionStyle, type Transition } from "motion/react";
 
 interface BorderBeamProps {
   size?: number;
@@ -11,50 +8,67 @@ interface BorderBeamProps {
   delay?: number;
   colorFrom?: string;
   colorTo?: string;
+  transition?: Transition;
+  className?: string;
+  style?: React.CSSProperties;
+  reverse?: boolean;
+  initialOffset?: number;
   borderWidth?: number;
 }
 
-export function BorderBeam({
-  size = 250,
-  duration = 12,
+export const BorderBeam = ({
+  className,
+  size = 50,
   delay = 0,
-  colorFrom = "#4a90d9",
+  duration = 6,
+  colorFrom = "#ffaa40",
   colorTo = "#9c40ff",
-  borderWidth = 2,
-}: BorderBeamProps) {
+  transition,
+  style,
+  reverse = false,
+  initialOffset = 0,
+  borderWidth = 1.5,
+}: BorderBeamProps) => {
   return (
     <div
-      className="pointer-events-none absolute inset-0"
+      className="pointer-events-none absolute inset-0 rounded-[inherit]"
       style={{
-        borderRadius: "inherit",
-        padding: `${borderWidth}px`,
-        background: `conic-gradient(
-          from 0deg,
-          transparent 0%,
-          transparent 30%,
-          ${colorFrom} 50%,
-          ${colorTo} 70%,
-          transparent 90%,
-          transparent 100%
-        )`,
-        WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-        WebkitMaskComposite: "xor",
-        mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-        maskComposite: "exclude",
-        animation: `border-beam-spin ${duration}s linear infinite`,
-        animationDelay: `${delay}s`,
+        borderWidth: `${borderWidth}px`,
+        borderStyle: "solid",
+        borderColor: "transparent",
+        WebkitMask:
+          "linear-gradient(transparent, transparent), " + "linear-gradient(#000, #000)",
+        WebkitMaskClip: "padding-box, border-box",
+        WebkitMaskComposite: "intersect",
+        mask: "linear-gradient(transparent, transparent), " + "linear-gradient(#000, #000)",
+        maskClip: "padding-box, border-box",
+        maskComposite: "intersect",
       }}
     >
-      <style jsx>{`
-        @keyframes border-beam-spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
+      <motion.div
+        className={`absolute aspect-square ${className || ""}`}
+        style={
+          {
+            width: size,
+            offsetPath: `rect(0 auto auto 0 round ${size}px)`,
+            background: `linear-gradient(to left, ${colorFrom}, ${colorTo}, transparent)`,
+            ...style,
+          } as MotionStyle
         }
-      `}</style>
+        initial={{ offsetDistance: `${initialOffset}%` }}
+        animate={{
+          offsetDistance: reverse
+            ? [`${100 - initialOffset}%`, `${-initialOffset}%`]
+            : [`${initialOffset}%`, `${100 + initialOffset}%`],
+        }}
+        transition={{
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "linear",
+          duration,
+          delay: -delay,
+          ...transition,
+        }}
+      />
     </div>
   );
-}
+};
