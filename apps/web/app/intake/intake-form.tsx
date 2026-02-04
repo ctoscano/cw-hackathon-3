@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { triggerConfetti } from "@/lib/confetti";
+import { createExperimentPrompt, generateChatGPTUrl } from "@/lib/chatgpt";
+import { BorderBeam } from "@/components/ui/border-beam";
+import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { ChatMessage, formatAnswerForDisplay } from "./chat-message";
 import styles from "./intake.module.css";
@@ -95,10 +99,21 @@ export function IntakeForm() {
   // Current input state
   const [textInput, setTextInput] = useState<string>("");
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [otherText, setOtherText] = useState<string>(""); // For "Other" option custom text
 
   // Completion outputs
   const [completionOutputs, setCompletionOutputs] =
     useState<IntakeStepResponse["completionOutputs"]>(null);
+
+  // Early completion generation (started after Q8, ready for Q9)
+  const [earlyCompletionPromise, setEarlyCompletionPromise] = useState<Promise<IntakeStepResponse["completionOutputs"]> | null>(
+    null
+  );
+
+  // Contact info collection (optional, during completion wait)
+  const [showContactForm, setShowContactForm] = useState<boolean>(false);
+  const [contactEmail, setContactEmail] = useState<string>("");
+  const [contactPhone, setContactPhone] = useState<string>("");
 
   // Ref for auto-scrolling
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -154,6 +169,7 @@ export function IntakeForm() {
   useEffect(() => {
     setTextInput("");
     setSelectedOptions([]);
+    setOtherText("");
   }, [questionId]);
 
   function getCurrentAnswer(): string | string[] {
@@ -162,6 +178,14 @@ export function IntakeForm() {
     if (currentQuestion.type === "text") {
       return textInput;
     }
+
+    // For multiselect/singleselect with "Other" option
+    const hasOther = selectedOptions.includes("Other");
+    if (hasOther && otherText.trim()) {
+      // Replace "Other" with "Other: <custom text>"
+      return selectedOptions.map((opt) => (opt === "Other" ? `Other: ${otherText.trim()}` : opt));
+    }
+
     return selectedOptions;
   }
 
@@ -171,16 +195,38 @@ export function IntakeForm() {
     if (currentQuestion.type === "text") {
       return textInput.trim().length > 0;
     }
-    return selectedOptions.length > 0;
+
+    // For multiselect/singleselect
+    if (selectedOptions.length === 0) return false;
+
+    // If "Other" is selected, require the otherText field to be filled
+    if (selectedOptions.includes("Other") && !otherText.trim()) {
+      return false;
+    }
+
+    return true;
   }
 
   function handleOptionToggle(option: string) {
     if (currentQuestion?.type === "singleselect") {
       setSelectedOptions([option]);
+      // Clear otherText if switching away from "Other"
+      if (option !== "Other") {
+        setOtherText("");
+      }
     } else {
-      setSelectedOptions((prev) =>
-        prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option],
-      );
+      setSelectedOptions((prev) => {
+        const newSelection = prev.includes(option)
+          ? prev.filter((o) => o !== option)
+          : [...prev, option];
+
+        // Clear otherText if "Other" is deselected
+        if (option === "Other" && !newSelection.includes("Other")) {
+          setOtherText("");
+        }
+
+        return newSelection;
+      });
     }
   }
 
@@ -197,15 +243,19 @@ export function IntakeForm() {
     setState("submitting");
     setError(null);
 
-    // OPTIMISTIC UI: Immediately show the user's answer and a loading reflection
+    // OPTIMISTIC UI: Immediately show the user's answer
     const answerId = generateMessageId();
-    const reflectionId = generateMessageId();
+    const reflectionId = isLastQuestion ? "" : generateMessageId();
 
     // Build new messages optimistically
     const newMessages: ChatMessageItem[] = [
       { id: answerId, type: "answer", content: answer },
-      { id: reflectionId, type: "reflection", content: null }, // Loading state
     ];
+
+    // For non-last questions, show loading reflection
+    if (!isLastQuestion && reflectionId) {
+      newMessages.push({ id: reflectionId, type: "reflection", content: null }); // Loading state
+    }
 
     // If not the last question, immediately show the next question
     // This is the key to perceived performance - user can start reading/answering
@@ -223,7 +273,9 @@ export function IntakeForm() {
     }
 
     setMessages((prev) => [...prev, ...newMessages]);
-    setPendingReflectionId(reflectionId);
+    if (reflectionId) {
+      setPendingReflectionId(reflectionId);
+    }
 
     // If last question, show the completion waiting state
     if (isLastQuestion) {
@@ -272,12 +324,54 @@ export function IntakeForm() {
         answer: answer,
         reflection: data.reflection,
       };
-      setCompletedAnswers((prev) => [...prev, newAnswer]);
+      const updatedAnswers = [...completedAnswers, newAnswer];
+      setCompletedAnswers(updatedAnswers);
+
+      // OPTIMIZATION: If we just submitted Q8 (step 7), start generating completion in background
+      // This makes Q9 feel snappier since completion is already generating
+      if (submittingStepIndex === 7 && totalSteps === 9 && !isLastQuestion) {
+        // Trigger completion generation based on Q1-Q8 answers
+        const completionPromise = fetch("/api/intake/completion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            intakeType,
+            answers: updatedAnswers,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => data.completionOutputs)
+          .catch((err) => {
+            console.error("Early completion generation failed:", err);
+            return null;
+          });
+
+        setEarlyCompletionPromise(completionPromise);
+      }
 
       if (data.isComplete) {
-        setCompletionOutputs(data.completionOutputs);
         setCurrentQuestion(null);
         setState("complete");
+
+        // Check if we have early completion ready
+        if (earlyCompletionPromise) {
+          // Use the early-generated completion
+          earlyCompletionPromise.then((outputs) => {
+            if (outputs) {
+              setCompletionOutputs(outputs);
+              // Trigger confetti only after early completion loads
+              setTimeout(() => triggerConfetti(), 300);
+            } else {
+              // Fallback to regular completion
+              setCompletionOutputs(data.completionOutputs);
+              setTimeout(() => triggerConfetti(), 300);
+            }
+          });
+        } else {
+          setCompletionOutputs(data.completionOutputs);
+          // Trigger celebratory confetti animation
+          setTimeout(() => triggerConfetti(), 300);
+        }
       } else {
         // Already showed next question optimistically, just update state
         setState("ready");
@@ -341,6 +435,21 @@ export function IntakeForm() {
         )}
       </header>
 
+      {/* Value Proposition */}
+      {state !== "complete" && !isGeneratingCompletion && messages.length === 1 && (
+        <div className={styles.valueProposition}>
+          <p className={styles.valuePropositionText}>
+            These questions help you explore whether therapy might be worth trying right now.
+          </p>
+          <ul className={styles.valuePropositionList}>
+            <li>Get clearer on what's happening and why it matters</li>
+            <li>Understand how therapy might help your specific situation</li>
+            <li>Learn what to talk about and look for in a first session</li>
+            <li>Try a few optional practices you can bring to therapy</li>
+          </ul>
+        </div>
+      )}
+
       {/* Chat Messages */}
       <div className={styles.chatContainer}>
         {messages.map((msg) => {
@@ -388,30 +497,66 @@ export function IntakeForm() {
       {/* Completion Waiting State */}
       {isGeneratingCompletion && (
         <div className={styles.completionWaiting}>
-          <div className={styles.completionWaitingIcon}>
-            <svg viewBox="0 0 100 100" className={styles.completionWaitingSvg} aria-hidden="true">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#e8f4fd" strokeWidth="8" />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#4a90d9"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray="251.2"
-                strokeDashoffset="125.6"
-                className={styles.completionWaitingCircle}
-              />
-            </svg>
+          <div className={styles.completionWaitingCard}>
+            <BorderBeam size={250} duration={12} delay={0} />
+            <TypingAnimation
+              words={["Gathering insights ✨", "Personalizing results 🎯", "Almost ready 🚀"]}
+              loop
+              className={styles.completionWaitingText}
+              duration={80}
+              showCursor={false}
+            />
+
+            {/* Optional Contact Info Collection */}
+            {!showContactForm ? (
+              <div className={styles.contactPrompt}>
+                <p className={styles.contactPromptText}>
+                  While you wait, would you like us to help connect you with a therapist?
+                </p>
+                <div className={styles.contactPromptButtons}>
+                  <button
+                    type="button"
+                    onClick={() => setShowContactForm(true)}
+                    className={styles.contactYesButton}
+                  >
+                    Yes, I&apos;d like that
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowContactForm(false)}
+                    className={styles.contactNoButton}
+                  >
+                    No thanks
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.contactForm}>
+                <p className={styles.contactFormText}>
+                  Great! Share your email or phone number and we&apos;ll reach out to help you get started.
+                </p>
+                <div className={styles.contactInputs}>
+                  <input
+                    type="email"
+                    placeholder="Email address (optional)"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className={styles.contactInput}
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Phone number (optional)"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    className={styles.contactInput}
+                  />
+                </div>
+                <p className={styles.contactFormNote}>
+                  You can skip this - your results will show below either way.
+                </p>
+              </div>
+            )}
           </div>
-          <TypingAnimation
-            words={["Gathering insights ✨", "Personalizing results 🎯", "Almost ready 🚀"]}
-            loop
-            className={styles.completionWaitingText}
-            duration={80}
-            showCursor={false}
-          />
         </div>
       )}
 
@@ -469,6 +614,18 @@ export function IntakeForm() {
                     </label>
                   ))}
                 </div>
+                {selectedOptions.includes("Other") && (
+                  <div className={styles.otherInputWrapper}>
+                    <input
+                      type="text"
+                      className={styles.otherInput}
+                      value={otherText}
+                      onChange={(e) => setOtherText(e.target.value)}
+                      placeholder="Please specify..."
+                      disabled={state === "submitting"}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -489,6 +646,18 @@ export function IntakeForm() {
                     </label>
                   ))}
                 </div>
+                {selectedOptions.includes("Other") && (
+                  <div className={styles.otherInputWrapper}>
+                    <input
+                      type="text"
+                      className={styles.otherInput}
+                      value={otherText}
+                      onChange={(e) => setOtherText(e.target.value)}
+                      placeholder="Please specify..."
+                      disabled={state === "submitting"}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -513,28 +682,14 @@ export function IntakeForm() {
           <section className={styles.completionSection}>
             <h3>How Therapy Might Help</h3>
             <div className={styles.completionContent}>
-              {completionOutputs.personalizedBrief
-                .split("\n")
-                .filter((p) => p.trim())
-                .map((paragraph) => (
-                  <p key={paragraph.slice(0, 50)} className={styles.completionParagraph}>
-                    {paragraph}
-                  </p>
-                ))}
+              <Markdown>{completionOutputs.personalizedBrief}</Markdown>
             </div>
           </section>
 
           <section className={styles.completionSection}>
             <h3>Making the Most of Your First Session</h3>
             <div className={styles.completionContent}>
-              {completionOutputs.firstSessionGuide
-                .split("\n")
-                .filter((p) => p.trim())
-                .map((paragraph) => (
-                  <p key={paragraph.slice(0, 50)} className={styles.completionParagraph}>
-                    {paragraph}
-                  </p>
-                ))}
+              <Markdown>{completionOutputs.firstSessionGuide}</Markdown>
             </div>
           </section>
 
@@ -545,12 +700,30 @@ export function IntakeForm() {
               They&apos;re designed to give you useful insights, not assignments to complete.
             </p>
             <div className={styles.experiments}>
-              {completionOutputs.experiments.map((experiment, i) => (
-                <div key={experiment.slice(0, 50)} className={styles.experiment}>
-                  <span className={styles.experimentNumber}>{i + 1}</span>
-                  <p>{experiment}</p>
-                </div>
-              ))}
+              {completionOutputs.experiments.map((experiment, i) => {
+                const isFirst = i === 0;
+                const chatGptPrompt = isFirst ? createExperimentPrompt(experiment) : null;
+                const chatGptUrl = chatGptPrompt ? generateChatGPTUrl(chatGptPrompt) : null;
+
+                return (
+                  <div key={experiment.slice(0, 50)} className={styles.experiment}>
+                    <span className={styles.experimentNumber}>{i + 1}</span>
+                    <div className={styles.experimentContent}>
+                      <Markdown>{experiment}</Markdown>
+                      {chatGptUrl && (
+                        <a
+                          href={chatGptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.chatGptButton}
+                        >
+                          Explore this with ChatGPT →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
