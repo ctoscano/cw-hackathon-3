@@ -960,7 +960,7 @@ During planning, we verified connectivity to the Redis Cloud instance:
 
 ### Rejection Log
 
-**Rejected on**: 2026-02-04
+**Rejected on**: 2026-02-04 (First rejection)
 
 **Reason**: Much improved functionality, but there are critical issues:
 
@@ -986,6 +986,62 @@ During planning, we verified connectivity to the Redis Cloud instance:
 3. Use nuqs for session detail state (`?session=<id>`)
 4. Document this SPA pattern for future data-heavy pages
 5. Apply professional styling throughout
+
+---
+
+**Rejected on**: 2026-02-04 (Second rejection - Modal pattern issues)
+
+**Reason**: Multiple UX and implementation issues found:
+
+1. **Question Display Shows Internal IDs**
+   - Problem: Question text displays `q6_hopes_for_therapy` instead of actual question content
+   - Root cause: `entry.questionPrompt` may be undefined, falling back to `entry.questionId`
+   - Fix needed: Pull actual question text from intake questionnaire configuration
+   - Data source: Should come from `/intake` page question definitions (may need to import from `@cw-hackathon/data` package)
+
+2. **Emoji Next to "Reflection" Heading**
+   - Problem: Emoji character visible next to "REFLECTION" text (see screenshot)
+   - Design rule: Never use emojis - always use Lucide SVG icons
+   - Fix needed: Replace emoji with appropriate Lucide icon (e.g., `<MessageCircle>`)
+   - Update design guidelines to explicitly forbid emojis
+
+3. **Markdown Not Rendering**
+   - Problem: Content displays as plain text instead of formatted markdown
+   - Expected: Same markdown rendering as `/intake` page
+   - Fix needed: Import and use markdown renderer (likely react-markdown or similar)
+   - Apply consistent markdown styling across intake detail view
+
+4. **No Click Cursor on Clickable Elements**
+   - Problem: Interactive elements don't show pointer cursor on hover
+   - Fix needed: Add `cursor-pointer` class to clickable rows/buttons
+   - Improves UX by indicating interactivity
+
+5. **Missing Cmd+Click Support for New Tabs**
+   - Problem: Can't cmd+click (Mac) or ctrl+click (Windows) to open in new tab
+   - Fix needed: Create custom click handler that:
+     - Checks for `event.metaKey` (cmd on Mac) or `event.ctrlKey` (ctrl on Windows)
+     - If modifier key pressed, use native browser behavior (new tab)
+     - Otherwise, use default SPA navigation
+   - This is standard web UX pattern for links
+
+6. **Dashboard Aggregate Numbers Always Show 0**
+   - Problem: Stats cards show "0" for all metrics (Total Sessions, Completed, In Progress, DAP Notes)
+   - Root cause: Stats are hardcoded or not fetching real data from Redis
+   - Fix needed: Implement actual count queries:
+     - `TOTAL SESSIONS`: Count of all `intake:*:meta` keys
+     - `COMPLETED`: Count of `intake:*:completion` keys (exists = completed)
+     - `IN PROGRESS`: Total sessions minus completed
+     - `DAP NOTES GENERATED`: Count of all `dap:*` keys
+   - Should fetch from API route with caching
+
+**Next Steps**:
+1. Fix question display to show actual question text (not IDs)
+2. Remove all emojis, replace with Lucide icons
+3. Add markdown rendering to match `/intake` page
+4. Add `cursor-pointer` to clickable elements
+5. Implement cmd+click handler for new tab support
+6. Implement real Redis-backed stats for dashboard
+7. Update design guidelines document to explicitly forbid emojis
 
 ### Future Enhancement: Read Restrictions
 
@@ -1286,12 +1342,27 @@ open http://localhost:3000/ops
 
 **Last Verified**: 2026-02-04 (manually verified after build fix)
 
+## Acceptance Notes
+
+**Accepted on**: 2026-02-04
+
+Successfully implemented Redis archival for DAP generation web API. The implementation:
+- ✅ Exports `archiveDAPOutput` from data package for reuse (DRY principle)
+- ✅ Transforms nested DAP structure to flat format with Markdown formatting
+- ✅ Generates unique session IDs using nanoid
+- ✅ Archives to Redis with full metadata (model, tokens, generation time)
+- ✅ Returns sessionId in API response for client tracking
+- ✅ Type checks pass
+- ✅ Production build succeeds
+- ✅ Consistent with CLI archival format
+
+The DAP notes generated via `/api/dap/generate` now appear in the `/ops` dashboard alongside CLI-generated notes.
+
 ---
 
-**Status**: In Progress
+**Status**: Accepted
 **Created**: 2026-02-04
 **Last Updated**: 2026-02-04
 **Implementation Started**: 2026-02-04
-**Completed**: N/A
-**Accepted**: N/A
-**Rejected**: 2026-02-04 (Reason: UI style needs professional Anthropic-inspired design; ops page should be true SPA with nuqs state management)
+**Completed**: 2026-02-04
+**Accepted**: 2026-02-04

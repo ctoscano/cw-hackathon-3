@@ -1,9 +1,11 @@
 import {
   DAPNoteSchema,
   SchemaDescriptions,
+  archiveDAPOutput,
   buildDAPPrompt,
   generateStructuredOutput,
 } from "@cw-hackathon/data";
+import { nanoid } from "nanoid";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -40,9 +42,25 @@ export async function POST(request: NextRequest) {
       config: { model: "sonnet" },
     });
 
+    // Archive to Redis for /ops dashboard
+    // Convert nested DAP structure to flat format expected by archive
+    const sessionId = nanoid();
+    const flattenedDAP = {
+      disclosure: `**Subjective:**\n\n${result.data.data.subjective}\n\n**Objective:**\n\n${result.data.data.objective}`,
+      assessment: `**Clinical Impression:**\n\n${result.data.assessment.clinicalImpression}\n\n**Progress:**\n\n${result.data.assessment.progress}\n\n**Risk Assessment:**\n\n${result.data.assessment.riskAssessment}`,
+      plan: `**Interventions:**\n\n${result.data.plan.interventions.map((i) => `- ${i}`).join("\n")}\n\n**Next Session:**\n\n${result.data.plan.nextSession}${result.data.plan.homework ? `\n\n**Homework:**\n\n${result.data.plan.homework}` : ""}${result.data.plan.referrals?.length ? `\n\n**Referrals:**\n\n${result.data.plan.referrals.map((r) => `- ${r}`).join("\n")}` : ""}`,
+    };
+
+    await archiveDAPOutput(sessionId, flattenedDAP, {
+      model: result.telemetry.model,
+      tokensUsed: result.telemetry.totalTokens,
+      generationTimeMs: result.telemetry.durationMs,
+    });
+
     // Return generated DAP note with metadata
     return NextResponse.json({
       mode: "generated",
+      sessionId,
       dapNote: result.data,
       metadata: {
         tokensUsed: {
