@@ -10,6 +10,7 @@
     "check": "biome check --write .",
     "type-check": "turbo run type-check",
     "debug:chrome": "./scripts/chrome-debug.sh",
+    "env:setup": "pnpm --filter @cw-hackathon/data cli setup",
     "prepare": "husky"
   },
   "lint-staged": {

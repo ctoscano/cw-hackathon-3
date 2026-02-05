@@ -202,6 +202,20 @@ cw-hackathon-3/
 
 ## Development Workflows
 
+### Initial Setup
+
+After cloning the repository, run the interactive setup wizard:
+
+```bash
+pnpm env:setup
+```
+
+This will configure environment variables for LLM provider and development settings. The wizard will:
+- Prompt for LLM provider selection (Claude Code or W&B Inference)
+- Configure API keys and project settings
+- Set the development server port (default: 3010)
+- Create `.env.local` and `.env` files for both workspaces
+
 ### Installing Dependencies
 
 ```bash
@@ -630,6 +644,9 @@ See `packages/data/.env.example` for all available options.
 ## Quick Reference
 
 ```bash
+# Initial setup (configure env vars)
+pnpm env:setup
+
 # Install dependencies
 pnpm install
 

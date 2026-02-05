@@ -1,6 +1,7 @@
 import { generateObject, generateText } from "ai";
-import { claudeCode } from "ai-sdk-provider-claude-code";
 import type { z } from "zod";
+import type { LLMProvider, ModelSpec } from "./models.js";
+import { createModel } from "./providers/index.js";
 import { initWeave, isWeaveEnabled, weave } from "./weave.js";
 
 /**
@@ -10,7 +11,10 @@ export interface AITelemetry {
   startTime: Date;
   endTime: Date;
   durationMs: number;
+  /** The actual model name used by the provider */
   model: string;
+  /** The provider used for this call */
+  provider: LLMProvider;
   promptTokens?: number;
   completionTokens?: number;
   totalTokens?: number;
@@ -28,14 +32,25 @@ export interface AIResult<T> {
 
 /**
  * Configuration for AI client
+ *
+ * Supports both new model tiers ('large', 'small') and legacy model names ('opus', 'sonnet', 'haiku').
+ * The actual model used depends on the LLM_PROVIDER environment variable.
  */
 export interface AIClientConfig {
-  /** Model to use: 'opus', 'sonnet', or 'haiku' */
-  model?: "opus" | "sonnet" | "haiku";
+  /**
+   * Model to use.
+   *
+   * New tier system:
+   * - 'large': More capable model (sonnet/gpt-oss-120b)
+   * - 'small': Faster model (haiku/gpt-oss-20b)
+   *
+   * Legacy (backward compatible):
+   * - 'opus': Maps to 'large' tier
+   * - 'sonnet': Maps to 'large' tier
+   * - 'haiku': Maps to 'small' tier
+   */
+  model?: ModelSpec;
 }
-
-/** Default model for AI calls */
-const DEFAULT_MODEL: "opus" | "sonnet" | "haiku" = "sonnet";
 
 /**
  * Core structured output generation - wrapped by Weave for tracing
@@ -44,19 +59,25 @@ async function generateStructuredOutputCore<T>(params: {
   schema: z.ZodType<T>;
   prompt: string;
   system?: string;
-  modelName: string;
+  modelSpec: ModelSpec | undefined;
 }): Promise<{
   object: T;
+  provider: LLMProvider;
+  modelName: string;
   usage?: { inputTokens: number; outputTokens: number; totalTokens: number };
 }> {
+  const { model, provider, modelName } = createModel(params.modelSpec);
+
   const result = await generateObject({
-    model: claudeCode(params.modelName as "opus" | "sonnet" | "haiku"),
+    model,
     schema: params.schema,
     prompt: params.prompt,
     system: params.system,
   });
   return {
     object: result.object,
+    provider,
+    modelName,
     usage: result.usage
       ? {
           inputTokens: result.usage.inputTokens ?? 0,
@@ -78,7 +99,10 @@ const generateStructuredOutputOp = weave.op(generateStructuredOutputCore, {
  * This is the primary function for generating typed responses from the LLM.
  * It wraps the AI SDK's generateObject with timing, token tracking, and error handling.
  *
- * Uses Claude Code as the AI provider - requires Claude Code CLI to be authenticated.
+ * The provider is selected via the LLM_PROVIDER environment variable:
+ * - 'claude-code' (default): Uses Claude Code CLI authentication
+ * - 'wandb-inference': Uses W&B Inference API (requires WANDB_API_KEY)
+ *
  * When WEAVE_PROJECT is set, calls are traced to Weights & Biases.
  */
 export async function generateStructuredOutput<T>(options: {
@@ -88,7 +112,7 @@ export async function generateStructuredOutput<T>(options: {
   config?: AIClientConfig;
 }): Promise<AIResult<T>> {
   const { schema, prompt, system, config } = options;
-  const modelName = config?.model ?? DEFAULT_MODEL;
+  const modelSpec = config?.model;
   const startTime = new Date();
 
   // Initialize Weave if configured (lazy initialization)
@@ -100,7 +124,8 @@ export async function generateStructuredOutput<T>(options: {
     startTime,
     endTime: startTime,
     durationMs: 0,
-    model: modelName,
+    model: "pending", // Will be set after provider resolves
+    provider: "claude-code", // Will be set after provider resolves
     success: false,
   };
 
@@ -111,13 +136,15 @@ export async function generateStructuredOutput<T>(options: {
       schema,
       prompt,
       system,
-      modelName,
+      modelSpec,
     });
 
     const endTime = new Date();
     telemetry.endTime = endTime;
     telemetry.durationMs = endTime.getTime() - startTime.getTime();
     telemetry.success = true;
+    telemetry.model = result.modelName;
+    telemetry.provider = result.provider;
 
     // Extract token usage if available (AI SDK v6 uses inputTokens/outputTokens)
     if (result.usage) {
@@ -127,7 +154,7 @@ export async function generateStructuredOutput<T>(options: {
     }
 
     console.log(
-      `[AI] Generated structured output in ${telemetry.durationMs}ms (${telemetry.totalTokens ?? "?"} tokens)`,
+      `[AI] Generated structured output via ${telemetry.provider}/${telemetry.model} in ${telemetry.durationMs}ms (${telemetry.totalTokens ?? "?"} tokens)`,
     );
 
     return {
@@ -153,18 +180,24 @@ export async function generateStructuredOutput<T>(options: {
 async function generateTextOutputCore(params: {
   prompt: string;
   system?: string;
-  modelName: string;
+  modelSpec: ModelSpec | undefined;
 }): Promise<{
   text: string;
+  provider: LLMProvider;
+  modelName: string;
   usage?: { inputTokens: number; outputTokens: number; totalTokens: number };
 }> {
+  const { model, provider, modelName } = createModel(params.modelSpec);
+
   const result = await generateText({
-    model: claudeCode(params.modelName as "opus" | "sonnet" | "haiku"),
+    model,
     prompt: params.prompt,
     system: params.system,
   });
   return {
     text: result.text,
+    provider,
+    modelName,
     usage: result.usage
       ? {
           inputTokens: result.usage.inputTokens ?? 0,
@@ -184,6 +217,11 @@ const generateTextOutputOp = weave.op(generateTextOutputCore, {
  * Generate text output with telemetry tracking
  *
  * Used for cases where structured output isn't needed (e.g., synthetic generation)
+ *
+ * The provider is selected via the LLM_PROVIDER environment variable:
+ * - 'claude-code' (default): Uses Claude Code CLI authentication
+ * - 'wandb-inference': Uses W&B Inference API (requires WANDB_API_KEY)
+ *
  * When WEAVE_PROJECT is set, calls are traced to Weights & Biases.
  */
 export async function generateTextOutput(options: {
@@ -192,7 +230,7 @@ export async function generateTextOutput(options: {
   config?: AIClientConfig;
 }): Promise<AIResult<string>> {
   const { prompt, system, config } = options;
-  const modelName = config?.model ?? DEFAULT_MODEL;
+  const modelSpec = config?.model;
   const startTime = new Date();
 
   // Initialize Weave if configured (lazy initialization)
@@ -204,7 +242,8 @@ export async function generateTextOutput(options: {
     startTime,
     endTime: startTime,
     durationMs: 0,
-    model: modelName,
+    model: "pending", // Will be set after provider resolves
+    provider: "claude-code", // Will be set after provider resolves
     success: false,
   };
 
@@ -214,13 +253,15 @@ export async function generateTextOutput(options: {
     const result = await callFn({
       prompt,
       system,
-      modelName,
+      modelSpec,
     });
 
     const endTime = new Date();
     telemetry.endTime = endTime;
     telemetry.durationMs = endTime.getTime() - startTime.getTime();
     telemetry.success = true;
+    telemetry.model = result.modelName;
+    telemetry.provider = result.provider;
 
     // Extract token usage if available (AI SDK v6 uses inputTokens/outputTokens)
     if (result.usage) {
@@ -230,7 +271,7 @@ export async function generateTextOutput(options: {
     }
 
     console.log(
-      `[AI] Generated text in ${telemetry.durationMs}ms (${telemetry.totalTokens ?? "?"} tokens)`,
+      `[AI] Generated text via ${telemetry.provider}/${telemetry.model} in ${telemetry.durationMs}ms (${telemetry.totalTokens ?? "?"} tokens)`,
     );
 
     return {
@@ -255,6 +296,7 @@ export async function generateTextOutput(options: {
  */
 export function formatTelemetry(telemetry: AITelemetry): string {
   const lines = [
+    `Provider: ${telemetry.provider}`,
     `Model: ${telemetry.model}`,
     `Duration: ${telemetry.durationMs}ms`,
     `Status: ${telemetry.success ? "Success" : "Failed"}`,
