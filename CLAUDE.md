@@ -11,8 +11,143 @@ This is a Turbo-powered monorepo using pnpm workspaces for a hackathon project.
 - **Language**: TypeScript 5.7.2 with strict mode enabled
 - **Linter/Formatter**: Biome 1.9.4 (replaces ESLint + Prettier)
 - **Web Framework**: Next.js 15.1.4 with React 19
+- **UI Frameworks**:
+  - **Tailwind CSS v4.1.18** - CSS-first configuration (v4 ONLY, no v3!)
+  - **HeroUI v3.0.0-beta.5** - React Aria-based component library
+  - **shadcn/ui** - Accessible components built with Radix UI
 - **CLI Framework**: Citty 0.1.6 (lightweight, TypeScript-first)
 - **CLI Runtime**: Bun (fast startup, native TypeScript support)
+
+## Tailwind CSS v4 - Critical Rules
+
+**⚠️ IMPORTANT:** This project uses **Tailwind CSS v4 ONLY**. Do NOT use v3 patterns or create `tailwind.config.ts` files.
+
+### Core Principles
+
+1. **CSS-First Configuration** - All configuration in `globals.css`, NO JavaScript config files
+2. **@source Directives** - Required to scan files for classes (replaces v3's `content` array)
+3. **@theme inline** - Define custom properties and theme mappings
+4. **No tailwind.config.ts** - Delete any v3 config files immediately
+
+### ✅ RIGHT (Tailwind v4)
+
+```css
+/* apps/web/app/globals.css */
+@custom-variant dark (&:is(.dark *));
+
+@import "tailwindcss";
+
+/* Scan source files */
+@source "./app/**/*.{ts,tsx}";
+@source "./components/**/*.{ts,tsx}";
+@source "./lib/**/*.{ts,tsx}";
+
+/* Theme configuration */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-border: var(--border);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+:root {
+  --primary: oklch(0.648 0.2 131.684);
+  --border: oklch(0.88 0 0);
+}
+```
+
+### ❌ WRONG (Tailwind v3 - DO NOT USE)
+
+```js
+// tailwind.config.ts - DELETE THIS FILE!
+export default {
+  content: ['./app/**/*.{ts,tsx}'],  // v3 pattern
+  theme: {
+    extend: {
+      colors: {
+        primary: '#00ff00',  // v3 pattern
+      },
+    },
+  },
+};
+```
+
+### Key Differences: v3 vs v4
+
+| Feature | v3 (WRONG) | v4 (CORRECT) |
+|---------|------------|--------------|
+| **Config file** | `tailwind.config.ts` | None - delete it! |
+| **Content scanning** | `content: [...]` array | `@source` directives in CSS |
+| **Theme** | JavaScript `theme.extend` | `@theme inline` in CSS |
+| **Imports** | Often in PostCSS | `@import "tailwindcss"` in CSS |
+| **Colors** | Hex/RGB strings | `oklch()` color space recommended |
+
+### Common Mistakes to Avoid
+
+#### ❌ WRONG: Creating a config file
+```bash
+# DO NOT RUN THIS
+npx tailwindcss init
+```
+**Why:** Creates `tailwind.config.ts` which v4 doesn't use.
+
+#### ❌ WRONG: Forgetting @source directives
+```css
+@import "tailwindcss";
+/* Missing @source - NO CLASSES WILL GENERATE! */
+```
+**Why:** Tailwind v4 won't scan any files without `@source` directives.
+
+#### ❌ WRONG: Wrong import order
+```css
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));  /* Too late! */
+```
+**Why:** Custom variants must come BEFORE the Tailwind import.
+
+#### ❌ WRONG: Using v3 color syntax
+```css
+@theme inline {
+  --color-primary: #00ff00;  /* Wrong! */
+}
+```
+**Why:** Use CSS variables that reference `:root` values: `--color-primary: var(--primary)`.
+
+### ✅ RIGHT: Complete Setup Checklist
+
+1. **No config file** - Delete `tailwind.config.ts` if it exists
+2. **PostCSS setup** - `@tailwindcss/postcss` in `postcss.config.mjs`
+3. **CSS imports** - `@import "tailwindcss"` at top of `globals.css`
+4. **@source directives** - Scan all component directories
+5. **@theme inline** - Map CSS variables to Tailwind utilities
+6. **Color variables** - Define in `:root` and `.dark` using `oklch()`
+
+### shadcn/ui + Tailwind v4 Requirements
+
+When using shadcn/ui components, you MUST define these in `@theme inline`:
+
+```css
+@theme inline {
+  /* Shadow variables - REQUIRED for shadcn components */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Color mappings - REQUIRED for utility classes */
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* ... etc */
+}
+```
+
+**Why:** shadcn components use `shadow` class (not `shadow-sm`), which Tailwind v4 doesn't provide by default.
+
+### Reference Documentation
+
+- **Tailwind v4 Setup**: [docs/tailwind-setup.md](./docs/tailwind-setup.md)
+- **Official Docs**: [tailwindcss.com/docs](https://tailwindcss.com/docs)
+- **Demo Page**: [/ops/demo](http://localhost:3001/ops/demo) - Verify setup works
 
 ### Workspace Structure
 
@@ -109,6 +244,30 @@ pnpm check
 # Type checking
 pnpm type-check
 ```
+
+### Quality Gates (Automated Checks)
+
+The project uses automated quality gates to prevent broken code from being committed or pushed.
+
+**Pre-Commit (Tier 1)** - Runs automatically before every commit:
+- Formats and lints staged files with Biome
+- Fast checks (~5-10 seconds)
+- Auto-fixes most issues
+
+**Pre-Push (Tier 2)** - Runs automatically before every push:
+- Type checks all workspaces
+- Builds all workspaces for production
+- Catches build failures and type errors (~30-60 seconds)
+
+**Bypass hooks (emergency only):**
+```bash
+git commit --no-verify  # Skip pre-commit
+git push --no-verify    # Skip pre-push
+```
+
+⚠️ **Important:** Only bypass hooks in emergencies. They prevent broken builds from reaching the repository.
+
+**See:** [docs/quality-gates.md](./docs/quality-gates.md) for detailed documentation.
 
 ### Running Individual Commands
 

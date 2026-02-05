@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Tier 2: Pre-push quality checks
+# - Type check all workspaces
+# - Build all workspaces for production
+# - Thorough checks (30-60 seconds)
+
+echo "🔍 Running type checks..."
+pnpm type-check || exit 1
+
+echo "🏗️  Running production build..."
+pnpm build || exit 1
+
+echo "✅ All checks passed! Pushing..."

@@ -50,12 +50,7 @@ export function ChatMessage({
       // Wrap in container to prevent width/height jitter during animation
       return (
         <span style={{ display: "inline-block", minWidth: `${estimatedWidth}px` }}>
-          <TypingAnimation
-            words={messages}
-            loop
-            duration={80}
-            showCursor={false}
-          />
+          <TypingAnimation words={messages} loop duration={80} showCursor={false} />
         </span>
       );
     }

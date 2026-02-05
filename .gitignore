@@ -52,3 +52,6 @@ packages/data/output/
 .agents/
 .claude/skills/
 .opencode/
+
+# PRD context tracking (project-specific state)
+.claude/prd-context.json

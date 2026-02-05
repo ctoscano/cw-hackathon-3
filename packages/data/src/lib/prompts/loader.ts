@@ -54,10 +54,7 @@ function findPromptsDir(): string {
  * @param options - Optional configuration including version
  * @returns Loaded prompt with metadata and content
  */
-export function loadPrompt(
-  filePath: string,
-  options?: { version?: string },
-): LoadedPrompt {
+export function loadPrompt(filePath: string, options?: { version?: string }): LoadedPrompt {
   const version = options?.version ?? "v3"; // Default to v3 (highest quality: 9.3/10)
   let absolutePath: string;
 
@@ -69,9 +66,10 @@ export function loadPrompt(
 
     // If filePath contains a category (e.g., "intake/reflection-system.md"),
     // inject the version into the path (e.g., "intake/v1/reflection-system.md")
+    // Skip version injection if version is empty string or if version is already in path
     let versionedPath = filePath;
     const parts = filePath.split("/");
-    if (parts.length > 1 && !parts.includes(version)) {
+    if (parts.length > 1 && version && version !== "" && !parts.includes(version)) {
       // Insert version after the category (first part)
       parts.splice(1, 0, version);
       versionedPath = parts.join("/");

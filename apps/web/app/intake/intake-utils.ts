@@ -164,11 +164,13 @@ export function getLoadingMessagesForQuestion(questionId: string): string[] {
     ],
   };
 
-  return loadingMessages[questionId] || [
-    "Reflecting...",
-    "Considering your response...",
-    "Gathering thoughts...",
-  ];
+  return (
+    loadingMessages[questionId] || [
+      "Reflecting...",
+      "Considering your response...",
+      "Gathering thoughts...",
+    ]
+  );
 }
 
 /**
