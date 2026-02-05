@@ -3,23 +3,25 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import DAPList from "./components/DAPList";
+import DashboardStats from "./components/DashboardStats";
 import IntakeList from "./components/IntakeList";
 import OpsHeader from "./components/OpsHeader";
-import SessionDetail from "./components/SessionDetail";
 
 // Force dynamic rendering (client-side only) since we use useQueryStates
 export const dynamic = "force-dynamic";
 
 export default function OpsPage() {
-  const [{ tab, page, search, session }, setQuery] = useQueryStates({
+  const [{ tab, page, search }, setQuery] = useQueryStates({
     tab: parseAsString.withDefault("intake"),
     page: parseAsInteger.withDefault(1),
     search: parseAsString,
-    session: parseAsString,
   });
 
   return (
     <div className="space-y-6">
+      {/* Dashboard Stats */}
+      <DashboardStats loading={false} />
+
       <OpsHeader
         search={search || ""}
         onSearchChange={(value) => setQuery({ search: value || null, page: 1 })}
@@ -46,26 +48,13 @@ export default function OpsPage() {
             page={page}
             search={search || undefined}
             onPageChange={(newPage) => setQuery({ page: newPage })}
-            onSelectSession={(sessionId) => setQuery({ session: sessionId })}
           />
         </TabsContent>
 
         <TabsContent value="dap" className="space-y-4">
-          <DAPList
-            page={page}
-            onPageChange={(newPage) => setQuery({ page: newPage })}
-            onSelectSession={(sessionId) => setQuery({ session: sessionId })}
-          />
+          <DAPList page={page} onPageChange={(newPage) => setQuery({ page: newPage })} />
         </TabsContent>
       </Tabs>
-
-      {session && (
-        <SessionDetail
-          sessionId={session}
-          type={tab as "intake" | "dap"}
-          onClose={() => setQuery({ session: null })}
-        />
-      )}
     </div>
   );
 }

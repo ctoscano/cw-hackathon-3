@@ -2,13 +2,14 @@
 
 import type { SessionSummary } from "@/lib/redis/ops";
 import { Button } from "@heroui/react";
+import Link from "next/link";
 
 interface SessionTableProps {
   sessions: SessionSummary[];
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onSelectSession: (sessionId: string) => void;
+  sessionType: "intake" | "dap";
 }
 
 export default function SessionTable({
@@ -16,7 +17,7 @@ export default function SessionTable({
   page,
   totalPages,
   onPageChange,
-  onSelectSession,
+  sessionType,
 }: SessionTableProps) {
   return (
     <div className="space-y-4">
@@ -32,18 +33,10 @@ export default function SessionTable({
       {/* Session Rows */}
       <div className="space-y-2">
         {sessions.map((session) => (
-          <div
+          <Link
             key={session.id}
-            onClick={() => onSelectSession(session.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSelectSession(session.id);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            className="cursor-pointer bg-white border-2 border-gray-200 rounded-lg hover:border-green-400 hover:shadow-md transition-all"
+            href={`/ops/${sessionType}/${session.id}`}
+            className="block bg-white border-2 border-gray-200 rounded-lg hover:border-green-400 hover:shadow-md transition-all"
           >
             <div className="grid grid-cols-[2fr_1.5fr_1fr_2fr_1fr] gap-4 px-6 py-4 items-center">
               {/* Session ID */}
@@ -92,7 +85,7 @@ export default function SessionTable({
                 </span>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
