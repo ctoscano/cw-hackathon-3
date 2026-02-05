@@ -43,6 +43,19 @@ Install Bun:
 curl -fsSL https://bun.sh/install | bash
 ```
 
+### Setup Environment
+
+Run the interactive setup wizard to configure environment variables:
+
+```bash
+pnpm env:setup
+```
+
+This will prompt you to configure:
+- LLM provider (Claude Code or W&B Inference)
+- API keys and project settings
+- Development server port (default: 3010)
+
 ### Install Dependencies
 
 ```bash
@@ -89,6 +102,7 @@ bun run src/bin/cli.ts hello --name="Developer" --loud
 
 ### Root Commands
 
+- `pnpm env:setup` - Interactive environment setup wizard
 - `pnpm install` - Install all dependencies
 - `pnpm dev` - Run all dev servers
 - `pnpm build` - Build all workspaces
@@ -132,7 +146,10 @@ bun run src/bin/cli.ts <command>
 ```
 
 **Commands:**
+- `setup` - Interactive environment configuration wizard
 - `hello [name]` - Say hello (use `--loud` flag for emphasis)
+- `dap` - DAP (Data Analysis Plan) generation
+- `intake` - Client intake form processing
 
 ## Code Quality
 

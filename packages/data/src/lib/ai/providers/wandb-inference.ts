@@ -75,7 +75,7 @@ function getProvider() {
  */
 export function createWandBInferenceModel(modelName: string): LanguageModel {
   const provider = getProvider();
-  return provider(modelName);
+  return provider.chat(modelName);
 }
 
 /**

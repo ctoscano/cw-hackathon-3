@@ -9,7 +9,8 @@
     "format": "biome format --write .",
     "check": "biome check --write .",
     "type-check": "turbo run type-check",
-    "debug:chrome": "./scripts/chrome-debug.sh"
+    "debug:chrome": "./scripts/chrome-debug.sh",
+    "env:setup": "pnpm --filter @cw-hackathon/data cli setup"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

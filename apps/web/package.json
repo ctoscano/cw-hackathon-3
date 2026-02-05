@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "sh -c 'set -a; [ -f .env.local ] && . .env.local; set +a; next dev -p ${PORT:-3000}'",
     "build": "next build",
     "start": "next start",
     "lint": "biome check .",
@@ -16,7 +16,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",
     "motion": "^12.31.0",
-    "next": "^15.1.4",
+    "next": "^15.5.12",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

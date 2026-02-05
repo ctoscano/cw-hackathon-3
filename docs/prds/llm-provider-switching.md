@@ -179,6 +179,120 @@ If issues occur:
 1. Set `LLM_PROVIDER=claude-code` (or unset it) to revert to Claude Code
 2. The existing code path remains intact as the default
 
+## Setup Automation
+
+### Interactive Setup Wizard
+
+A setup command is available to configure environment variables interactively:
+
+```bash
+pnpm env:setup
+```
+
+This command will:
+1. Prompt for LLM provider selection (Claude Code or W&B Inference)
+2. Ask for WANDB_API_KEY if W&B Inference is selected
+3. Optionally configure WEAVE_PROJECT for tracing
+4. Set the PORT for the Next.js dev server (default: 3010)
+5. Write configuration to both workspaces:
+   - `apps/web/.env.local`
+   - `packages/data/.env`
+
+### Example Session
+
+```bash
+$ pnpm env:setup
+
+┌──────────────────────────────────────────┐
+│  CW Hackathon Setup                      │
+│  Configure environment variables for     │
+│  LLM provider and development            │
+└──────────────────────────────────────────┘
+
+? LLM Provider: › wandb-inference
+? WANDB_API_KEY: › wandb_v1_***
+? WEAVE_PROJECT (optional, for tracing): › hackathon-3
+? PORT: › 3010
+
+┌──────────────────────────────────────────┐
+│  Configuration Summary                   │
+│  LLM_PROVIDER: wandb-inference           │
+│  WANDB_API_KEY: wandb_v1_...             │
+│  WEAVE_PROJECT: hackathon-3              │
+│  PORT: 3010                              │
+└──────────────────────────────────────────┘
+
+? Write configuration to .env files? › Yes
+
+✓ Configuration saved!
+
+┌──────────────────────────────────────────┐
+│  Next Steps                              │
+│  Files created:                          │
+│    • apps/web/.env.local                 │
+│    • packages/data/.env                  │
+│                                          │
+│  Start development:                      │
+│    pnpm dev    # Starts on port 3010     │
+└──────────────────────────────────────────┘
+```
+
+### Technical Implementation
+
+**Files:**
+- `packages/data/src/commands/setup.ts` - Interactive setup command
+- `packages/data/src/lib/setup/env-writer.ts` - Environment file writer utility
+
+**Dependencies:**
+- `consola@^3.4.2` - Interactive prompts and pretty output
+
+**Features:**
+- Validates required variables based on provider choice
+- Preserves existing environment variables
+- Masks sensitive API keys in confirmation display
+- Provides clear next steps after setup
+
+## Implementation Notes
+
+### AI SDK v6 and API Compatibility
+
+**Issue Discovered:** AI SDK v6 uses OpenAI's Responses API by default, which is incompatible with W&B Inference.
+
+**Context:**
+- AI SDK v6 introduced support for OpenAI's new Responses API (`/v1/responses` endpoint)
+- When calling `provider(modelName)`, the SDK defaults to the Responses API
+- W&B Inference only supports the traditional Chat Completions API (`/v1/chat/completions`)
+- This mismatch caused "Invalid Authentication" errors (400 status) when using W&B Inference
+
+**Solution:**
+Use the `.chat()` method to explicitly use the Chat Completions API:
+
+```typescript
+// ❌ Wrong - uses Responses API by default
+return provider(modelName);
+
+// ✅ Correct - explicitly uses Chat Completions API
+return provider.chat(modelName);
+```
+
+**Files Modified:**
+- `packages/data/src/lib/ai/providers/wandb-inference.ts:78` - Changed to `provider.chat(modelName)`
+
+**References:**
+- [AI SDK OpenAI Provider Documentation](https://ai-sdk.dev/docs/guides/providers/openai)
+- [AI SDK v6 Migration Guide](https://ai-sdk.dev/docs/migration-guides/migration-guide-6-0)
+- [OpenAI Responses API Guide](https://ai-sdk.dev/cookbook/guides/openai-responses)
+
+### WEAVE_PROJECT Format
+
+The `WEAVE_PROJECT` environment variable should use the format `<team-name>/<project-name>` for best compatibility:
+
+```bash
+WEAVE_PROJECT=ctoscano-weller-labs/wnb_oai
+```
+
+However, Weave tracing may work with just the project name. The OpenAI-Project header passed to W&B Inference uses this value directly, so following the team/project format is recommended.
+
 ## Success Criteria
 
 1. Can generate structured output with W&B Inference provider
@@ -186,3 +300,4 @@ If issues occur:
 3. Switching providers requires only environment variable change
 4. Weave tracing works with both providers
 5. Existing code using legacy model names continues to work
+6. Setup wizard simplifies initial configuration
