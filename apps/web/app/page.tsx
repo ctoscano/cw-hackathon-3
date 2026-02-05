@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cw-hackathon/ui";
+import { ClipboardList, FileText } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -23,10 +24,8 @@ export default function HomePage() {
           <Link href="/intake" className="group">
             <Card className="h-full transition-all hover:border-primary hover:shadow-lg">
               <CardHeader>
-                <div className="mb-2 text-4xl">
-                  <span role="img" aria-label="clipboard">
-                    📋
-                  </span>
+                <div className="mb-2">
+                  <ClipboardList className="h-10 w-10 text-primary" aria-hidden="true" />
                 </div>
                 <CardTitle className="text-xl group-hover:text-primary">
                   Therapy Readiness Assessment
@@ -53,10 +52,8 @@ export default function HomePage() {
           <Link href="/dap" className="group">
             <Card className="h-full transition-all hover:border-secondary hover:shadow-lg">
               <CardHeader>
-                <div className="mb-2 text-4xl">
-                  <span role="img" aria-label="notepad">
-                    📝
-                  </span>
+                <div className="mb-2">
+                  <FileText className="h-10 w-10 text-secondary" aria-hidden="true" />
                 </div>
                 <CardTitle className="text-xl group-hover:text-secondary">
                   DAP Notes Generator

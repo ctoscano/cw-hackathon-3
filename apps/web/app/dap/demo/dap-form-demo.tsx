@@ -14,6 +14,7 @@ import {
   TabsTrigger,
   Textarea,
 } from "@cw-hackathon/ui";
+import { CheckCircle } from "lucide-react";
 import { useState } from "react";
 
 // Mock data for demonstration
@@ -319,9 +320,7 @@ ${dapNote.plan.nextSession}`;
     <Card className="border-border/50 overflow-hidden">
       <CardHeader className="flex-row items-center justify-between space-y-0 bg-muted/30 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <span className="text-2xl" role="img" aria-label="checkmark">
-            ✓
-          </span>
+          <CheckCircle className="h-6 w-6 text-accent" aria-hidden="true" />
           <CardTitle className="text-lg font-heading">Generated DAP Note</CardTitle>
         </div>
         <CopyButton

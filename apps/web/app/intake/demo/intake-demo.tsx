@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
 import { triggerConfetti } from "@/lib/confetti";
+import { Moon, PartyPopper, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
 import intakeStyles from "../intake.module.css";
@@ -44,7 +45,9 @@ export function IntakeDemo() {
             {/* Default */}
             <Card className="relative w-[200px] overflow-hidden">
               <CardHeader>
-                <CardTitle className="text-center text-4xl">✨</CardTitle>
+                <CardTitle className="flex justify-center">
+                  <Sparkles className="h-10 w-10 text-primary" aria-hidden="true" />
+                </CardTitle>
                 <CardDescription className="text-center">Default</CardDescription>
               </CardHeader>
               <BorderBeam size={200} duration={6} />
@@ -53,7 +56,9 @@ export function IntakeDemo() {
             {/* Fast */}
             <Card className="relative w-[200px] overflow-hidden">
               <CardHeader>
-                <CardTitle className="text-center text-4xl">⚡</CardTitle>
+                <CardTitle className="flex justify-center">
+                  <Zap className="h-10 w-10 text-yellow-500" aria-hidden="true" />
+                </CardTitle>
                 <CardDescription className="text-center">Fast</CardDescription>
               </CardHeader>
               <BorderBeam size={200} duration={3} colorFrom="#00ff88" colorTo="#00ccff" />
@@ -62,7 +67,9 @@ export function IntakeDemo() {
             {/* Slow */}
             <Card className="relative w-[200px] overflow-hidden">
               <CardHeader>
-                <CardTitle className="text-center text-4xl">🌙</CardTitle>
+                <CardTitle className="flex justify-center">
+                  <Moon className="h-10 w-10 text-purple-400" aria-hidden="true" />
+                </CardTitle>
                 <CardDescription className="text-center">Slow</CardDescription>
               </CardHeader>
               <BorderBeam size={200} duration={12} colorFrom="#ff6b9d" colorTo="#c06bff" />
@@ -234,14 +241,14 @@ export function IntakeDemo() {
               <BorderBeam size={250} duration={12} delay={0} />
               {showAnimations ? (
                 <TypingAnimation
-                  words={["Gathering insights ✨", "Personalizing results 🎯", "Almost ready 🚀"]}
+                  words={["Gathering insights...", "Personalizing results...", "Almost ready..."]}
                   loop
                   className={intakeStyles.completionWaitingText}
                   duration={80}
                   showCursor={false}
                 />
               ) : (
-                <p className={intakeStyles.completionWaitingText}>Gathering insights ✨</p>
+                <p className={intakeStyles.completionWaitingText}>Gathering insights...</p>
               )}
             </div>
           </div>
@@ -263,7 +270,7 @@ export function IntakeDemo() {
           <div className={intakeStyles.completionWaiting}>
             <div className={intakeStyles.completionWaitingCard}>
               <BorderBeam size={250} duration={12} delay={0} />
-              <p className={intakeStyles.completionWaitingText}>Gathering insights ✨</p>
+              <p className={intakeStyles.completionWaitingText}>Gathering insights...</p>
 
               <div className={intakeStyles.contactForm}>
                 <p className={intakeStyles.contactFormText}>
@@ -368,9 +375,13 @@ export function IntakeDemo() {
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
             }}
           >
-            Trigger Confetti 🎉
+            <PartyPopper className="h-5 w-5" aria-hidden="true" />
+            Trigger Confetti
           </button>
         </div>
       </section>

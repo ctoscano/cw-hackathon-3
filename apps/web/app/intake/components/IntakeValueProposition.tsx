@@ -3,6 +3,7 @@
  */
 
 import { Card, CardContent } from "@cw-hackathon/ui";
+import { Check } from "lucide-react";
 
 export function IntakeValueProposition() {
   return (
@@ -22,7 +23,7 @@ export function IntakeValueProposition() {
               key={item}
               className="flex items-start gap-2 text-sm text-muted-foreground leading-snug"
             >
-              <span className="text-secondary font-semibold mt-0.5">✓</span>
+              <Check className="h-4 w-4 text-secondary flex-shrink-0 mt-0.5" aria-hidden="true" />
               <span>{item}</span>
             </li>
           ))}

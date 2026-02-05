@@ -1,3 +1,4 @@
+import { FlaskConical } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DAPFormDemo } from "./dap-form-demo";
@@ -21,9 +22,7 @@ export default function DAPDemoPage() {
             Back to DAP
           </Link>
           <div className="flex items-center gap-3">
-            <span className="text-2xl" role="img" aria-label="test tube">
-              🧪
-            </span>
+            <FlaskConical className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
             <h1 className="font-heading text-xl font-semibold text-foreground">DAP Demo</h1>
           </div>
           <div className="w-20" />

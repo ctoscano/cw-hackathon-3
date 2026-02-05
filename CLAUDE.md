@@ -626,6 +626,44 @@ For detailed React development patterns, performance optimization, and component
 - Parallelize independent async operations with `Promise.all()`
 - Calculate derived state during rendering, not in effects
 
+### UI Icons - NEVER Use Emojis
+
+**CRITICAL RULE:** Never use emoji characters in the UI. Always use Lucide React icons instead.
+
+**Why:**
+- Emojis render inconsistently across platforms and browsers
+- Emojis don't match the professional design aesthetic
+- SVG icons are more accessible and customizable
+- Icons can be styled with Tailwind classes (size, color, etc.)
+
+**Correct pattern:**
+```tsx
+import { ClipboardList, FileText, Check, FlaskConical } from "lucide-react";
+
+// Header icons
+<ClipboardList className="h-6 w-6 text-primary" />
+
+// Checkmarks
+<Check className="h-4 w-4 text-accent" />
+
+// Demo/test pages
+<FlaskConical className="h-6 w-6 text-muted-foreground" />
+```
+
+**Icon mappings (emoji -> Lucide):**
+| Instead of | Use |
+|------------|-----|
+| 📋 | `<ClipboardList />` |
+| 📝 | `<FileText />` or `<StickyNote />` |
+| ✓ ✔ | `<Check />` or `<CheckCircle />` |
+| 🧪 | `<FlaskConical />` or `<TestTube2 />` |
+| ✨ | `<Sparkles />` |
+| 🎯 | `<Target />` |
+| 🚀 | `<Rocket />` |
+| 🎉 | Use confetti animation, not emoji |
+
+**See:** [docs/design-guidelines.md](./docs/design-guidelines.md) for complete icon usage guide.
+
 ## Adding New Workspaces
 
 ### New App

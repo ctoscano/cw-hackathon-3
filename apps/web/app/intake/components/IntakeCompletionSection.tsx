@@ -39,7 +39,7 @@ export function IntakeCompletionSection({
         <div className={styles.completionWaitingCard}>
           <BorderBeam size={250} duration={12} delay={0} />
           <TypingAnimation
-            words={["Gathering insights ✨", "Personalizing results 🎯", "Almost ready 🚀"]}
+            words={["Gathering insights...", "Personalizing results...", "Almost ready..."]}
             loop
             className={styles.completionWaitingText}
             duration={80}
