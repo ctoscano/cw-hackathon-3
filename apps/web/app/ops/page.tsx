@@ -6,16 +6,26 @@ import DAPList from "./components/DAPList";
 import DashboardStats from "./components/DashboardStats";
 import IntakeList from "./components/IntakeList";
 import OpsHeader from "./components/OpsHeader";
+import SessionDetail from "./components/SessionDetail";
 
 // Force dynamic rendering (client-side only) since we use useQueryStates
 export const dynamic = "force-dynamic";
 
 export default function OpsPage() {
-  const [{ tab, page, search }, setQuery] = useQueryStates({
+  const [{ tab, page, search, session }, setQuery] = useQueryStates({
     tab: parseAsString.withDefault("intake"),
     page: parseAsInteger.withDefault(1),
     search: parseAsString,
+    session: parseAsString, // Session ID for detail modal - SPA pattern
   });
+
+  const handleSelectSession = (sessionId: string) => {
+    setQuery({ session: sessionId });
+  };
+
+  const handleCloseDetail = () => {
+    setQuery({ session: null });
+  };
 
   return (
     <div className="space-y-6">
@@ -48,13 +58,27 @@ export default function OpsPage() {
             page={page}
             search={search || undefined}
             onPageChange={(newPage) => setQuery({ page: newPage })}
+            onSelectSession={handleSelectSession}
           />
         </TabsContent>
 
         <TabsContent value="dap" className="space-y-4">
-          <DAPList page={page} onPageChange={(newPage) => setQuery({ page: newPage })} />
+          <DAPList
+            page={page}
+            onPageChange={(newPage) => setQuery({ page: newPage })}
+            onSelectSession={handleSelectSession}
+          />
         </TabsContent>
       </Tabs>
+
+      {/* Session Detail Modal - True SPA pattern with nuqs state management */}
+      {session && (
+        <SessionDetail
+          sessionId={session}
+          sessionType={tab as "intake" | "dap"}
+          onClose={handleCloseDetail}
+        />
+      )}
     </div>
   );
 }

@@ -9,9 +9,15 @@ interface IntakeListProps {
   page: number;
   search?: string;
   onPageChange: (page: number) => void;
+  onSelectSession: (sessionId: string) => void;
 }
 
-export default function IntakeList({ page, search, onPageChange }: IntakeListProps) {
+export default function IntakeList({
+  page,
+  search,
+  onPageChange,
+  onSelectSession,
+}: IntakeListProps) {
   const [data, setData] = useState<PaginatedResponse<SessionSummary> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +87,7 @@ export default function IntakeList({ page, search, onPageChange }: IntakeListPro
       page={data.page}
       totalPages={data.totalPages}
       onPageChange={onPageChange}
-      sessionType="intake"
+      onSelectSession={onSelectSession}
     />
   );
 }

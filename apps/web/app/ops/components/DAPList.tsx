@@ -8,9 +8,10 @@ import SessionTable from "./SessionTable";
 interface DAPListProps {
   page: number;
   onPageChange: (page: number) => void;
+  onSelectSession: (sessionId: string) => void;
 }
 
-export default function DAPList({ page, onPageChange }: DAPListProps) {
+export default function DAPList({ page, onPageChange, onSelectSession }: DAPListProps) {
   const [data, setData] = useState<PaginatedResponse<SessionSummary> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export default function DAPList({ page, onPageChange }: DAPListProps) {
       page={data.page}
       totalPages={data.totalPages}
       onPageChange={onPageChange}
-      sessionType="dap"
+      onSelectSession={onSelectSession}
     />
   );
 }

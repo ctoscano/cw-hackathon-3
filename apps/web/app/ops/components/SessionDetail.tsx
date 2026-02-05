@@ -10,11 +10,11 @@ import { useEffect, useState } from "react";
 
 interface SessionDetailProps {
   sessionId: string;
-  type: "intake" | "dap";
+  sessionType: "intake" | "dap";
   onClose: () => void;
 }
 
-export default function SessionDetail({ sessionId, type, onClose }: SessionDetailProps) {
+export default function SessionDetail({ sessionId, sessionType, onClose }: SessionDetailProps) {
   const [data, setData] = useState<SessionData | DAPArchiveEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function SessionDetail({ sessionId, type, onClose }: SessionDetai
 
       try {
         const url =
-          type === "intake" ? `/api/ops/intake/${sessionId}` : `/api/ops/dap/${sessionId}`;
+          sessionType === "intake" ? `/api/ops/intake/${sessionId}` : `/api/ops/dap/${sessionId}`;
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -43,7 +43,7 @@ export default function SessionDetail({ sessionId, type, onClose }: SessionDetai
     }
 
     fetchData();
-  }, [sessionId, type]);
+  }, [sessionId, sessionType]);
 
   if (!sessionId) return null;
 
@@ -53,27 +53,31 @@ export default function SessionDetail({ sessionId, type, onClose }: SessionDetai
         <Modal.Container size="lg" scroll="inside">
           <Modal.Dialog>
             <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading className="text-2xl font-bold">Session Details</Modal.Heading>
+            <Modal.Header className="bg-anthropic-light border-b border-anthropic-mid-gray/20">
+              <Modal.Heading className="text-2xl font-heading font-semibold text-anthropic-dark">
+                Session Details
+              </Modal.Heading>
             </Modal.Header>
             <Modal.Body>
               {loading && (
                 <div className="space-y-4">
-                  <div className="h-8 w-full bg-muted rounded animate-pulse" />
-                  <div className="h-64 w-full bg-muted rounded animate-pulse" />
+                  <div className="h-8 w-full bg-anthropic-light-gray rounded animate-pulse" />
+                  <div className="h-64 w-full bg-anthropic-light-gray rounded animate-pulse" />
                 </div>
               )}
 
               {error && (
-                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                  <p className="font-bold text-red-900">Error loading session</p>
-                  <p className="text-sm mt-1 text-red-700">{error}</p>
+                <div className="bg-anthropic-orange/10 border border-anthropic-orange rounded-lg p-4">
+                  <p className="font-heading font-semibold text-anthropic-dark">
+                    Error loading session
+                  </p>
+                  <p className="text-sm mt-1 font-body text-anthropic-dark/80">{error}</p>
                 </div>
               )}
 
               {!loading && !error && data && (
                 <div className="space-y-6">
-                  {type === "intake" ? (
+                  {sessionType === "intake" ? (
                     <IntakeSessionDetail data={data as SessionData} />
                   ) : (
                     <DAPSessionDetail data={data as DAPArchiveEntry} />
@@ -92,9 +96,9 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
   return (
     <>
       {/* Session Information */}
-      <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-          <Info className="h-5 w-5 text-green-600 flex-shrink-0" />
+      <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
+        <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+          <Info className="h-5 w-5 text-anthropic-blue flex-shrink-0" />
           Session Information
         </h3>
         <div className="grid grid-cols-2 gap-4">
@@ -123,9 +127,9 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
 
       {/* Contact Information */}
       {data.contact && (
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-            <User className="h-5 w-5 text-green-600 flex-shrink-0" />
+        <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
+          <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+            <User className="h-5 w-5 text-anthropic-green flex-shrink-0" />
             Contact Information
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -146,14 +150,14 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
       )}
 
       {/* Conversational Q&A */}
-      <div className="bg-gradient-to-b from-gray-50 to-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
-          <MessageSquare className="h-5 w-5 text-green-600 flex-shrink-0" />
+      <div className="bg-gradient-to-b from-anthropic-light to-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
+        <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-6">
+          <MessageSquare className="h-5 w-5 text-anthropic-orange flex-shrink-0" />
           Intake Conversation ({data.progress.length} Questions)
         </h3>
         <div className="space-y-1 bg-white rounded-lg p-4 border border-gray-200">
           {data.progress.map((entry, index) => (
-            <div key={index}>
+            <div key={entry.questionId || `question-${index}`}>
               <QuestionMessage
                 questionNumber={index + 1}
                 questionText={entry.questionPrompt || entry.questionId}
@@ -167,51 +171,53 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
 
       {/* Completion Outputs */}
       {data.completion && (
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+        <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
+          <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+            <CheckCircle className="h-5 w-5 text-anthropic-green flex-shrink-0" />
             Final Report
           </h3>
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-1 w-12 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full" />
-                <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                <div className="h-1 w-12 bg-anthropic-orange rounded-full" />
+                <p className="text-sm font-heading font-semibold text-anthropic-dark uppercase tracking-wide">
                   Personalized Brief
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-purple-50 to-white border-l-4 border-purple-400 rounded-r-lg p-4 text-sm leading-relaxed text-gray-800 shadow-sm">
+              <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-orange rounded-r-lg p-4 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm">
                 {data.completion.outputs.personalizedBrief}
               </div>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full" />
-                <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                <div className="h-1 w-12 bg-anthropic-blue rounded-full" />
+                <p className="text-sm font-heading font-semibold text-anthropic-dark uppercase tracking-wide">
                   First Session Guide
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-blue-50 to-white border-l-4 border-blue-400 rounded-r-lg p-4 text-sm leading-relaxed text-gray-800 shadow-sm whitespace-pre-wrap">
+              <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-blue rounded-r-lg p-4 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm whitespace-pre-wrap">
                 {data.completion.outputs.firstSessionGuide}
               </div>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-1 w-12 bg-gradient-to-r from-green-500 to-green-300 rounded-full" />
-                <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                <div className="h-1 w-12 bg-anthropic-green rounded-full" />
+                <p className="text-sm font-heading font-semibold text-anthropic-dark uppercase tracking-wide">
                   Suggested Experiments
                 </p>
               </div>
               <ul className="space-y-3">
                 {data.completion.outputs.experiments.map((exp, i) => (
                   <li
-                    key={i}
-                    className="flex gap-3 text-sm bg-gradient-to-r from-green-50 to-white border-l-4 border-green-400 rounded-r-lg p-4 shadow-sm"
+                    key={exp.slice(0, 50)}
+                    className="flex gap-3 text-sm bg-gradient-to-r from-anthropic-light to-white border-l-4 border-anthropic-green rounded-r-lg p-4 shadow-sm"
                   >
-                    <span className="flex-shrink-0 flex items-center justify-center min-w-[28px] h-7 rounded-full bg-gradient-to-br from-green-600 to-green-500 text-white text-sm font-bold shadow-sm">
+                    <span className="flex-shrink-0 flex items-center justify-center min-w-[28px] h-7 rounded-full bg-anthropic-green text-white text-sm font-heading font-semibold shadow-sm">
                       {i + 1}
                     </span>
-                    <span className="pt-0.5 leading-relaxed text-gray-800">{exp}</span>
+                    <span className="pt-0.5 leading-relaxed font-body text-anthropic-dark">
+                      {exp}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -228,7 +234,10 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
           </h3>
           <div className="space-y-2">
             {data.interactions.map((interaction, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
+              <div
+                key={`${interaction.type}-${interaction.timestamp}`}
+                className="flex items-center gap-3 text-sm"
+              >
                 <Badge variant="outline">{interaction.type}</Badge>
                 <span className="text-gray-600">
                   {new Date(interaction.timestamp).toLocaleString()}
@@ -246,9 +255,9 @@ function DAPSessionDetail({ data }: { data: DAPArchiveEntry }) {
   return (
     <>
       {/* Session Information */}
-      <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-          <Info className="h-5 w-5 text-green-600 flex-shrink-0" />
+      <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
+        <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+          <Info className="h-5 w-5 text-anthropic-blue flex-shrink-0" />
           Session Information
         </h3>
         <div className="grid grid-cols-2 gap-4">
@@ -288,34 +297,36 @@ function DAPSessionDetail({ data }: { data: DAPArchiveEntry }) {
       </div>
 
       {/* Data (Disclosure) */}
-      <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
+      <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">📊</span>
-          <h3 className="text-lg font-bold text-gray-900">Data (Disclosure)</h3>
+          <h3 className="text-lg font-heading font-semibold text-anthropic-dark">
+            Data (Disclosure)
+          </h3>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-white border-l-4 border-purple-400 rounded-r-lg p-5 text-sm whitespace-pre-wrap leading-relaxed text-gray-800 shadow-sm">
+        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-orange rounded-r-lg p-5 text-sm font-body whitespace-pre-wrap leading-relaxed text-anthropic-dark shadow-sm">
           {data.dap.disclosure}
         </div>
       </div>
 
       {/* Assessment */}
-      <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
+      <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">🔍</span>
-          <h3 className="text-lg font-bold text-gray-900">Assessment</h3>
+          <h3 className="text-lg font-heading font-semibold text-anthropic-dark">Assessment</h3>
         </div>
-        <div className="bg-gradient-to-br from-amber-50 to-white border-l-4 border-amber-400 rounded-r-lg p-5 text-sm whitespace-pre-wrap leading-relaxed text-gray-800 shadow-sm">
+        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-blue rounded-r-lg p-5 text-sm font-body whitespace-pre-wrap leading-relaxed text-anthropic-dark shadow-sm">
           {data.dap.assessment}
         </div>
       </div>
 
       {/* Plan */}
-      <div className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-md">
+      <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">📋</span>
-          <h3 className="text-lg font-bold text-gray-900">Plan</h3>
+          <h3 className="text-lg font-heading font-semibold text-anthropic-dark">Plan</h3>
         </div>
-        <div className="bg-gradient-to-br from-emerald-50 to-white border-l-4 border-emerald-400 rounded-r-lg p-5 text-sm whitespace-pre-wrap leading-relaxed text-gray-800 shadow-sm">
+        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-green rounded-r-lg p-5 text-sm font-body whitespace-pre-wrap leading-relaxed text-anthropic-dark shadow-sm">
           {data.dap.plan}
         </div>
       </div>
