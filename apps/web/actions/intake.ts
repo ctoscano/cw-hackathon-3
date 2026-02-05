@@ -20,6 +20,7 @@ import {
 export async function saveIntakeProgress(
   sessionId: string,
   questionId: string,
+  questionPrompt: string,
   answer: string | string[],
   reflection: string,
 ): Promise<{ success: boolean; error?: string }> {
@@ -28,7 +29,7 @@ export async function saveIntakeProgress(
       `[Server Action] Saving intake progress for session ${sessionId}, question ${questionId}`,
     );
 
-    await saveIntakeProgressLib(sessionId, questionId, answer, reflection);
+    await saveIntakeProgressLib(sessionId, questionId, questionPrompt, answer, reflection);
 
     console.log(`[Server Action] Successfully saved progress for ${sessionId}`);
     return { success: true };

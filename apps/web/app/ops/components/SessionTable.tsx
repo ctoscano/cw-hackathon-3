@@ -34,9 +34,19 @@ export default function SessionTable({
         {sessions.map((session) => (
           <button
             key={session.id}
-            onClick={() => onSelectSession(session.id)}
+            onClick={(e) => {
+              // Check for cmd (Mac) or ctrl (Windows/Linux) click
+              if (e.metaKey || e.ctrlKey) {
+                // Open in new tab
+                const url = `${window.location.pathname}?session=${session.id}`;
+                window.open(url, "_blank");
+              } else {
+                // Default SPA navigation
+                onSelectSession(session.id);
+              }
+            }}
             type="button"
-            className="w-full text-left bg-white border border-anthropic-mid-gray/20 rounded-lg hover:border-anthropic-orange hover:shadow-lg transition-all"
+            className="w-full text-left bg-white border border-anthropic-mid-gray/20 rounded-lg hover:border-anthropic-orange hover:shadow-lg transition-all cursor-pointer"
           >
             <div className="grid grid-cols-[2fr_1.5fr_1fr_2fr_1fr] gap-4 px-6 py-4 items-center">
               {/* Session ID */}

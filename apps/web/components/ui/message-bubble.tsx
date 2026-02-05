@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Lightbulb } from "lucide-react";
 
 export interface MessageBubbleProps {
   variant: "assistant" | "user" | "system";
@@ -76,7 +77,7 @@ export function ReflectionMessage({ reflection, className }: ReflectionMessagePr
     <MessageBubble variant="assistant" className={className}>
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <span className="text-base">💭</span>
+          <Lightbulb className="h-4 w-4 flex-shrink-0" />
           <span className="text-xs font-semibold uppercase opacity-70">Reflection</span>
         </div>
         <p className="text-sm leading-relaxed italic">{reflection}</p>

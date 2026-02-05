@@ -71,6 +71,7 @@ export interface SessionData {
 export async function saveIntakeProgress(
   sessionId: string,
   questionId: string,
+  questionPrompt: string,
   answer: string | string[],
   reflection: string,
 ): Promise<void> {
@@ -78,7 +79,7 @@ export async function saveIntakeProgress(
 
   const entry: IntakeProgressEntry = {
     questionId,
-    questionPrompt: questionId, // Will be enhanced with actual prompt later
+    questionPrompt,
     answer,
     reflection,
     timestamp: new Date().toISOString(),

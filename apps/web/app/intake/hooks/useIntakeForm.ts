@@ -106,7 +106,7 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
     }
 
     return msgs;
-  }, [answers, currentQuestion, flow.currentStep, flow.status, metadata?.allQuestions]);
+  }, [answers, currentQuestion, flow.currentStep, flow.status, metadata]);
 
   // Generate session ID on mount
   useEffect(() => {
@@ -235,7 +235,13 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
 
         // Save progress to Redis (graceful - don't block UX on failure)
         if (sessionId && !wasStale) {
-          saveIntakeProgress(sessionId, questionId, answer, data.reflection).catch((err) => {
+          saveIntakeProgress(
+            sessionId,
+            questionId,
+            currentQuestion.prompt,
+            answer,
+            data.reflection,
+          ).catch((err) => {
             console.error("Failed to save intake progress to Redis:", err);
             // Continue - persistence failure shouldn't block user
           });
@@ -275,7 +281,11 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
           });
 
           // Check if we have early completion ready
-          let finalOutputs;
+          let finalOutputs: {
+            personalizedBrief: string;
+            firstSessionGuide: string;
+            experiments: string[];
+          } | null;
           if (earlyCompletionPromise) {
             const outputs = await earlyCompletionPromise;
             finalOutputs = outputs || data.completionOutputs;
@@ -311,7 +321,15 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
         });
       }
     },
-    [metadata, currentQuestion, flow.currentStep, isLastQuestion, answers, earlyCompletionPromise],
+    [
+      metadata,
+      currentQuestion,
+      flow.currentStep,
+      isLastQuestion,
+      answers,
+      earlyCompletionPromise,
+      sessionId,
+    ],
   );
 
   return {

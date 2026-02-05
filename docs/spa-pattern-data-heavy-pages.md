@@ -7,10 +7,10 @@ This document describes the Single Page Application (SPA) pattern used for data-
 ## Key Principles
 
 1. **Client-Side State Management with nuqs**: ALL state (tabs, pagination, search, AND detail views) managed via URL query parameters
-2. **No Separate Routes for Details**: Detail views render as modals/panels, not separate page routes
-3. **Instant Navigation**: Clicking items opens modals instantly without server requests
+2. **No Separate Routes for Details**: Detail views render inline by replacing the list view, not as separate page routes
+3. **Instant Navigation**: Clicking items switches to detail view instantly without server requests
 4. **Shareable URLs**: Full application state encoded in URL (`?tab=intake&session=abc123`)
-5. **Browser Navigation Support**: Back/forward buttons work correctly, closing/opening modals as expected
+5. **Browser Navigation Support**: Back/forward buttons work correctly, switching between list and detail views as expected
 
 ## When to Use This Pattern
 
@@ -79,18 +79,22 @@ export default function OpsPage() {
   };
 
   return (
-    <div>
-      <Tabs value={tab} onValueChange={(value) => setQuery({ tab: value })}>
-        {/* Tab content with lists */}
-      </Tabs>
-
-      {/* Conditional modal rendering based on URL state */}
-      {session && (
+    <div className="space-y-6">
+      {/* Conditionally render: either list view OR detail view */}
+      {session ? (
+        // Detail View - Full page takeover
         <SessionDetail
           sessionId={session}
-          sessionType={tab}
+          sessionType={tab as "intake" | "dap"}
           onClose={handleCloseDetail}
         />
+      ) : (
+        // List View - Dashboard with tabs
+        <>
+          <Tabs value={tab} onValueChange={(value) => setQuery({ tab: value })}>
+            {/* Tab content with lists */}
+          </Tabs>
+        </>
       )}
     </div>
   );
@@ -179,12 +183,15 @@ export default function SessionTable({
 </button>
 ```
 
-### 3. Detail Modal Component (Client-Side Data Fetching)
+### 3. Detail Component (Client-Side Data Fetching, Full Page Takeover)
 
-**Purpose**: Fetch and display individual item details in a modal
+**Purpose**: Fetch and display individual item details, replacing the list view
 
 ```typescript
 "use client";
+
+import { Button } from "@heroui/react";
+import { ArrowLeft } from "lucide-react";
 
 export default function SessionDetail({
   sessionId,
@@ -207,11 +214,24 @@ export default function SessionDetail({
   }, [sessionId, sessionType]);
 
   return (
-    <Modal>
-      <Modal.Backdrop isOpen={!!sessionId} onOpenChange={(open) => !open && onClose()}>
-        {/* Modal content */}
-      </Modal.Backdrop>
-    </Modal>
+    <div className="space-y-6">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 border-b px-6 py-4 sticky top-0 bg-white">
+        <Button
+          variant="outline"
+          onPress={onClose}
+          startContent={<ArrowLeft className="h-4 w-4" />}
+        >
+          Back to List
+        </Button>
+        <h2 className="text-2xl font-semibold">Session Details</h2>
+      </div>
+
+      {/* Detail content */}
+      <div className="px-6 pb-6">
+        {/* ... detail content ... */}
+      </div>
+    </div>
   );
 }
 ```
@@ -255,15 +275,15 @@ export async function GET(
 
 ### 1. **Performance**
 - No page reloads when opening details
-- Instant modal rendering
+- Instant component switching (list → detail)
 - Only fetch data when needed
 - Browser back/forward is instant (no server request)
 
 ### 2. **User Experience**
-- Smooth, app-like navigation
-- No loading spinners between views
+- Smooth, app-like navigation with full-page transitions
+- Instant view switching (no loading spinners between list/detail)
 - Shareable URLs for specific states
-- Browser history works intuitively
+- Browser history works intuitively (back button returns to list)
 
 ### 3. **Developer Experience**
 - Type-safe URL state management
@@ -281,7 +301,7 @@ export async function GET(
 
 **✅ DO:**
 ```
-?session=abc-123  // URL param, modal in same page
+?session=abc-123  // URL param, detail view replaces list view
 ```
 
 ### 2. Managing State in Component State
@@ -303,7 +323,7 @@ const [{ session }, setQuery] = useQueryStates({ session: parseAsString }); // P
 
 **✅ DO:**
 ```typescript
-<button onClick={() => setQuery({ session: id })}>View</button> // Instant modal
+<button onClick={() => setQuery({ session: id })}>View</button> // Instant detail view
 ```
 
 ## Migration Guide
@@ -331,13 +351,19 @@ With:
 <button onClick={() => setQuery({ session: id })}>View</button>
 ```
 
-### Step 4: Add Conditional Modal Rendering
+### Step 4: Add Conditional Component Rendering
 ```typescript
-{session && (
-  <DetailModal
+{session ? (
+  // Detail View - Full page takeover
+  <DetailView
     id={session}
     onClose={() => setQuery({ session: null })}
   />
+) : (
+  // List View
+  <>
+    {/* List components */}
+  </>
 )}
 ```
 
@@ -353,15 +379,17 @@ interface ListProps {
 
 ### Testing URL State
 ```typescript
-test("opens detail modal when session param is set", () => {
+test("shows detail view when session param is set", () => {
   render(<OpsPage />, { url: "?session=abc-123" });
   expect(screen.getByText("Session Details")).toBeInTheDocument();
+  expect(screen.queryByText("Intake Sessions")).not.toBeInTheDocument(); // List hidden
 });
 
-test("closes modal when session param is cleared", () => {
+test("shows list view when session param is cleared", () => {
   const { rerender } = render(<OpsPage />, { url: "?session=abc-123" });
   rerender(<OpsPage />, { url: "" });
   expect(screen.queryByText("Session Details")).not.toBeInTheDocument();
+  expect(screen.getByText("Intake Sessions")).toBeInTheDocument(); // List shown
 });
 ```
 
@@ -388,10 +416,11 @@ See the full implementation in:
 ## Summary
 
 This SPA pattern provides:
-- ✅ Instant navigation with no page reloads
+- ✅ Instant navigation with full-page transitions (no page reloads)
 - ✅ Shareable, bookmarkable URLs
-- ✅ Type-safe state management
-- ✅ Better performance and UX
-- ✅ Simpler codebase (no duplicate routes)
+- ✅ Type-safe state management with nuqs
+- ✅ Better performance and UX (no modals, clean view switching)
+- ✅ Simpler codebase (no duplicate routes, no modal overlays)
+- ✅ Intuitive browser back/forward navigation
 
 Use this pattern for all data-heavy pages that need list + detail views with filtering/pagination.

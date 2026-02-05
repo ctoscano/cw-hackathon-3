@@ -4,9 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { AnswerMessage, QuestionMessage, ReflectionMessage } from "@/components/ui/message-bubble";
 import type { SessionData } from "@/lib/redis/intake";
 import type { DAPArchiveEntry } from "@/lib/redis/ops";
-import { Modal } from "@heroui/react";
-import { CheckCircle, Info, MessageSquare, User } from "lucide-react";
+import { Button } from "@heroui/react";
+import {
+  ArrowLeft,
+  CheckCircle,
+  ClipboardList,
+  Database,
+  Info,
+  MessageSquare,
+  Search,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface SessionDetailProps {
   sessionId: string;
@@ -48,47 +59,47 @@ export default function SessionDetail({ sessionId, sessionType, onClose }: Sessi
   if (!sessionId) return null;
 
   return (
-    <Modal>
-      <Modal.Backdrop isOpen={!!sessionId} onOpenChange={(open) => !open && onClose()}>
-        <Modal.Container size="lg" scroll="inside">
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header className="bg-anthropic-light border-b border-anthropic-mid-gray/20">
-              <Modal.Heading className="text-2xl font-heading font-semibold text-anthropic-dark">
-                Session Details
-              </Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              {loading && (
-                <div className="space-y-4">
-                  <div className="h-8 w-full bg-anthropic-light-gray rounded animate-pulse" />
-                  <div className="h-64 w-full bg-anthropic-light-gray rounded animate-pulse" />
-                </div>
-              )}
+    <div className="space-y-6">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 bg-anthropic-light border-b border-anthropic-mid-gray/20 px-6 py-4 sticky top-0 z-10">
+        <Button
+          variant="outline"
+          onPress={onClose}
+          className="flex items-center gap-2 font-heading"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to List
+        </Button>
+        <h2 className="text-2xl font-heading font-semibold text-anthropic-dark">Session Details</h2>
+      </div>
 
-              {error && (
-                <div className="bg-anthropic-orange/10 border border-anthropic-orange rounded-lg p-4">
-                  <p className="font-heading font-semibold text-anthropic-dark">
-                    Error loading session
-                  </p>
-                  <p className="text-sm mt-1 font-body text-anthropic-dark/80">{error}</p>
-                </div>
-              )}
+      {/* Content */}
+      <div className="px-6 pb-6">
+        {loading && (
+          <div className="space-y-4">
+            <div className="h-8 w-full bg-anthropic-light-gray rounded animate-pulse" />
+            <div className="h-64 w-full bg-anthropic-light-gray rounded animate-pulse" />
+          </div>
+        )}
 
-              {!loading && !error && data && (
-                <div className="space-y-6">
-                  {sessionType === "intake" ? (
-                    <IntakeSessionDetail data={data as SessionData} />
-                  ) : (
-                    <DAPSessionDetail data={data as DAPArchiveEntry} />
-                  )}
-                </div>
-              )}
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
+        {error && (
+          <div className="bg-anthropic-orange/10 border border-anthropic-orange rounded-lg p-4">
+            <p className="font-heading font-semibold text-anthropic-dark">Error loading session</p>
+            <p className="text-sm mt-1 font-body text-anthropic-dark/80">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && data && (
+          <div className="space-y-6">
+            {sessionType === "intake" ? (
+              <IntakeSessionDetail data={data as SessionData} />
+            ) : (
+              <DAPSessionDetail data={data as DAPArchiveEntry} />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -184,8 +195,10 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
                   Personalized Brief
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-orange rounded-r-lg p-4 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm">
-                {data.completion.outputs.personalizedBrief}
+              <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-orange rounded-r-lg p-4 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm prose prose-sm max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {data.completion.outputs.personalizedBrief}
+                </ReactMarkdown>
               </div>
             </div>
             <div>
@@ -195,8 +208,10 @@ function IntakeSessionDetail({ data }: { data: SessionData }) {
                   First Session Guide
                 </p>
               </div>
-              <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-blue rounded-r-lg p-4 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm whitespace-pre-wrap">
-                {data.completion.outputs.firstSessionGuide}
+              <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-blue rounded-r-lg p-4 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm prose prose-sm max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {data.completion.outputs.firstSessionGuide}
+                </ReactMarkdown>
               </div>
             </div>
             <div>
@@ -298,36 +313,34 @@ function DAPSessionDetail({ data }: { data: DAPArchiveEntry }) {
 
       {/* Data (Disclosure) */}
       <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">📊</span>
-          <h3 className="text-lg font-heading font-semibold text-anthropic-dark">
-            Data (Disclosure)
-          </h3>
-        </div>
-        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-orange rounded-r-lg p-5 text-sm font-body whitespace-pre-wrap leading-relaxed text-anthropic-dark shadow-sm">
-          {data.dap.disclosure}
+        <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+          <Database className="h-5 w-5 text-anthropic-orange flex-shrink-0" />
+          Data (Disclosure)
+        </h3>
+        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-orange rounded-r-lg p-5 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm prose prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{data.dap.disclosure}</ReactMarkdown>
         </div>
       </div>
 
       {/* Assessment */}
       <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🔍</span>
-          <h3 className="text-lg font-heading font-semibold text-anthropic-dark">Assessment</h3>
-        </div>
-        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-blue rounded-r-lg p-5 text-sm font-body whitespace-pre-wrap leading-relaxed text-anthropic-dark shadow-sm">
-          {data.dap.assessment}
+        <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+          <Search className="h-5 w-5 text-anthropic-blue flex-shrink-0" />
+          Assessment
+        </h3>
+        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-blue rounded-r-lg p-5 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm prose prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{data.dap.assessment}</ReactMarkdown>
         </div>
       </div>
 
       {/* Plan */}
       <div className="bg-white border border-anthropic-mid-gray/20 rounded-lg p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">📋</span>
-          <h3 className="text-lg font-heading font-semibold text-anthropic-dark">Plan</h3>
-        </div>
-        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-green rounded-r-lg p-5 text-sm font-body whitespace-pre-wrap leading-relaxed text-anthropic-dark shadow-sm">
-          {data.dap.plan}
+        <h3 className="text-lg font-heading font-semibold text-anthropic-dark flex items-center gap-2 mb-4">
+          <ClipboardList className="h-5 w-5 text-anthropic-green flex-shrink-0" />
+          Plan
+        </h3>
+        <div className="bg-gradient-to-br from-anthropic-light to-white border-l-4 border-anthropic-green rounded-r-lg p-5 text-sm font-body leading-relaxed text-anthropic-dark shadow-sm prose prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{data.dap.plan}</ReactMarkdown>
         </div>
       </div>
     </>

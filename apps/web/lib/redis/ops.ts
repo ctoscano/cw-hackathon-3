@@ -137,7 +137,7 @@ export async function listArchivedDAPSessions(
   const client = await getRedisClient();
 
   // Get session IDs from recent list (reverse order - newest first)
-  const allSessionIds = await client.zRange("dap:recent", 0, -1, { REV: true } as any);
+  const allSessionIds = await client.zRange("dap:recent", 0, -1, { REV: true });
 
   // Calculate pagination
   const total = allSessionIds.length;
@@ -204,4 +204,67 @@ export async function getDAPSession(sessionId: string): Promise<DAPArchiveEntry 
     dap: JSON.parse(data.dap),
     metadata: JSON.parse(data.metadata),
   };
+}
+
+/**
+ * Stats data structure
+ */
+export interface StatsData {
+  totalIntakeSessions: number;
+  completedIntakeSessions: number;
+  inProgressIntakeSessions: number;
+  totalDAPSessions: number;
+}
+
+/**
+ * Get dashboard statistics
+ */
+export async function getDashboardStats(): Promise<StatsData> {
+  const client = await getRedisClient();
+
+  try {
+    // Count intake sessions by scanning for meta keys
+    const intakeKeys: string[] = [];
+    let cursor: string | number = 0;
+    do {
+      const cursorArg = typeof cursor === "number" ? cursor.toString() : cursor;
+      const result = await client.scan(cursorArg, {
+        MATCH: "intake:*:meta",
+        COUNT: 100,
+      });
+      cursor = result.cursor;
+      intakeKeys.push(...result.keys);
+    } while (Number(cursor) !== 0);
+
+    const totalIntakeSessions = intakeKeys.length;
+
+    // Count completed sessions by checking for completion keys
+    const completionCheckPromises = intakeKeys.map((key) => {
+      const sessionId = key.replace("intake:", "").replace(":meta", "");
+      return client.exists(`intake:${sessionId}:completion`);
+    });
+    const completionResults = await Promise.all(completionCheckPromises);
+    const completedIntakeSessions = completionResults.filter((exists) => exists === 1).length;
+
+    const inProgressIntakeSessions = totalIntakeSessions - completedIntakeSessions;
+
+    // Count DAP sessions using the recent list
+    const totalDAPSessions = await client.zCard("dap:recent");
+
+    return {
+      totalIntakeSessions,
+      completedIntakeSessions,
+      inProgressIntakeSessions,
+      totalDAPSessions,
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    // Return zeros if there's an error
+    return {
+      totalIntakeSessions: 0,
+      completedIntakeSessions: 0,
+      inProgressIntakeSessions: 0,
+      totalDAPSessions: 0,
+    };
+  }
 }

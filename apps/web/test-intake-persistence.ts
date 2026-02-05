@@ -22,10 +22,22 @@ async function testIntakePersistence() {
   try {
     // Test 1: Save progress for multiple questions
     console.log("\n1. Testing saveIntakeProgress...");
-    await saveIntakeProgress(sessionId, "q1", "answer to question 1", "reflection on q1");
+    await saveIntakeProgress(
+      sessionId,
+      "q1",
+      "What brings you to therapy?",
+      "answer to question 1",
+      "reflection on q1",
+    );
     console.log("   ✅ Saved progress for question 1");
 
-    await saveIntakeProgress(sessionId, "q2", ["option1", "option2"], "reflection on q2");
+    await saveIntakeProgress(
+      sessionId,
+      "q2",
+      "What are your goals?",
+      ["option1", "option2"],
+      "reflection on q2",
+    );
     console.log("   ✅ Saved progress for question 2 (multi-select)");
 
     // Test 2: Retrieve progress
@@ -107,7 +119,13 @@ async function testIntakePersistence() {
     // Test 8: Partial contact info (email only)
     console.log("\n8. Testing partial contact info...");
     const sessionId2 = `test-intake-${Date.now() + 1}`;
-    await saveIntakeProgress(sessionId2, "q1", "test answer", "test reflection");
+    await saveIntakeProgress(
+      sessionId2,
+      "q1",
+      "What brings you to therapy?",
+      "test answer",
+      "test reflection",
+    );
     await saveContactInfo(sessionId2, "email-only@example.com");
     const session2Data = await getSessionData(sessionId2);
     if (session2Data?.contact?.email && !session2Data.contact.phone) {

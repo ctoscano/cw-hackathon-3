@@ -4,19 +4,18 @@ import { Card } from "@heroui/react";
 import { CheckCircle, Clock, FileText, TrendingUp } from "lucide-react";
 
 interface StatsData {
-  totalSessions: number;
-  completedSessions: number;
-  inProgressSessions: number;
-  dapNotesGenerated: number;
+  totalIntakeSessions: number;
+  completedIntakeSessions: number;
+  inProgressIntakeSessions: number;
+  totalDAPSessions: number;
 }
 
 interface DashboardStatsProps {
-  intakeStats?: StatsData;
-  dapStats?: StatsData;
+  stats: StatsData | null;
   loading?: boolean;
 }
 
-export default function DashboardStats({ intakeStats, dapStats, loading }: DashboardStatsProps) {
+export default function DashboardStats({ stats, loading }: DashboardStatsProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -27,10 +26,10 @@ export default function DashboardStats({ intakeStats, dapStats, loading }: Dashb
     );
   }
 
-  const stats = [
+  const statCards = [
     {
       label: "Total Sessions",
-      value: (intakeStats?.totalSessions || 0) + (dapStats?.totalSessions || 0),
+      value: stats?.totalIntakeSessions || 0,
       icon: FileText,
       color: "blue",
       bgColor: "bg-blue-50",
@@ -39,7 +38,7 @@ export default function DashboardStats({ intakeStats, dapStats, loading }: Dashb
     },
     {
       label: "Completed",
-      value: (intakeStats?.completedSessions || 0) + (dapStats?.completedSessions || 0),
+      value: stats?.completedIntakeSessions || 0,
       icon: CheckCircle,
       color: "green",
       bgColor: "bg-green-50",
@@ -48,7 +47,7 @@ export default function DashboardStats({ intakeStats, dapStats, loading }: Dashb
     },
     {
       label: "In Progress",
-      value: (intakeStats?.inProgressSessions || 0) + (dapStats?.inProgressSessions || 0),
+      value: stats?.inProgressIntakeSessions || 0,
       icon: Clock,
       color: "amber",
       bgColor: "bg-amber-50",
@@ -57,7 +56,7 @@ export default function DashboardStats({ intakeStats, dapStats, loading }: Dashb
     },
     {
       label: "DAP Notes Generated",
-      value: dapStats?.dapNotesGenerated || 0,
+      value: stats?.totalDAPSessions || 0,
       icon: TrendingUp,
       color: "purple",
       bgColor: "bg-purple-50",
@@ -68,7 +67,7 @@ export default function DashboardStats({ intakeStats, dapStats, loading }: Dashb
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {stats.map((stat) => (
+      {statCards.map((stat) => (
         <Card
           key={stat.label}
           className={`${stat.bgColor} border-2 ${stat.borderColor} shadow-sm hover:shadow-md transition-shadow p-6`}
