@@ -10,10 +10,20 @@
     "check": "biome check --write .",
     "type-check": "turbo run type-check",
     "debug:chrome": "./scripts/chrome-debug.sh",
-    "env:setup": "pnpm --filter @cw-hackathon/data cli setup"
+    "env:setup": "pnpm --filter @cw-hackathon/data cli setup",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "biome check --write --no-errors-on-unmatched",
+      "biome format --write --no-errors-on-unmatched"
+    ],
+    "*.{json,md}": ["biome format --write --no-errors-on-unmatched"]
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },

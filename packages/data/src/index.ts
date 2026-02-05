@@ -29,3 +29,4 @@ export * from "./lib/prompts/loader.js";
 export * from "./lib/prompts/builder.js";
 export * from "./lib/intake/index.js";
 export * from "./lib/utils/file.js";
+export * from "./lib/redis/archive.js";

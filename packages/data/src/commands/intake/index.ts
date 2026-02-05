@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { archiveCommand } from "./archive.js";
 import { evaluateCommand } from "./evaluate.js";
 import { syntheticCommand } from "./synthetic.js";
 
@@ -10,5 +11,6 @@ export const intakeCommand = defineCommand({
   subCommands: {
     synthetic: syntheticCommand,
     evaluate: evaluateCommand,
+    archive: archiveCommand,
   },
 });

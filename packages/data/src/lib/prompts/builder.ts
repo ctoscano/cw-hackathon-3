@@ -252,6 +252,7 @@ export function buildDAPPrompt(
     outputPrefix: "dap-prompt",
     outputFormat: options?.outputFormat,
     schemaDescription: options?.schemaDescription,
+    version: "", // DAP prompts don't use versioning - they're at dap-notes/*.md directly
   });
 }
 

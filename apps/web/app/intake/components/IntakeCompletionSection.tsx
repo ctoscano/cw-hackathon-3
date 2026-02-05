@@ -2,6 +2,7 @@
  * Completion section component for displaying results and optional contact form
  */
 
+import { trackChatGPTClick } from "@/actions/intake";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
@@ -13,9 +14,24 @@ import { IntakeContactForm } from "./IntakeContactForm";
 interface IntakeCompletionSectionProps {
   status: "waiting" | "ready";
   outputs: IntakeStepResponse["completionOutputs"];
+  sessionId: string | null;
 }
 
-export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSectionProps) {
+export function IntakeCompletionSection({
+  status,
+  outputs,
+  sessionId,
+}: IntakeCompletionSectionProps) {
+  // Handle ChatGPT button click - track interaction
+  const handleChatGPTClick = () => {
+    if (sessionId) {
+      trackChatGPTClick(sessionId).catch((err) => {
+        console.error("Failed to track ChatGPT click:", err);
+        // Don't block navigation on tracking failure
+      });
+    }
+  };
+
   // Waiting state - show loading animation with optional contact form
   if (status === "waiting") {
     return (
@@ -31,7 +47,7 @@ export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSec
           />
 
           {/* Optional Contact Info Collection */}
-          <IntakeContactForm variant="waiting" />
+          <IntakeContactForm variant="waiting" sessionId={sessionId} />
         </div>
       </div>
     );
@@ -42,7 +58,7 @@ export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSec
     return (
       <div className={styles.completion}>
         {/* Contact form - shown above title */}
-        <IntakeContactForm variant="afterResults" />
+        <IntakeContactForm variant="afterResults" sessionId={sessionId} />
 
         <h2 className={styles.completionTitle}>Your Personalized Results</h2>
 
@@ -83,6 +99,7 @@ export function IntakeCompletionSection({ status, outputs }: IntakeCompletionSec
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.chatGptButton}
+                        onClick={handleChatGPTClick}
                       >
                         Explore this with ChatGPT →
                       </a>

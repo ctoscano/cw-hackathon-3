@@ -3,6 +3,7 @@ import { defineCommand } from "citty";
 import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
 import { type DAPNote, DAPNoteSchema, SchemaDescriptions } from "../../lib/ai/schemas.js";
 import { type PromptOutputFormat, buildDAPPrompt } from "../../lib/prompts/builder.js";
+import { archiveDAPOutput, isRedisEnabled } from "../../lib/redis/archive.js";
 import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
 
 export const generateCommand = defineCommand({
@@ -38,6 +39,11 @@ export const generateCommand = defineCommand({
       type: "string",
       description: "Prompt output format: markdown, json, copyable, all",
       default: "all",
+    },
+    archive: {
+      type: "boolean",
+      description: "Archive DAP output to Redis for persistence and retrieval",
+      default: false,
     },
   },
   async run({ args }) {
@@ -148,6 +154,41 @@ export const generateCommand = defineCommand({
     console.log("\n📊 Telemetry:");
     console.log(formatTelemetry(result.telemetry));
 
+    // Archive to Redis if requested
+    let sessionId: string | undefined;
+    if (args.archive) {
+      if (!isRedisEnabled()) {
+        console.log("\n⚠️  Redis is disabled (REDIS_ENABLED=false)");
+        console.log("   Skipping archival. Enable Redis to use --archive flag.");
+      } else {
+        console.log("\n💾 Archiving to Redis...");
+        try {
+          sessionId = crypto.randomUUID();
+
+          // Convert DAP note to archive format
+          const dapArchive = {
+            disclosure: `${result.data.data.subjective}\n\n${result.data.data.objective}`,
+            assessment: `${result.data.assessment.clinicalImpression}\n\n${result.data.assessment.progress}\n\n${result.data.assessment.riskAssessment}`,
+            plan: `${result.data.plan.interventions.join("\n")}\n\n${result.data.plan.homework || ""}\n\n${result.data.plan.nextSession}`,
+          };
+
+          await archiveDAPOutput(sessionId, dapArchive, {
+            model: args.model as string,
+            tokensUsed: result.telemetry.totalTokens,
+            generationTimeMs: result.telemetry.durationMs,
+          });
+
+          console.log(`   ✅ Archived with session ID: ${sessionId}`);
+        } catch (error) {
+          console.error(
+            "   ❌ Archival failed:",
+            error instanceof Error ? error.message : String(error),
+          );
+          console.log("   DAP note generation succeeded, but archival failed.");
+        }
+      }
+    }
+
     // Print a preview
     console.log("\n--- DAP Note Preview ---\n");
     console.log(`📅 Session: ${result.data.metadata.sessionDate}`);
@@ -163,6 +204,7 @@ export const generateCommand = defineCommand({
       success: true,
       inputSource,
       dapNote: result.data,
+      sessionId,
       files: {
         json: dapJsonPath,
         markdown: dapMarkdownPath,
