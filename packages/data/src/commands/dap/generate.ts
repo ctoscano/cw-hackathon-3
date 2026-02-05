@@ -3,8 +3,8 @@ import { defineCommand } from "citty";
 import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
 import { type DAPNote, DAPNoteSchema, SchemaDescriptions } from "../../lib/ai/schemas.js";
 import { type PromptOutputFormat, buildDAPPrompt } from "../../lib/prompts/builder.js";
-import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
 import { archiveDAPOutput, isRedisEnabled } from "../../lib/redis/archive.js";
+import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
 
 export const generateCommand = defineCommand({
   meta: {
@@ -167,24 +167,23 @@ export const generateCommand = defineCommand({
 
           // Convert DAP note to archive format
           const dapArchive = {
-            disclosure: result.data.data.subjective + "\n\n" + result.data.data.objective,
-            assessment: result.data.assessment.clinicalImpression + "\n\n" + result.data.assessment.progress + "\n\n" + result.data.assessment.riskAssessment,
-            plan: result.data.plan.interventions.join("\n") + "\n\n" + (result.data.plan.homework || "") + "\n\n" + result.data.plan.nextSession,
+            disclosure: `${result.data.data.subjective}\n\n${result.data.data.objective}`,
+            assessment: `${result.data.assessment.clinicalImpression}\n\n${result.data.assessment.progress}\n\n${result.data.assessment.riskAssessment}`,
+            plan: `${result.data.plan.interventions.join("\n")}\n\n${result.data.plan.homework || ""}\n\n${result.data.plan.nextSession}`,
           };
 
-          await archiveDAPOutput(
-            sessionId,
-            dapArchive,
-            {
-              model: args.model as string,
-              tokensUsed: result.telemetry.totalTokens,
-              generationTimeMs: result.telemetry.durationMs,
-            },
-          );
+          await archiveDAPOutput(sessionId, dapArchive, {
+            model: args.model as string,
+            tokensUsed: result.telemetry.totalTokens,
+            generationTimeMs: result.telemetry.durationMs,
+          });
 
           console.log(`   ✅ Archived with session ID: ${sessionId}`);
         } catch (error) {
-          console.error("   ❌ Archival failed:", error instanceof Error ? error.message : String(error));
+          console.error(
+            "   ❌ Archival failed:",
+            error instanceof Error ? error.message : String(error),
+          );
           console.log("   DAP note generation succeeded, but archival failed.");
         }
       }

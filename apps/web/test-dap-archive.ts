@@ -4,12 +4,7 @@
  * Test script for DAP archival functions
  */
 
-import {
-  archiveDAPOutput,
-  getDAPOutput,
-  listDAPOutputs,
-  getDAPCount,
-} from "./lib/redis/archive";
+import { archiveDAPOutput, getDAPCount, getDAPOutput, listDAPOutputs } from "./lib/redis/archive";
 import { closeRedisClient } from "./lib/redis/client";
 
 async function testDAPArchival() {

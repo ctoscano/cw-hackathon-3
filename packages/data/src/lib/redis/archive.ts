@@ -3,8 +3,8 @@
  * Stores and retrieves DAP outputs with metadata
  */
 
-import { createRedisClient, withRedisClient, isRedisEnabled } from "./client.js";
 import type { RedisClientType } from "redis";
+import { createRedisClient, isRedisEnabled, withRedisClient } from "./client.js";
 
 // Re-export for convenience
 export { isRedisEnabled };

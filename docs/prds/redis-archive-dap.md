@@ -10,7 +10,10 @@ The scope includes:
 - Intake questionnaire progress tracking (save after each question)
 - Contact information storage (email/phone) with session association
 - User interaction tracking (ChatGPT button clicks)
-- Tailwind CSS + shadcn/ui components for any UI additions
+- CLI commands for viewing archived data (both intake and DAP)
+- Web-based /ops dashboard for viewing submissions (feature-flagged)
+- Tailwind CSS + shadcn/ui components for UI
+- URL-based state management with nuqs for shareable views
 
 The scope explicitly excludes:
 - User authentication/authorization (future enhancement)
@@ -103,10 +106,110 @@ The scope explicitly excludes:
     - `cn()` helper for class name merging
     - Standard shadcn utility file
 
+11. **`packages/data/src/commands/dap/archive.ts`** - CLI archive commands for DAP ✅
+    - `list` subcommand - List archived DAP sessions with pagination
+    - `view` subcommand - View specific DAP session details
+    - Table-formatted output with session metadata
+    - JSON output format option
+
+12. **`packages/data/src/commands/intake/archive.ts`** - CLI archive commands for Intake ✅
+    - `list` subcommand - List archived intake sessions with pagination
+    - `view` subcommand - View complete intake session data
+    - Display progress, completion, contact, and interactions
+    - Search filter support
+
+13. **`packages/data/src/lib/redis/intake-archive.ts`** - CLI intake retrieval functions ✅
+    - `getSessionData(sessionId)` - Get complete intake session
+    - `listIntakeSessions(options)` - List sessions with pagination and search
+    - `getIntakeSessionCount()` - Get total count of sessions
+    - TypeScript interfaces matching web app
+
+14. **`apps/web/lib/feature-flags.ts`** - Feature flag system ✅
+    - `isFeatureEnabled(flag)` - Check if feature is enabled
+    - Environment-based flags (development vs production)
+    - `ops_page` flag for operations dashboard
+
+15. **`apps/web/lib/redis/ops.ts`** - Ops-specific Redis queries ✅
+    - `listArchivedIntakeSessions(page, pageSize, search)` - Paginated intake list
+    - `listArchivedDAPSessions(page, pageSize)` - Paginated DAP list
+    - `getDAPSession(sessionId)` - Get DAP session details
+    - Returns PaginatedResponse with items, total, page info
+
+16. **`apps/web/app/ops/layout.tsx`** - Ops dashboard layout ✅
+    - Feature flag check (returns 404 if disabled)
+    - Consistent header and styling
+    - Max-width container for readability
+
+17. **`apps/web/app/ops/page.tsx`** - Main ops page ✅
+    - Client Component with nuqs for URL state management
+    - Tabs for Intake vs DAP views
+    - Search and pagination controls
+    - Session detail dialog
+
+18. **`apps/web/app/ops/components/OpsHeader.tsx`** - Search header ✅
+    - Search input with form submission
+    - Clear search button
+    - Controlled input state
+
+19. **`apps/web/app/ops/components/IntakeList.tsx`** - Intake session list ✅
+    - Fetches data from API with pagination and search
+    - Loading states with skeletons
+    - Error handling
+    - Empty state messaging
+
+20. **`apps/web/app/ops/components/DAPList.tsx`** - DAP session list ✅
+    - Fetches data from API with pagination
+    - Loading and error states
+    - Passes data to SessionTable
+
+21. **`apps/web/app/ops/components/SessionTable.tsx`** - Reusable table component ✅
+    - Displays sessions with metadata
+    - Click to view details
+    - Pagination controls
+    - Badge for status
+
+22. **`apps/web/app/ops/components/SessionDetail.tsx`** - Session detail dialog ✅
+    - Modal/dialog for viewing full session data
+    - Supports both intake and DAP types
+    - Formatted output with sections
+    - Loading and error states
+
+23. **`apps/web/app/api/ops/intake/route.ts`** - Intake list API ✅
+    - GET endpoint for listing intake sessions
+    - Feature flag check
+    - Query params: page, search
+    - Returns PaginatedResponse
+
+24. **`apps/web/app/api/ops/intake/[sessionId]/route.ts`** - Intake detail API ✅
+    - GET endpoint for specific intake session
+    - Feature flag check
+    - Returns complete SessionData
+
+25. **`apps/web/app/api/ops/dap/route.ts`** - DAP list API ✅
+    - GET endpoint for listing DAP sessions
+    - Feature flag check
+    - Query param: page
+    - Returns PaginatedResponse
+
+26. **`apps/web/app/api/ops/dap/[sessionId]/route.ts`** - DAP detail API ✅
+    - GET endpoint for specific DAP session
+    - Feature flag check
+    - Returns DAPArchiveEntry
+
+27. **Additional shadcn components** ✅
+    - `apps/web/components/ui/table.tsx` - Table component
+    - `apps/web/components/ui/tabs.tsx` - Tabs component
+    - `apps/web/components/ui/dialog.tsx` - Dialog/modal component
+    - `apps/web/components/ui/badge.tsx` - Badge component
+    - `apps/web/components/ui/separator.tsx` - Separator component
+    - `apps/web/components/ui/select.tsx` - Select dropdown component
+    - `apps/web/components/ui/skeleton.tsx` - Loading skeleton component
+
 ### Files to Modify
 
-1. **`apps/web/.env.example`** - Add Redis configuration
+1. **`apps/web/.env.example`** - Add Redis and feature flag configuration ✅
    - Add REDIS_HOST, REDIS_PORT, REDIS_PASSWORD placeholders
+   - Add ENABLE_OPS_PAGE feature flag
    - Document connection string format
    - Add comments about Redis Cloud usage
 
@@ -131,17 +234,21 @@ The scope explicitly excludes:
    - Pass session ID from parent component
    - No UI feedback needed (silent tracking)
 
-6. **`apps/web/package.json`** - Add dependencies
+6. **`apps/web/package.json`** - Add dependencies ✅
    - Add redis: ^5.10.0
+   - Add nuqs: ^2.8.8 (URL state management)
    - Add shadcn dependencies if not present: class-variance-authority, clsx, tailwind-merge
 
 7. **`packages/data/package.json`** - Add dependencies
    - Add redis: ^5.10.0
 
-8. **`packages/data/src/commands/dap.ts`** - Add archival integration
-   - Add optional --archive flag to generate command
-   - Call archive function after successful generation
-   - Display archive confirmation message
+8. **`packages/data/src/commands/dap/index.ts`** - Add archive command ✅
+   - Import archiveCommand from archive.ts
+   - Add to subCommands object
+
+9. **`packages/data/src/commands/intake/index.ts`** - Add archive command ✅
+   - Import archiveCommand from archive.ts
+   - Add to subCommands object
 
 ### Architecture Decisions
 
@@ -608,7 +715,123 @@ await client.disconnect();
 - [x] Verify Redis data saved correctly (2026-02-04 04:21) - graceful error handling
 - [x] **COMMIT**: `git add -A && git commit -m "feat: add archival support to DAP CLI command"` (1dc2f9d)
 
-### Step 8: Documentation and Future Enhancements
+### Step 8: Enhanced UI with ai-elements and Design Sketches
+
+**Action**: Implement enhanced Operations Dashboard UI based on design sketches, reusing ai-elements components for conversational UI.
+
+**Requirements**:
+- **Import ai-elements components** instead of creating custom ones:
+  - Use `<ChatMessages>` component for displaying intake question/answer pairs
+  - Use `<MessageBubble>` for individual messages (questions, user responses, reflections)
+  - Consider `<ChainOfThought>` for DAP generation reasoning display
+  - Leverage existing ai-elements patterns for consistent UX
+- **Dashboard Overview Page** (`/ops`):
+  - Stats cards showing total sessions, active intakes, DAP notes generated
+  - System status indicators (Redis connected, latest activity)
+  - Tabbed interface for Intake Sessions vs DAP Notes
+  - Use HeroUI Card components for stats display
+- **Intake Session Detail View** (modal or dedicated route):
+  - Session metadata panel (ID, status, timestamps, client alias)
+  - **Conversational log using ai-elements**:
+    - Display questions with `<MessageBubble role="assistant">`
+    - Display user inputs with `<MessageBubble role="user">`
+    - Display personalized responses/reflections with `<MessageBubble role="assistant" type="reflection">`
+  - Timeline/status tracking (LLM testing waves if applicable)
+  - Action buttons ("Flag for Review", "Export", etc.)
+- **DAP Notes Management View**:
+  - List of DAP sessions with metadata (therapist ID, submission time, note status)
+  - Filterable by status, date range, formatting type
+  - Quality scores/indicators if available
+  - Click to expand/view full DAP note with formatted sections
+- **Component Library Strategy**:
+  - **ai-elements**: Use for conversational UI, message display, chat-like interfaces
+  - **HeroUI**: Use for structural components (Cards, Modals, SearchField)
+  - **shadcn/ui**: Use for data tables, badges, dialogs, form inputs
+  - **DO NOT duplicate** - always import existing components first
+- **Styling with Tailwind CSS v4**:
+  - Rely on Tailwind's Preflight (no custom resets)
+  - Use utility classes for spacing, colors, typography
+  - Follow existing color system (oklch colors from globals.css)
+  - Responsive design with mobile-first approach
+
+**Verification**:
+```bash
+# Start dev server
+cd apps/web && pnpm dev
+
+# Visit operations dashboard
+open http://localhost:3000/ops
+
+# Verify:
+# 1. Dashboard Overview
+#    - Stats cards display correctly ✓
+#    - System status indicators show Redis connection ✓
+#    - Tabs switch between Intake and DAP views ✓
+
+# 2. Intake Session Detail
+#    - Click any intake session
+#    - Conversational log displays with ai-elements components ✓
+#    - Questions and answers formatted like chat messages ✓
+#    - Metadata panel shows session details ✓
+#    - Timeline/status tracking visible ✓
+
+# 3. DAP Notes View
+#    - DAP notes list displays with status badges ✓
+#    - Click to view full note with formatted sections ✓
+#    - Filters work (status, date, formatting type) ✓
+#    - Quality indicators visible (if applicable) ✓
+
+# 4. Component Reuse
+#    - No duplicate component code ✓
+#    - ai-elements imported correctly ✓
+#    - HeroUI and shadcn components used appropriately ✓
+
+# 5. Responsive Design
+#    - Resize browser window ✓
+#    - Mobile view works (tables become cards, etc.) ✓
+#    - No horizontal scrolling ✓
+
+# Expected output:
+# ✅ Dashboard renders with stats and tabs
+# ✅ Session detail uses ai-elements for conversational display
+# ✅ DAP notes view shows formatted output
+# ✅ All components imported (not duplicated)
+# ✅ Responsive design works across screen sizes
+```
+
+**Implementation Log**:
+- [x] **Resolved CSS reset issue** (2026-02-04 16:43)
+  - Removed duplicate custom CSS reset from globals.css (lines 28-61)
+  - Now relying on Tailwind's Preflight for base reset
+  - All shadcn/ui and HeroUI components now render correctly
+  - Verified on /ops, /ops/demo, /intake, /dap pages ✅
+- [x] **Audited current /ops dashboard implementation** (2026-02-04 16:43)
+  - Tabs working (Intake Sessions / DAP Notes)
+  - Session list table with status badges ✅
+  - Session detail modal showing all data ✅
+  - Search and pagination functional ✅
+  - URL state management with nuqs working ✅
+- [ ] **Identified UI improvements needed** (2026-02-04 16:43)
+  - Current Q&A display is plain text ("Q1:", "Q2:") - NOT conversational
+  - No ai-elements components used yet
+  - Completion outputs section has CSS issues (blue highlighting)
+  - Missing stats cards from design sketches
+  - No visual hierarchy/polish - functional but "ugly"
+- [ ] Install ai-elements package (if not already installed)
+- [ ] Import ChatMessages and MessageBubble from ai-elements
+- [ ] Create DashboardStats component with HeroUI Cards
+- [ ] Create SystemStatus component (Redis connection indicator)
+- [ ] Enhance IntakeSessionDetail to use ai-elements for conversational log
+- [ ] Transform intake progress data into message format for ai-elements
+- [ ] Create DAPNotesView with filterable list
+- [ ] Add status badges and quality indicators
+- [ ] Implement responsive design breakpoints
+- [ ] Test on mobile and desktop screen sizes
+- [ ] Verify no duplicate components created
+- [ ] Test full user flow from dashboard → detail views
+- [ ] **COMMIT**: `git add -A && git commit -m "feat: enhanced ops UI with ai-elements and design sketches"`
+
+### Step 9: Documentation and Future Enhancements
 
 **Action**: Document the Redis data structure, access patterns, and future enhancement paths (including read restrictions).
 
@@ -647,6 +870,7 @@ git grep "REDIS_PASSWORD" -- ':!.env*' ':!*.md'
 
 ## Completion Criteria
 
+### Core Persistence Features
 - [x] Redis connection working in both web app and CLI
 - [x] DAP outputs successfully archived and retrievable
 - [x] Intake progress tracked after each question answered
@@ -655,8 +879,24 @@ git grep "REDIS_PASSWORD" -- ':!.env*' ':!*.md'
 - [x] ChatGPT button clicks tracked
 - [x] All TypeScript type checks passing
 - [x] Dev environment tested with full intake flow
-- [x] Documentation complete with future enhancement paths
 - [x] No secrets committed to git
+
+### Data Viewing Features
+- [x] CLI commands to list and view archived DAP sessions
+- [x] CLI commands to list and view archived intake sessions
+- [x] Feature flag system implemented with environment-based control
+- [x] nuqs installed for URL state management
+- [x] Additional shadcn components installed (table, tabs, dialog, badge, separator, select, skeleton)
+- [x] /ops page created with feature flag protection
+- [x] Tabs for switching between Intake and DAP views
+- [x] URL state management with nuqs (shareable, bookmarkable views)
+- [x] Session list tables with pagination
+- [x] Search functionality for intake sessions
+- [x] Session detail dialog/modal
+- [x] API routes for fetching intake and DAP data
+- [x] Loading states and error handling
+- [x] Responsive design with Tailwind CSS
+- [x] Documentation updated with viewing features
 
 ## Notes
 
@@ -777,6 +1017,106 @@ Redis Cloud supports Access Control Lists (ACLs) for restricting read/write perm
 - Risk: If leaked, requires manual password change
 - Future: Implement password rotation script and ACLs
 
+**9. Tailwind CSS v4 Duplicate Reset Issue (2026-02-04)**
+- Problem: Custom CSS reset in `globals.css` was duplicating Tailwind's built-in Preflight
+- Symptoms:
+  - Cards and buttons had no padding on `/ops/demo` page
+  - shadcn/ui components not rendering correctly
+  - Custom `* { padding: 0; margin: 0; }` reset was overriding component styles
+- Root Cause:
+  - Tailwind v4 Preflight already provides: `*, ::before, ::after { margin: 0; padding: 0; box-sizing: border-box; }`
+  - Custom reset (lines 28-61 in globals.css) was running OUTSIDE layers
+  - This prevented component libraries from adding padding via Tailwind utilities
+- Solution:
+  - Deleted duplicate custom CSS reset (lines 28-61)
+  - Relied entirely on Tailwind's Preflight for base reset
+  - Component libraries (shadcn/ui, HeroUI) are DESIGNED to work with Preflight
+  - CSS modules in `/intake` and `/dap` still work (explicit padding defined)
+- Verification:
+  - `/ops/demo` - All components render perfectly ✅
+  - `/ops` - Header, tabs, search all styled correctly ✅
+  - `/intake` - Form inputs and buttons have proper padding ✅
+  - `/dap` - Textarea and buttons styled correctly ✅
+  - No console errors on any page ✅
+- Key Learning: **Tailwind's Preflight is sufficient** - modern component libraries assume it
+- Files Modified: `apps/web/app/globals.css` (removed lines 28-61)
+
+### Data Viewing Architecture
+
+**CLI Archive Commands:**
+- Purpose: Quick inspection of archived data from terminal
+- Location: `packages/data/src/commands/*/archive.ts`
+- Commands:
+  - `dap archive list` - List all archived DAP sessions
+  - `dap archive view <session-id>` - View specific DAP session
+  - `intake archive list [--search=<term>]` - List intake sessions with search
+  - `intake archive view <session-id>` - View complete intake session
+- Output: Formatted tables and text, JSON option available
+- Benefits: Fast, scriptable, no UI needed
+
+**Web Ops Dashboard:**
+- Purpose: Visual interface for viewing and analyzing submissions
+- Location: `/ops` route (feature-flagged)
+- Features:
+  - Tabbed interface (Intake vs DAP)
+  - Pagination and search
+  - Click-to-view details in modal
+  - URL-based state (shareable links)
+- Access Control: Feature flag (`ENABLE_OPS_PAGE`)
+  - Enabled by default in development
+  - Disabled by default in production
+  - Can be explicitly enabled with env var
+- Technology:
+  - nuqs for URL state management
+  - shadcn components for UI
+  - Server Components for data fetching
+  - Client Components for interactivity
+
+**URL State Management:**
+- All filters and selections stored in URL query params
+- Benefits:
+  - Shareable links (e.g., `/ops?tab=intake&session=abc123`)
+  - Bookmarkable views
+  - Browser back/forward works correctly
+  - No local state loss on refresh
+- Query Params:
+  - `?tab=intake|dap` - Current tab
+  - `?page=1` - Pagination
+  - `?search=...` - Search filter (intake only)
+  - `?session=<id>` - Selected session for detail view
+
+**Feature Flag System:**
+- Location: `apps/web/lib/feature-flags.ts`
+- Flags:
+  - `ops_page` - Controls /ops route access
+- Logic:
+  - Check `ENABLE_OPS_PAGE` env var first
+  - Fall back to `NODE_ENV === 'development'`
+  - Return 404 if disabled
+- Benefits:
+  - Safe to deploy with hidden features
+  - Development-friendly (auto-enabled)
+  - Production-safe (explicit opt-in)
+
+**API Routes:**
+- Location: `apps/web/app/api/ops/*`
+- Endpoints:
+  - `GET /api/ops/intake` - List intake sessions (paginated, searchable)
+  - `GET /api/ops/intake/[sessionId]` - Get intake session details
+  - `GET /api/ops/dap` - List DAP sessions (paginated)
+  - `GET /api/ops/dap/[sessionId]` - Get DAP session details
+- Security: Feature flag checked on every request
+- Response Format: JSON with pagination metadata
+
+**Future Enhancements:**
+- Export to CSV
+- Advanced filtering (date ranges, status filters)
+- Bulk operations (delete, export multiple)
+- Real-time updates (polling or WebSockets)
+- Analytics dashboard (trends, completion rates)
+- Session replay/timeline view
+- Comparison views (side-by-side sessions)
+
 ### Demo Instructions
 
 **How to Demo:**
@@ -819,7 +1159,57 @@ redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD KEYS "dap:*"
 redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD HGETALL dap:<session-id>
 ```
 
-**3. Key Features Demonstrated:**
+**3. Demo CLI Archive Viewing:**
+```bash
+# List archived DAP sessions
+cd packages/data
+bun run src/bin/cli.ts dap archive list
+
+# View specific DAP session
+bun run src/bin/cli.ts dap archive view <session-id>
+
+# List archived intake sessions
+bun run src/bin/cli.ts intake archive list
+
+# Search intake sessions
+bun run src/bin/cli.ts intake archive list --search=<term>
+
+# View specific intake session
+bun run src/bin/cli.ts intake archive view <session-id>
+
+# Output includes:
+# - Session metadata (ID, timestamps, types)
+# - Full session data (questions, answers, reflections)
+# - Completion outputs (if completed)
+# - Contact information (if provided)
+# - Interaction events (ChatGPT clicks)
+```
+
+**4. Demo Web Ops Dashboard:**
+```bash
+# Start web dev server (if not running)
+cd apps/web && pnpm dev
+
+# Visit ops dashboard (automatically enabled in development)
+open http://localhost:3000/ops
+
+# Explore features:
+# - Switch between Intake and DAP tabs
+# - Navigate pages with pagination
+# - Search for intake sessions
+# - Click any row to view full details
+# - Notice URL changes (shareable/bookmarkable)
+# - Try browser back/forward buttons
+# - Copy URL and paste in new tab (state persists)
+
+# Test feature flag:
+# - Set NODE_ENV=production in terminal
+# - Visit /ops (should get 404)
+# - Set ENABLE_OPS_PAGE=true
+# - Visit /ops (should work)
+```
+
+**5. Key Features Demonstrated:**
 - ✅ Session ID auto-generation (UUID v4)
 - ✅ Progress saved after each question
 - ✅ Completion outputs persisted
@@ -827,6 +1217,13 @@ redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD HGETALL dap:<session-
 - ✅ ChatGPT click tracking
 - ✅ DAP archival with metadata (model, tokens, time)
 - ✅ Graceful error handling (logs but doesn't block UX)
+- ✅ CLI archive viewing with formatted output
+- ✅ Web ops dashboard with tabs and pagination
+- ✅ URL state management (shareable links)
+- ✅ Feature flag system (development vs production)
+- ✅ Search and filter functionality
+- ✅ Session detail modals
+- ✅ Loading states and error handling
 
 ## Quality Checks
 
@@ -839,10 +1236,10 @@ redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD HGETALL dap:<session-
 
 ---
 
-**Status**: Pending Review
+**Status**: In Progress
 **Created**: 2026-02-04
 **Last Updated**: 2026-02-04
 **Implementation Started**: 2026-02-04
-**Completed**: 2026-02-04
+**Completed**: N/A
 **Accepted**: N/A
-**Rejected**: N/A
+**Rejected**: 2026-02-04 (Reason: Adding enhanced UI with ai-elements and design sketches)

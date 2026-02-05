@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
-import { getLoadingMessagesForQuestion, type ChatMessageItem } from "../intake-utils";
+import { type ChatMessageItem, getLoadingMessagesForQuestion } from "../intake-utils";
 import styles from "../intake.module.css";
 import type { IntakeQuestion, IntakeState } from "../types";
 

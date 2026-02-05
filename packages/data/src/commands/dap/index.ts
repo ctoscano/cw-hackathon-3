@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { archiveCommand } from "./archive.js";
 import { evaluateCommand } from "./evaluate.js";
 import { generateCommand } from "./generate.js";
 import { syntheticCommand } from "./synthetic.js";
@@ -12,5 +13,6 @@ export const dapCommand = defineCommand({
     synthetic: syntheticCommand,
     generate: generateCommand,
     evaluate: evaluateCommand,
+    archive: archiveCommand,
   },
 });

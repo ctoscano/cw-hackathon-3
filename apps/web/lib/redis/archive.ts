@@ -97,9 +97,7 @@ export async function listDAPOutputs(options: {
   const sessionIds = await client.zRange("dap:recent", -(offset + limit), -(offset + 1));
 
   // Fetch each DAP output
-  const outputs = await Promise.all(
-    sessionIds.map((sessionId) => getDAPOutput(sessionId)),
-  );
+  const outputs = await Promise.all(sessionIds.map((sessionId) => getDAPOutput(sessionId)));
 
   // Filter out nulls
   return outputs.filter((output): output is DAPArchiveEntry => output !== null);

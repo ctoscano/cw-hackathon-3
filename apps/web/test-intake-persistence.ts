@@ -4,15 +4,15 @@
  * Comprehensive test script for intake persistence functions
  */
 
-import {
-  saveIntakeProgress,
-  getIntakeProgress,
-  saveIntakeCompletion,
-  saveContactInfo,
-  trackChatGPTClick,
-  getSessionData,
-} from "./lib/redis/intake";
 import { closeRedisClient } from "./lib/redis/client";
+import {
+  getIntakeProgress,
+  getSessionData,
+  saveContactInfo,
+  saveIntakeCompletion,
+  saveIntakeProgress,
+  trackChatGPTClick,
+} from "./lib/redis/intake";
 
 async function testIntakePersistence() {
   console.log("🧪 Testing Intake Persistence Functions...");
@@ -25,12 +25,7 @@ async function testIntakePersistence() {
     await saveIntakeProgress(sessionId, "q1", "answer to question 1", "reflection on q1");
     console.log("   ✅ Saved progress for question 1");
 
-    await saveIntakeProgress(
-      sessionId,
-      "q2",
-      ["option1", "option2"],
-      "reflection on q2",
-    );
+    await saveIntakeProgress(sessionId, "q2", ["option1", "option2"], "reflection on q2");
     console.log("   ✅ Saved progress for question 2 (multi-select)");
 
     // Test 2: Retrieve progress

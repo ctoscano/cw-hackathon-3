@@ -3,12 +3,9 @@
  * Consolidates metadata, flow state, answers, and derives messages
  */
 
+import { saveIntakeCompletion, saveIntakeProgress } from "@/actions/intake";
 import { triggerConfetti } from "@/lib/confetti";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  saveIntakeProgress,
-  saveIntakeCompletion,
-} from "@/actions/intake";
 import type { ChatMessageItem } from "../intake-utils";
 import {
   buildAnswerPayload,

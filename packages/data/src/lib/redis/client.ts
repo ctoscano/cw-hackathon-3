@@ -3,7 +3,7 @@
  * Optimized for short-lived command execution
  */
 
-import { createClient, type RedisClientType } from "redis";
+import { type RedisClientType, createClient } from "redis";
 
 /**
  * Create and connect Redis client for CLI usage

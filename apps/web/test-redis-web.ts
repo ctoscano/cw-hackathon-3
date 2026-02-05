@@ -4,7 +4,7 @@
  * Test script for web Redis client
  */
 
-import { getRedisClient, closeRedisClient } from "./lib/redis/client";
+import { closeRedisClient, getRedisClient } from "./lib/redis/client";
 
 async function testWebClient() {
   console.log("🧪 Testing Web Redis Client...");

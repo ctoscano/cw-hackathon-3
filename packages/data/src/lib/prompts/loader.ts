@@ -54,10 +54,7 @@ function findPromptsDir(): string {
  * @param options - Optional configuration including version
  * @returns Loaded prompt with metadata and content
  */
-export function loadPrompt(
-  filePath: string,
-  options?: { version?: string },
-): LoadedPrompt {
+export function loadPrompt(filePath: string, options?: { version?: string }): LoadedPrompt {
   const version = options?.version ?? "v3"; // Default to v3 (highest quality: 9.3/10)
   let absolutePath: string;
 

@@ -3,8 +3,8 @@
  * Can be used during waiting state or after results
  */
 
-import { useState } from "react";
 import { saveContactInfo } from "@/actions/intake";
+import { useState } from "react";
 import styles from "../intake.module.css";
 
 interface IntakeContactFormProps {
@@ -13,7 +13,11 @@ interface IntakeContactFormProps {
   onSubmit?: (email: string, phone: string) => void;
 }
 
-export function IntakeContactForm({ variant = "afterResults", sessionId, onSubmit }: IntakeContactFormProps) {
+export function IntakeContactForm({
+  variant = "afterResults",
+  sessionId,
+  onSubmit,
+}: IntakeContactFormProps) {
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -30,7 +34,11 @@ export function IntakeContactForm({ variant = "afterResults", sessionId, onSubmi
     if (sessionId && (contactEmail || contactPhone)) {
       setIsSubmitting(true);
       try {
-        const result = await saveContactInfo(sessionId, contactEmail || undefined, contactPhone || undefined);
+        const result = await saveContactInfo(
+          sessionId,
+          contactEmail || undefined,
+          contactPhone || undefined,
+        );
         if (result.success) {
           setSubmitSuccess(true);
           console.log("Contact info saved successfully");
@@ -46,15 +54,19 @@ export function IntakeContactForm({ variant = "afterResults", sessionId, onSubmi
   };
 
   // Choose styles based on variant
-  const promptClass = variant === "waiting" ? styles.contactPrompt : styles.contactPromptAboveResults;
+  const promptClass =
+    variant === "waiting" ? styles.contactPrompt : styles.contactPromptAboveResults;
   const promptTextClass =
     variant === "waiting" ? styles.contactPromptText : styles.contactPromptTextAbove;
   const buttonsClass =
     variant === "waiting" ? styles.contactPromptButtons : styles.contactPromptButtonsAbove;
-  const yesButtonClass = variant === "waiting" ? styles.contactYesButton : styles.contactYesButtonAbove;
-  const noButtonClass = variant === "waiting" ? styles.contactNoButton : styles.contactNoButtonAbove;
+  const yesButtonClass =
+    variant === "waiting" ? styles.contactYesButton : styles.contactYesButtonAbove;
+  const noButtonClass =
+    variant === "waiting" ? styles.contactNoButton : styles.contactNoButtonAbove;
   const formClass = variant === "waiting" ? styles.contactForm : styles.contactFormAboveResults;
-  const formTextClass = variant === "waiting" ? styles.contactFormText : styles.contactFormTextAbove;
+  const formTextClass =
+    variant === "waiting" ? styles.contactFormText : styles.contactFormTextAbove;
   const inputsClass = variant === "waiting" ? styles.contactInputs : styles.contactInputsAbove;
   const inputClass = variant === "waiting" ? styles.contactInput : styles.contactInputAbove;
   const submitButtonClass = variant === "waiting" ? undefined : styles.contactSubmitButtonAbove;

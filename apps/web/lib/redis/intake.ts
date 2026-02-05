@@ -185,10 +185,7 @@ export async function saveContactInfo(
  * Track ChatGPT button click
  * Uses Redis List to maintain event order
  */
-export async function trackChatGPTClick(
-  sessionId: string,
-  timestamp: string,
-): Promise<void> {
+export async function trackChatGPTClick(sessionId: string, timestamp: string): Promise<void> {
   const client = await getRedisClient();
 
   const event: InteractionEvent = {
@@ -249,9 +246,7 @@ export async function getSessionData(sessionId: string): Promise<SessionData | n
   // Get interactions
   const interactionsKey = `intake:${sessionId}:interactions`;
   const interactionEntries = await client.lRange(interactionsKey, 0, -1);
-  const interactions = interactionEntries.map(
-    (entry) => JSON.parse(entry) as InteractionEvent,
-  );
+  const interactions = interactionEntries.map((entry) => JSON.parse(entry) as InteractionEvent);
 
   return {
     sessionId,

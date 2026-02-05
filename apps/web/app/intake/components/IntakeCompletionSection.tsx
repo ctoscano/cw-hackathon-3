@@ -2,10 +2,10 @@
  * Completion section component for displaying results and optional contact form
  */
 
+import { trackChatGPTClick } from "@/actions/intake";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { Markdown } from "@/components/ui/markdown";
 import { TypingAnimation } from "@/components/ui/typing-animation";
-import { trackChatGPTClick } from "@/actions/intake";
 import { createExperimentPrompt, generateChatGPTUrl } from "@/lib/chatgpt";
 import styles from "../intake.module.css";
 import type { IntakeStepResponse } from "../types";
@@ -17,7 +17,11 @@ interface IntakeCompletionSectionProps {
   sessionId: string | null;
 }
 
-export function IntakeCompletionSection({ status, outputs, sessionId }: IntakeCompletionSectionProps) {
+export function IntakeCompletionSection({
+  status,
+  outputs,
+  sessionId,
+}: IntakeCompletionSectionProps) {
   // Handle ChatGPT button click - track interaction
   const handleChatGPTClick = () => {
     if (sessionId) {

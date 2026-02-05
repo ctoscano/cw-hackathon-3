@@ -81,10 +81,7 @@ export function buildReflectionPrompt(options: {
 /**
  * Build a prompt for generating completion outputs
  */
-export function buildCompletionPrompt(
-  allAnswers: IntakeAnswer[],
-  version?: string,
-): BuiltPrompt {
+export function buildCompletionPrompt(allAnswers: IntakeAnswer[], version?: string): BuiltPrompt {
   return buildPrompt({
     systemParts: ["intake/completion-system.md"],
     userParts: ["intake/completion-user.md"],
