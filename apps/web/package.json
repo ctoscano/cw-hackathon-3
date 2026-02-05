@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "sh -c 'set -a; [ -f .env.local ] && . .env.local; set +a; next dev -p ${PORT:-3000}'",
+    "dev:bun": "sh -c 'set -a; [ -f .env.local ] && . .env.local; set +a; bun --bun next dev -p ${PORT:-3000}'",
     "build": "next build",
+    "build:bun": "bun --bun next build",
     "start": "next start",
+    "start:bun": "bun --bun next start",
     "lint": "biome check .",
     "type-check": "tsc --noEmit",
     "test:e2e": "playwright test",
