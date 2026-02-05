@@ -30,8 +30,8 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./web": {
       "types": "./dist/web-exports.d.ts",
@@ -42,8 +42,8 @@
       "import": "./dist/web-exports-static.js"
     },
     "./lib/*": {
-      "types": "./dist/lib/*.d.ts",
-      "import": "./dist/lib/*.js"
+      "types": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
     }
   }
 }
