@@ -6,7 +6,6 @@
 import { useEffect, useRef } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";
 import { type ChatMessageItem, getLoadingMessagesForQuestion } from "../intake-utils";
-import styles from "../intake.module.css";
 import type { IntakeQuestion, IntakeState } from "../types";
 
 interface IntakeChatSectionProps {
@@ -28,16 +27,18 @@ export function IntakeChatSection({
   const isComplete = state === "complete";
 
   // Auto-scroll when messages change or reflection content loads
+  const messagesLength = messages.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We intentionally track messagesLength to scroll when new messages are added
   useEffect(() => {
     // Small delay to let DOM update with new content height
     const timer = setTimeout(() => {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50);
     return () => clearTimeout(timer);
-  }, [messages]);
+  }, [messagesLength]);
 
   return (
-    <div className={styles.chatContainer}>
+    <div className="flex flex-col gap-2 py-4">
       {messages.map((msg) => {
         if (msg.type === "question") {
           // Only show as chat bubble if it's a past question (not the current active one)

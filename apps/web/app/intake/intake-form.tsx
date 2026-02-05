@@ -9,6 +9,7 @@
  * - UI rendering to presentational components
  */
 
+import { Card, CardContent, Skeleton } from "@cw-hackathon/ui";
 import { IntakeChatSection } from "./components/IntakeChatSection";
 import { IntakeCompletionSection } from "./components/IntakeCompletionSection";
 import { IntakeFormSection } from "./components/IntakeFormSection";
@@ -17,7 +18,6 @@ import { IntakeValueProposition } from "./components/IntakeValueProposition";
 import { useIntakeForm } from "./hooks/useIntakeForm";
 import { useIntakeInput } from "./hooks/useIntakeInput";
 import { buildAnswerPayload } from "./intake-utils";
-import styles from "./intake.module.css";
 
 export function IntakeForm() {
   // Use custom hooks (all state logic extracted!)
@@ -50,8 +50,18 @@ export function IntakeForm() {
   // Loading state
   if (flow.status === "loading") {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Loading...</div>
+      <div className="flex flex-col gap-8">
+        <div className="text-center space-y-4">
+          <Skeleton className="h-8 w-64 mx-auto" />
+          <Skeleton className="h-4 w-48 mx-auto" />
+        </div>
+        <Card className="border-border/50">
+          <CardContent className="py-8 space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-5/6" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -59,8 +69,12 @@ export function IntakeForm() {
   // Error state
   if (flow.status === "error") {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>{flow.error}</div>
+      <div className="flex flex-col gap-8">
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="py-6">
+            <p className="text-sm text-destructive text-center">{flow.error}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -74,7 +88,7 @@ export function IntakeForm() {
   const showProgress = !isComplete && !isGeneratingCompletion;
 
   return (
-    <div className={styles.container}>
+    <div className="flex flex-col gap-8">
       {/* Header with progress */}
       <IntakeHeader
         name={metadata.name}
