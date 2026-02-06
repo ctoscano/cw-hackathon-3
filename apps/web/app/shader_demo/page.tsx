@@ -3,12 +3,13 @@
 import { useState } from "react";
 import {
   BackgroundCanvas,
+  CanyonLandscape,
   ForestLandscape,
   MountainLandscape,
   OceanLandscape,
 } from "../components/webgl";
 
-type ShaderType = "mountain" | "ocean" | "forest" | "all";
+type ShaderType = "mountain" | "ocean" | "forest" | "canyon" | "all";
 
 const shaderInfo = {
   mountain: {
@@ -29,6 +30,12 @@ const shaderInfo = {
     gradient:
       "linear-gradient(to bottom, #a7c4d9 0%, #d4b896 20%, #e8c9a0 35%, #f0d8a8 45%, #c9d4a8 55%, #8aaa88 65%, #5a7a68 75%, #3a5a48 85%, #1a3a28 95%, #0a2018 100%)",
   },
+  canyon: {
+    name: "Canyon",
+    description: "Desert canyon with splat-based terrain blending, rock strata, and heat shimmer",
+    gradient:
+      "linear-gradient(to bottom, #5588bb 0%, #88aacc 20%, #ccbb99 40%, #cc9966 60%, #aa6644 75%, #884433 90%, #442211 100%)",
+  },
 };
 
 export default function ShaderDemo() {
@@ -43,6 +50,8 @@ export default function ShaderDemo() {
         return <OceanLandscape speed={1.0} />;
       case "forest":
         return <ForestLandscape speed={0.3} />;
+      case "canyon":
+        return <CanyonLandscape speed={0.2} />;
       default:
         return null;
     }
@@ -69,7 +78,7 @@ export default function ShaderDemo() {
         >
           <h1 style={{ margin: 0, fontSize: "1.5rem", color: "#fff" }}>Shader Demo</h1>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            {(["mountain", "ocean", "forest", "all"] as ShaderType[]).map((type) => (
+            {(["mountain", "ocean", "forest", "canyon", "all"] as ShaderType[]).map((type) => (
               <button
                 type="button"
                 key={type}
@@ -101,7 +110,7 @@ export default function ShaderDemo() {
             background: "#111",
           }}
         >
-          {(["mountain", "ocean", "forest"] as const).map((type) => (
+          {(["mountain", "ocean", "forest", "canyon"] as const).map((type) => (
             <button
               type="button"
               key={type}
@@ -177,7 +186,7 @@ export default function ShaderDemo() {
       >
         <h1 style={{ margin: 0, fontSize: "1.5rem", color: "#fff" }}>Shader Demo</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          {(["mountain", "ocean", "forest", "all"] as ShaderType[]).map((type) => (
+          {(["mountain", "ocean", "forest", "canyon", "all"] as ShaderType[]).map((type) => (
             <button
               type="button"
               key={type}

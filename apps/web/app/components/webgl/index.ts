@@ -9,3 +9,4 @@ export { useReducedMotion } from "./hooks/useReducedMotion";
 export { MountainLandscape } from "./shaders/MountainLandscape";
 export { OceanLandscape } from "./shaders/OceanLandscape";
 export { ForestLandscape } from "./shaders/ForestLandscape";
+export { CanyonLandscape } from "./shaders/CanyonLandscape";

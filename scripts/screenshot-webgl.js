@@ -18,6 +18,7 @@ const PAGES = [
   { path: "/landscapes/mountain", name: "mountain" },
   { path: "/landscapes/ocean", name: "ocean" },
   { path: "/landscapes/forest", name: "forest" },
+  { path: "/landscapes/canyon", name: "canyon" },
 ];
 
 async function main() {

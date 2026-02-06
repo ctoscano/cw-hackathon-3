@@ -21,6 +21,7 @@ export default function LandscapesLayout({
           <Link href="/landscapes/mountain">Mountain</Link>
           <Link href="/landscapes/ocean">Ocean</Link>
           <Link href="/landscapes/forest">Forest</Link>
+          <Link href="/landscapes/canyon">Canyon</Link>
         </div>
       </nav>
       {children}
