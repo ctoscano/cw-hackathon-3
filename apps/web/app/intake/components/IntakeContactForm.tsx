@@ -4,6 +4,7 @@
  */
 
 import { saveContactInfo } from "@/actions/intake";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import styles from "../intake.module.css";
 
@@ -95,8 +96,17 @@ export function IntakeContactForm({
   if (submitSuccess) {
     return (
       <div className={formClass}>
-        <p className={formTextClass} style={{ color: "var(--color-success, #22c55e)" }}>
-          ✓ Thank you! We&apos;ll be in touch soon.
+        <p
+          className={formTextClass}
+          style={{
+            color: "var(--color-success, #22c55e)",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          <Check className="h-4 w-4" aria-hidden="true" />
+          Thank you! We&apos;ll be in touch soon.
         </p>
       </div>
     );

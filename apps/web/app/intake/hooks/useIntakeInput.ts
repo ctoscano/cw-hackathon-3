@@ -1,6 +1,11 @@
 /**
  * Hook for managing form input state for the current question
  * Consolidates textInput, selectedOptions, and otherText into a single object
+ *
+ * KEY ARCHITECTURE:
+ * - Takes questionId (string) instead of question object for stability
+ * - The question object reference can change on re-renders even for the same question
+ * - Using questionId ensures input only resets when the actual question changes
  */
 
 import { useEffect, useState } from "react";
@@ -26,13 +31,19 @@ const EMPTY_INPUT: FormInput = {
 
 /**
  * Hook for managing form input state for a question
- * Automatically resets when the question changes
+ * Automatically resets when the questionId changes (stable key)
+ *
+ * @param questionId - The stable question ID (not the question object)
+ * @param question - The question object (for validation only)
  */
-export function useIntakeInput(question: IntakeQuestion | null): UseIntakeInputReturn {
+export function useIntakeInput(
+  questionId: string | null,
+  question: IntakeQuestion | null,
+): UseIntakeInputReturn {
   const [input, setInput] = useState<FormInput>(EMPTY_INPUT);
 
-  // Reset input when question changes
-  const questionId = question?.id;
+  // Reset input when questionId changes (stable dependency)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: questionId is intentionally the only dependency - we want to reset input when question changes
   useEffect(() => {
     setInput(EMPTY_INPUT);
   }, [questionId]);

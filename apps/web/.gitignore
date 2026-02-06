@@ -16,3 +16,9 @@ yarn-error.log*
 # Local
 .DS_Store
 *.pem
+
+# Playwright
+/playwright-report/
+/playwright/.cache/
+/test-results/
+/test-output/

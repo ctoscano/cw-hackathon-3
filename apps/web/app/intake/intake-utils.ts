@@ -3,14 +3,14 @@
  * Extracted from intake-form.tsx to improve testability and reusability
  */
 
-import type { IntakeAnswer } from "./types";
+import type { IntakeAnswer, IntakeOption } from "./types";
 
 // Question type that matches the API shape
 export interface Question {
   id: string;
   prompt: string;
   type: "text" | "multiselect" | "singleselect";
-  options?: string[];
+  options?: string[] | IntakeOption[]; // Support both legacy and structured options
   examples?: string[];
 }
 
@@ -27,10 +27,21 @@ export type ChatMessageItem =
   | { id: string; type: "answer"; content: string | string[] }
   | { id: string; type: "reflection"; content: string | null; questionId?: string }; // null = loading
 
-// Message ID generator
+// Message ID generator (kept for backward compatibility)
 let messageIdCounter = 0;
 export function generateMessageId(): string {
   return `msg-${++messageIdCounter}`;
+}
+
+/**
+ * Generate a stable message ID based on questionId and message type
+ * This ensures React can correctly identify messages across re-renders
+ */
+export function generateStableMessageId(
+  questionId: string,
+  type: "question" | "answer" | "reflection",
+): string {
+  return `${type}-${questionId}`;
 }
 
 /**
@@ -38,11 +49,36 @@ export function generateMessageId(): string {
  */
 
 /**
+ * Get the value from an option (handles both string and IntakeOption)
+ */
+export function getOptionValue(option: string | IntakeOption): string {
+  return typeof option === "string" ? option : option.value;
+}
+
+/**
+ * Get the display text from an option (handles both string and IntakeOption)
+ */
+export function getOptionText(option: string | IntakeOption): string {
+  return typeof option === "string" ? option : option.text;
+}
+
+/**
  * Checks if an option represents an "Other" or "Something else" variant
+ * Handles both string (legacy) and IntakeOption (structured) formats
  */
 export function isOtherVariant(option: string): boolean {
   const lower = option.toLowerCase();
   return lower.includes("other") || lower.includes("something else");
+}
+
+/**
+ * Checks if a structured or string option is marked as "other"
+ */
+export function isOtherOption(option: string | IntakeOption): boolean {
+  if (typeof option === "string") {
+    return isOtherVariant(option);
+  }
+  return option.isOther === true;
 }
 
 /**
@@ -60,7 +96,11 @@ export function extractOtherText(options: string[], otherText: string): string |
  * Checks if a question has an "Other" option
  */
 export function hasOtherOption(question: Question): boolean {
-  return question.options?.some(isOtherVariant) ?? false;
+  return (
+    question.options?.some((opt) =>
+      typeof opt === "string" ? isOtherVariant(opt) : opt.isOther === true,
+    ) ?? false
+  );
 }
 
 /**
@@ -175,14 +215,19 @@ export function getLoadingMessagesForQuestion(questionId: string): string[] {
 
 /**
  * MESSAGE UTILITIES
+ *
+ * All message creation functions now use stable IDs based on questionId.
+ * This ensures React can correctly track message identity across re-renders,
+ * preventing unnecessary DOM operations and animation glitches.
  */
 
 /**
  * Creates a question message for the chat
+ * Uses stable ID based on questionId
  */
 export function createQuestionMessage(question: Question, questionNumber: number): ChatMessageItem {
   return {
-    id: generateMessageId(),
+    id: generateStableMessageId(question.id, "question"),
     type: "question",
     questionNumber,
     question,
@@ -191,10 +236,14 @@ export function createQuestionMessage(question: Question, questionNumber: number
 
 /**
  * Creates an answer message for the chat
+ * Uses stable ID based on questionId (passed as parameter)
  */
-export function createAnswerMessage(answer: string | string[]): ChatMessageItem {
+export function createAnswerMessage(
+  answer: string | string[],
+  questionId?: string,
+): ChatMessageItem {
   return {
-    id: generateMessageId(),
+    id: questionId ? generateStableMessageId(questionId, "answer") : generateMessageId(),
     type: "answer",
     content: answer,
   };
@@ -202,13 +251,14 @@ export function createAnswerMessage(answer: string | string[]): ChatMessageItem 
 
 /**
  * Creates a reflection message for the chat (with optional content)
+ * Uses stable ID based on questionId
  */
 export function createReflectionMessage(
   content: string | null = null,
   questionId?: string,
 ): ChatMessageItem {
   return {
-    id: generateMessageId(),
+    id: questionId ? generateStableMessageId(questionId, "reflection") : generateMessageId(),
     type: "reflection",
     content,
     questionId,

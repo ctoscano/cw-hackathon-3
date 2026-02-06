@@ -2,7 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import type { DAPArchiveEntry } from "@/lib/redis/ops";
-import { Activity, ArrowLeft, Calendar, Clock, FileText, Zap } from "lucide-react";
+import { Activity, ArrowLeft, Calendar, CheckCircle, Clock, FileText, Zap } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,7 +13,12 @@ async function getDAPData(sessionId: string): Promise<DAPArchiveEntry | null> {
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    // Get the host from request headers for self-referential URL
+    const headersList = await headers();
+    const host = headersList.get("host") || "localhost:3000";
+    const protocol = headersList.get("x-forwarded-proto") || "http";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+
     const response = await fetch(`${baseUrl}/api/ops/dap/${sessionId}`, {
       cache: "no-store",
     });
@@ -65,8 +71,9 @@ export default async function DAPSessionDetailPage({
                 <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{sessionId}</code>
               </p>
             </div>
-            <Badge variant="default" className="text-sm px-4 py-2">
-              ✓ Complete
+            <Badge variant="default" className="text-sm px-4 py-2 flex items-center gap-1.5">
+              <CheckCircle className="h-4 w-4" aria-hidden="true" />
+              Complete
             </Badge>
           </div>
         </div>

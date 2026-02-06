@@ -2,11 +2,17 @@
  * Shared type definitions for the intake flow
  */
 
+export interface IntakeOption {
+  text: string;
+  value: string;
+  isOther?: boolean;
+}
+
 export interface IntakeQuestion {
   id: string;
   prompt: string;
   type: "text" | "multiselect" | "singleselect";
-  options?: string[];
+  options?: IntakeOption[] | string[]; // Support both new and legacy formats
   examples?: string[];
 }
 

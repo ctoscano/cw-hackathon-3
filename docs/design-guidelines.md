@@ -152,6 +152,28 @@ import {
 - Match to section color: `text-anthropic-orange`, `text-anthropic-blue`, `text-anthropic-green`
 - Use `flex-shrink-0` to prevent icon squishing in flex containers
 
+### Icon Mappings (Emoji to Lucide)
+
+| Instead of | Use | Example |
+|------------|-----|---------|
+| 📋 | `<ClipboardList />` | `<ClipboardList className="h-6 w-6 text-primary" />` |
+| 📝 | `<FileText />` | `<FileText className="h-6 w-6 text-secondary" />` |
+| ✓ ✔ | `<Check />` | `<Check className="h-4 w-4 text-accent" />` |
+| ✓ Complete | `<CheckCircle />` | `<CheckCircle className="h-4 w-4" />` |
+| 🧪 | `<FlaskConical />` | `<FlaskConical className="h-6 w-6 text-muted-foreground" />` |
+| ✨ | `<Sparkles />` | `<Sparkles className="h-5 w-5 text-primary" />` |
+| ⚡ | `<Zap />` | `<Zap className="h-5 w-5 text-yellow-500" />` |
+| 🌙 | `<Moon />` | `<Moon className="h-5 w-5 text-purple-400" />` |
+| 🎉 | `<PartyPopper />` | `<PartyPopper className="h-5 w-5" />` |
+| 🎯 | `<Target />` | `<Target className="h-5 w-5" />` |
+| 🚀 | `<Rocket />` | `<Rocket className="h-5 w-5" />` |
+
+**Loading Messages:**
+Instead of emoji-laden loading messages like "Gathering insights ✨", use plain text with ellipsis:
+- "Gathering insights..."
+- "Personalizing results..."
+- "Almost ready..."
+
 ## Component Libraries
 
 ### HeroUI v3

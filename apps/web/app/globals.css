@@ -18,8 +18,8 @@
 @source "./components/**/*.{ts,tsx}";
 @source "./lib/**/*.{ts,tsx}";
 
-/* Scan HeroUI component files in node_modules */
-@source "../node_modules/@heroui/react/dist/**/*.{js,mjs}";
+/* Scan shared UI package - relative path required for Tailwind v4 @source */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 /* Exclude test files for performance */
 @source not "./**/*.test.{ts,tsx}";

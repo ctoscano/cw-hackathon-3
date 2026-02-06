@@ -156,7 +156,187 @@ cw-hackathon-3/
 ├── apps/
 │   └── web/              # Next.js 15 web application
 └── packages/
+    ├── ui/               # Shared UI components (@cw-hackathon/ui)
     └── data/             # CLI tool using Citty, runs with Bun
+```
+
+## Component Library Strategy
+
+This project uses a hierarchical approach to UI components. Follow this decision tree when building UI.
+
+### Component Library Priority
+
+When implementing UI features, use components in this order of preference:
+
+1. **HeroUI** (Primary) - Interactive components with built-in accessibility
+   - Buttons, Inputs, Modals, Cards, Tables, Navigation
+   - Best for: Standard UI patterns, forms, navigation
+   - Import: `import { Button, Card } from "@heroui/react"`
+
+2. **ai-elements** (AI Features) - Chat/conversation interfaces
+   - Message, Conversation, ChainOfThought, CodeBlock, PromptInput
+   - Best for: Chat UI, AI responses, streaming content
+   - Install: `npx ai-elements@latest add <component>`
+   - See: `.agents/skills/ai-elements/` for component docs
+
+3. **@cw-hackathon/ui** (Shared Primitives) - Base shadcn/ui components
+   - Button, Card, Badge, Tabs, Dialog, Table, Input, Select
+   - Best for: Consistent primitives across apps, customization needs
+   - Import: `import { Button, Card } from "@cw-hackathon/ui"`
+
+4. **KiboUI** (Specialized) - Complex specialized components
+   - Kanban, Gantt, Calendar, Code Editor, File Tree, Markdown Editor
+   - Best for: Rich interactive widgets not in HeroUI
+   - Install: Copy from https://www.kibo-ui.com/docs/usage
+   - Consider when: Building project management, code editing, file browsing
+
+### When to Use Each Library
+
+| Use Case | Library | Why |
+|----------|---------|-----|
+| Form elements | HeroUI | Built-in validation, accessibility |
+| Chat/AI interface | ai-elements | Optimized for streaming, AI patterns |
+| Base primitives | @cw-hackathon/ui | Shared across apps, customizable |
+| Kanban/Calendar | KiboUI | Specialized features |
+| Custom component | packages/ui | Reusable, type-safe |
+
+### Where to Put New Components
+
+**Put in `packages/ui`** (PREFERRED):
+- Reusable across multiple apps
+- Design system primitives
+- Components you might demo or document
+- Anything that could go in a Storybook later
+- Examples: Button variants, Cards, Form controls, Layout components
+
+**Put in `apps/web/components`** (ONLY when app-specific):
+- Tightly coupled to app routes/data
+- Uses app-specific hooks or context
+- Not reusable outside this app
+- Examples: PageHeader with app navigation, FeatureSpecificWidget
+
+**Rule of thumb:** When in doubt, put it in `packages/ui`. It's easier to use an existing package component than to migrate one later.
+
+### packages/ui Organization
+
+```
+packages/ui/src/
+├── components/           # Flat structure, alphabetically sorted
+│   ├── button.tsx        # CVA-based with variants
+│   ├── card.tsx          # Card + CardHeader/Content/Footer
+│   ├── dialog.tsx        # Modal/Dialog
+│   ├── input.tsx         # Text input
+│   ├── tabs.tsx          # Tab navigation
+│   ├── typing-indicator.tsx  # Loading dots animation
+│   └── index.ts          # Barrel export
+├── hooks/                # Shared hooks
+│   └── index.ts
+├── utils/
+│   ├── cn.ts             # Class name utility (clsx + tailwind-merge)
+│   └── index.ts
+├── globals.css           # Design tokens and theme
+└── index.ts              # Main package export
+```
+
+### Using packages/ui
+
+```tsx
+// Import components
+import { Button, Card, CardContent, TypingIndicator } from "@cw-hackathon/ui";
+
+// Import utilities
+import { cn } from "@cw-hackathon/ui";
+
+// Use in components
+<Card>
+  <CardContent>
+    <Button variant="default">Click me</Button>
+  </CardContent>
+</Card>
+```
+
+### Component Patterns
+
+All components in packages/ui follow these patterns:
+
+1. **CVA for variants** - Use class-variance-authority
+   ```tsx
+   const buttonVariants = cva("base-classes", {
+     variants: { variant: { default: "...", secondary: "..." } }
+   });
+   ```
+
+2. **forwardRef** - Support DOM refs
+   ```tsx
+   const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(...)
+   ```
+
+3. **Export variants too** - Allow styling without wrapping
+   ```tsx
+   export { Button, buttonVariants };
+   ```
+
+4. **Tailwind-first** - Use utility classes, avoid CSS modules
+5. **CSS variables** - Reference design tokens from globals.css
+
+### Optimistic UI Patterns (Critical for Chat)
+
+When building conversational interfaces, follow these patterns from `docs/prds/intake-chat-ui.md`:
+
+1. **Show next question immediately** - Don't wait for LLM reflection
+2. **Protect user input** - Never overwrite current input when async content resolves
+3. **Typing indicators** - Show TypingIndicator while waiting
+4. **fadeInUp animation** - Smooth transitions for new content
+
+```tsx
+// Optimistic pattern example
+async function handleSubmit() {
+  // 1. Immediately update UI
+  addMessage({ type: 'answer', content: currentAnswer });
+  addMessage({ type: 'reflection', content: null }); // Loading
+
+  // 2. Show next question immediately (if known)
+  if (nextQuestionKnown) {
+    addMessage({ type: 'question', content: nextQuestion.prompt });
+  }
+
+  // 3. Fetch reflection in background
+  const response = await submitAnswer();
+
+  // 4. Update reflection when ready (don't touch user's current input!)
+  updateMessage(pendingReflectionIndex, { content: response.reflection });
+}
+```
+
+### Installing ai-elements Components
+
+```bash
+# Install a specific component
+npx ai-elements@latest add message
+npx ai-elements@latest add conversation
+npx ai-elements@latest add chain-of-thought
+
+# Components are copied to components/ai-elements/
+```
+
+### Design System Colors
+
+The design system uses Anthropic-inspired colors:
+
+```css
+/* Primary palette */
+--anthropic-orange: #d97757   /* Primary actions */
+--anthropic-blue: #6a9bcc     /* Secondary, info */
+--anthropic-green: #788c5d    /* Success, accent */
+--anthropic-dark: #141413     /* Text, headings */
+--anthropic-light: #faf9f5    /* Backgrounds */
+
+/* Use via Tailwind */
+.bg-primary        /* Orange */
+.bg-secondary      /* Blue */
+.bg-accent         /* Green */
+.text-foreground   /* Dark */
+.bg-background     /* Light */
 ```
 
 ## Project Structure
@@ -188,6 +368,15 @@ cw-hackathon-3/
 │       │   └── globals.css
 │       └── public/
 └── packages/
+    ├── ui/                       # Shared UI components
+    │   ├── package.json
+    │   ├── tsconfig.json
+    │   └── src/
+    │       ├── index.ts          # Main package export
+    │       ├── components/       # UI components (button, card, etc.)
+    │       ├── hooks/            # Shared React hooks
+    │       ├── utils/            # Utilities (cn function)
+    │       └── globals.css       # Design system tokens
     └── data/
         ├── package.json
         ├── tsconfig.json
@@ -436,6 +625,44 @@ For detailed React development patterns, performance optimization, and component
 - Use Server Actions for mutations
 - Parallelize independent async operations with `Promise.all()`
 - Calculate derived state during rendering, not in effects
+
+### UI Icons - NEVER Use Emojis
+
+**CRITICAL RULE:** Never use emoji characters in the UI. Always use Lucide React icons instead.
+
+**Why:**
+- Emojis render inconsistently across platforms and browsers
+- Emojis don't match the professional design aesthetic
+- SVG icons are more accessible and customizable
+- Icons can be styled with Tailwind classes (size, color, etc.)
+
+**Correct pattern:**
+```tsx
+import { ClipboardList, FileText, Check, FlaskConical } from "lucide-react";
+
+// Header icons
+<ClipboardList className="h-6 w-6 text-primary" />
+
+// Checkmarks
+<Check className="h-4 w-4 text-accent" />
+
+// Demo/test pages
+<FlaskConical className="h-6 w-6 text-muted-foreground" />
+```
+
+**Icon mappings (emoji -> Lucide):**
+| Instead of | Use |
+|------------|-----|
+| 📋 | `<ClipboardList />` |
+| 📝 | `<FileText />` or `<StickyNote />` |
+| ✓ ✔ | `<Check />` or `<CheckCircle />` |
+| 🧪 | `<FlaskConical />` or `<TestTube2 />` |
+| ✨ | `<Sparkles />` |
+| 🎯 | `<Target />` |
+| 🚀 | `<Rocket />` |
+| 🎉 | Use confetti animation, not emoji |
+
+**See:** [docs/design-guidelines.md](./docs/design-guidelines.md) for complete icon usage guide.
 
 ## Adding New Workspaces
 

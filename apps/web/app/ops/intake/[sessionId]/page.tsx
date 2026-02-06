@@ -3,7 +3,16 @@ import { AnswerMessage, QuestionMessage, ReflectionMessage } from "@/components/
 import { Separator } from "@/components/ui/separator";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import type { SessionData } from "@/lib/redis/intake";
-import { Activity, ArrowLeft, Calendar, FileCheck, MessageSquare, User } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Circle,
+  FileCheck,
+  MessageSquare,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -68,9 +77,19 @@ export default async function IntakeSessionDetailPage({
             </div>
             <Badge
               variant={data.completion ? "default" : "secondary"}
-              className="text-sm px-4 py-2"
+              className="text-sm px-4 py-2 flex items-center gap-1.5"
             >
-              {data.completion ? "✓ Complete" : "○ In Progress"}
+              {data.completion ? (
+                <>
+                  <CheckCircle className="h-4 w-4" aria-hidden="true" />
+                  Complete
+                </>
+              ) : (
+                <>
+                  <Circle className="h-4 w-4" aria-hidden="true" />
+                  In Progress
+                </>
+              )}
             </Badge>
           </div>
         </div>
