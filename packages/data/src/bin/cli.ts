@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
 import { runMain } from "citty";
-import { main } from "../index.js";
+import { main } from "../index";
 
 runMain(main);

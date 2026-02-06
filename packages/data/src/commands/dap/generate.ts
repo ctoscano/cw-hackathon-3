@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { defineCommand } from "citty";
-import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
-import { type DAPNote, DAPNoteSchema, SchemaDescriptions } from "../../lib/ai/schemas.js";
-import { type PromptOutputFormat, buildDAPPrompt } from "../../lib/prompts/builder.js";
-import { archiveDAPOutput, isRedisEnabled } from "../../lib/redis/archive.js";
-import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
+import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client";
+import { type DAPNote, DAPNoteSchema, SchemaDescriptions } from "../../lib/ai/schemas";
+import { type PromptOutputFormat, buildDAPPrompt } from "../../lib/prompts/builder";
+import { archiveDAPOutput, isRedisEnabled } from "../../lib/redis/archive";
+import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file";
 
 export const generateCommand = defineCommand({
   meta: {

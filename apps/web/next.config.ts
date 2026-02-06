@@ -15,9 +15,10 @@ const nextConfig: NextConfig = {
   },
 
   // Turbopack configuration (for dev:turbo and build:turbo)
+  // Uses relative path from project root for Turbopack compatibility
   turbopack: {
     resolveAlias: {
-      "@cw-hackathon/data": dataPackageSrc,
+      "@cw-hackathon/data": "../../packages/data/src/index.ts",
     },
     resolveExtensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
   },

@@ -1,6 +1,6 @@
 import { defineCommand } from "citty";
-import { getIntakeDefinition, getTotalSteps } from "../../lib/intake/definitions.js";
-import { saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
+import { getIntakeDefinition, getTotalSteps } from "../../lib/intake/definitions";
+import { saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file";
 
 /**
  * Predefined synthetic intake scenarios for testing

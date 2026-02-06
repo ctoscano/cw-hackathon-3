@@ -1,4 +1,4 @@
-import { type AIResult, generateStructuredOutput } from "../ai/client.js";
+import { type AIResult, generateStructuredOutput } from "../ai/client";
 import {
   type IntakeAnswer,
   type IntakeCompletionOutputs,
@@ -7,9 +7,9 @@ import {
   IntakeReflectionSchema,
   type IntakeStepRequest,
   type IntakeStepResponse,
-} from "../ai/intake-schemas.js";
-import { type BuiltPrompt, buildPrompt } from "../prompts/builder.js";
-import { getIntakeDefinition, getQuestionByIndex, getTotalSteps } from "./definitions.js";
+} from "../ai/intake-schemas";
+import { type BuiltPrompt, buildPrompt } from "../prompts/builder";
+import { getIntakeDefinition, getQuestionByIndex, getTotalSteps } from "./definitions";
 
 /**
  * Format a user's answer for display in prompts

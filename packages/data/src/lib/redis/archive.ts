@@ -4,7 +4,7 @@
  */
 
 import type { RedisClientType } from "redis";
-import { createRedisClient, isRedisEnabled, withRedisClient } from "./client.js";
+import { createRedisClient, isRedisEnabled, withRedisClient } from "./client";
 
 // Re-export for convenience
 export { isRedisEnabled };

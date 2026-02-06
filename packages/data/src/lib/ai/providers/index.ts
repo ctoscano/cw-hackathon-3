@@ -8,14 +8,9 @@
  */
 
 import type { LanguageModel } from "ai";
-import {
-  type LLMProvider,
-  type ModelSpec,
-  getProviderFromEnv,
-  resolveModelName,
-} from "../models.js";
-import { createClaudeCodeModel } from "./claude-code.js";
-import { createWandBInferenceModel } from "./wandb-inference.js";
+import { type LLMProvider, type ModelSpec, getProviderFromEnv, resolveModelName } from "../models";
+import { createClaudeCodeModel } from "./claude-code";
+import { createWandBInferenceModel } from "./wandb-inference";
 
 /**
  * Create a language model for the given model specification.
@@ -74,5 +69,5 @@ export function getProviderInfo(): {
 }
 
 // Re-export for convenience
-export { createClaudeCodeModel } from "./claude-code.js";
-export { createWandBInferenceModel, clearProviderCache } from "./wandb-inference.js";
+export { createClaudeCodeModel } from "./claude-code";
+export { createWandBInferenceModel, clearProviderCache } from "./wandb-inference";

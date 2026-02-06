@@ -1,8 +1,8 @@
 import { defineCommand } from "citty";
-import { dapCommand } from "./commands/dap/index.js";
-import { helloCommand } from "./commands/hello.js";
-import { intakeCommand } from "./commands/intake/index.js";
-import { setupCommand } from "./commands/setup.js";
+import { dapCommand } from "./commands/dap/index";
+import { helloCommand } from "./commands/hello";
+import { intakeCommand } from "./commands/intake/index";
+import { setupCommand } from "./commands/setup";
 
 export const main = defineCommand({
   meta: {
@@ -19,14 +19,14 @@ export const main = defineCommand({
 });
 
 // Re-export library modules for use in web app
-export * from "./lib/ai/client.js";
-export * from "./lib/ai/models.js";
-export * from "./lib/ai/providers/index.js";
-export * from "./lib/ai/schemas.js";
-export * from "./lib/ai/weave.js";
-export * from "./lib/ai/intake-schemas.js";
-export * from "./lib/prompts/loader.js";
-export * from "./lib/prompts/builder.js";
-export * from "./lib/intake/index.js";
-export * from "./lib/utils/file.js";
-export * from "./lib/redis/archive.js";
+export * from "./lib/ai/client";
+export * from "./lib/ai/models";
+export * from "./lib/ai/providers/index";
+export * from "./lib/ai/schemas";
+export * from "./lib/ai/weave";
+export * from "./lib/ai/intake-schemas";
+export * from "./lib/prompts/loader";
+export * from "./lib/prompts/builder";
+export * from "./lib/intake/index";
+export * from "./lib/utils/file";
+export * from "./lib/redis/archive";

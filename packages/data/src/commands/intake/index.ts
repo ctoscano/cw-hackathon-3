@@ -1,8 +1,8 @@
 import { defineCommand } from "citty";
-import { archiveCommand } from "./archive.js";
-import { evaluateCommand } from "./evaluate.js";
-import { syntheticCommand } from "./synthetic.js";
-import { verifyCommand } from "./verify.js";
+import { archiveCommand } from "./archive";
+import { evaluateCommand } from "./evaluate";
+import { syntheticCommand } from "./synthetic";
+import { verifyCommand } from "./verify";
 
 export const intakeCommand = defineCommand({
   meta: {

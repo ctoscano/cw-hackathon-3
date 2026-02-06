@@ -1,5 +1,5 @@
-import { saveJsonOutput, saveMarkdownOutput, saveOutput } from "../utils/file.js";
-import { type PromptVariables, loadPrompt, substituteVariables } from "./loader.js";
+import { saveJsonOutput, saveMarkdownOutput, saveOutput } from "../utils/file";
+import { type PromptVariables, loadPrompt, substituteVariables } from "./loader";
 
 /**
  * A built prompt with full context

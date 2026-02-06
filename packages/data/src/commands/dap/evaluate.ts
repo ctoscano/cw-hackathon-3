@@ -1,13 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { defineCommand } from "citty";
-import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
+import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client";
 import {
   type EvaluationResult,
   EvaluationResultSchema,
   SchemaDescriptions,
-} from "../../lib/ai/schemas.js";
-import { type PromptOutputFormat, buildEvaluationPrompt } from "../../lib/prompts/builder.js";
-import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
+} from "../../lib/ai/schemas";
+import { type PromptOutputFormat, buildEvaluationPrompt } from "../../lib/prompts/builder";
+import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file";
 
 export const evaluateCommand = defineCommand({
   meta: {

@@ -1,4 +1,4 @@
-import type { IntakeDefinition } from "../ai/intake-schemas.js";
+import type { IntakeDefinition } from "../ai/intake-schemas";
 
 /**
  * Therapy Readiness Intake - "Is Therapy Right for Me?"

@@ -1,10 +1,5 @@
 import { defineCommand } from "citty";
-import {
-  getDAPCount,
-  getDAPOutput,
-  isRedisEnabled,
-  listDAPOutputs,
-} from "../../lib/redis/archive.js";
+import { getDAPCount, getDAPOutput, isRedisEnabled, listDAPOutputs } from "../../lib/redis/archive";
 
 const listCommand = defineCommand({
   meta: {
