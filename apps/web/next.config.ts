@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
     "*": [".next/cache/**", "cache/**", "**/.turbo/**", "**/*.tsbuildinfo"],
   },
 
+  // Turbopack configuration (for dev:turbo and build:turbo)
+  turbopack: {
+    resolveAlias: {
+      "@cw-hackathon/data": dataPackageSrc,
+    },
+    resolveExtensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+  },
+
   // Webpack configuration (for standard dev and build)
   webpack: (config) => {
     // Resolve .js imports to .ts files for workspace packages
