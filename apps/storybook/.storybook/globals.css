@@ -3,7 +3,7 @@
 @import "tailwindcss";
 
 /* Scan the shared UI package for Tailwind classes */
-@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 /* Theme mappings for Tailwind v4 */
 @theme inline {
