@@ -7,6 +7,16 @@ export const QuestionTypeSchema = z.enum(["text", "multiselect", "singleselect"]
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 
 /**
+ * Schema for a structured option in multiple choice questions
+ */
+export const IntakeOptionSchema = z.object({
+  text: z.string().describe("Display text shown to the user"),
+  value: z.string().describe("Internal value used for storage and logic"),
+  isOther: z.boolean().optional().describe("Flag indicating this option requires free-text input"),
+});
+export type IntakeOption = z.infer<typeof IntakeOptionSchema>;
+
+/**
  * Schema for a single intake question definition
  */
 export const IntakeQuestionSchema = z.object({
@@ -14,9 +24,11 @@ export const IntakeQuestionSchema = z.object({
   prompt: z.string().describe("The question text shown to the user"),
   type: QuestionTypeSchema.describe("Type of input expected: text, multiselect, or singleselect"),
   options: z
-    .array(z.string())
+    .union([z.array(z.string()), z.array(IntakeOptionSchema)])
     .optional()
-    .describe("Options for multiselect or singleselect questions"),
+    .describe(
+      "Options for multiselect or singleselect questions - can be strings (legacy) or structured IntakeOption objects",
+    ),
   examples: z
     .array(z.string())
     .optional()

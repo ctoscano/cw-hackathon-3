@@ -6,7 +6,7 @@
 import type { FormInput } from "../intake-utils";
 import { isOtherVariant } from "../intake-utils";
 import styles from "../intake.module.css";
-import type { IntakeQuestion } from "../types";
+import type { IntakeOption, IntakeQuestion } from "../types";
 
 interface IntakeFormSectionProps {
   question: IntakeQuestion;
@@ -21,6 +21,30 @@ interface IntakeFormSectionProps {
   error: string | null;
 }
 
+/**
+ * Get the value from an option (handles both string and IntakeOption)
+ */
+function getOptionValue(option: string | IntakeOption): string {
+  return typeof option === "string" ? option : option.value;
+}
+
+/**
+ * Get the display text from an option (handles both string and IntakeOption)
+ */
+function getOptionText(option: string | IntakeOption): string {
+  return typeof option === "string" ? option : option.text;
+}
+
+/**
+ * Check if an option is marked as "other" (handles both string and IntakeOption)
+ */
+function isOtherOption(option: string | IntakeOption): boolean {
+  if (typeof option === "string") {
+    return isOtherVariant(option);
+  }
+  return option.isOther === true;
+}
+
 export function IntakeFormSection({
   question,
   currentStep,
@@ -33,7 +57,8 @@ export function IntakeFormSection({
   isSubmitting,
   error,
 }: IntakeFormSectionProps) {
-  const showOtherInput = input.selectedOptions.some(isOtherVariant);
+  const showOtherInput =
+    question.options?.some(isOtherOption) && input.selectedOptions.some(isOtherVariant);
 
   return (
     <form onSubmit={onSubmit} className={styles.questionForm}>
@@ -75,18 +100,23 @@ export function IntakeFormSection({
           <div className={styles.optionsWrapper}>
             <p className={styles.optionsHint}>Select all that apply</p>
             <div className={styles.options}>
-              {question.options.map((option) => (
-                <label key={option} className={styles.optionLabel}>
-                  <input
-                    type="checkbox"
-                    checked={input.selectedOptions.includes(option)}
-                    onChange={() => onOptionToggle(option)}
-                    disabled={isSubmitting}
-                    className={styles.checkbox}
-                  />
-                  <span className={styles.optionText}>{option}</span>
-                </label>
-              ))}
+              {question.options.map((option) => {
+                const value = getOptionValue(option);
+                const text = getOptionText(option);
+                return (
+                  <label key={value} className={styles.optionLabel}>
+                    <input
+                      type="checkbox"
+                      value={value}
+                      checked={input.selectedOptions.includes(value)}
+                      onChange={() => onOptionToggle(value)}
+                      disabled={isSubmitting}
+                      className={styles.checkbox}
+                    />
+                    <span className={styles.optionText}>{text}</span>
+                  </label>
+                );
+              })}
             </div>
             {showOtherInput && (
               <div className={styles.otherInputWrapper}>
@@ -107,19 +137,24 @@ export function IntakeFormSection({
         {question.type === "singleselect" && question.options && (
           <div className={styles.optionsWrapper}>
             <div className={styles.options}>
-              {question.options.map((option) => (
-                <label key={option} className={styles.optionLabel}>
-                  <input
-                    type="radio"
-                    name="singleselect"
-                    checked={input.selectedOptions.includes(option)}
-                    onChange={() => onOptionToggle(option)}
-                    disabled={isSubmitting}
-                    className={styles.radio}
-                  />
-                  <span className={styles.optionText}>{option}</span>
-                </label>
-              ))}
+              {question.options.map((option) => {
+                const value = getOptionValue(option);
+                const text = getOptionText(option);
+                return (
+                  <label key={value} className={styles.optionLabel}>
+                    <input
+                      type="radio"
+                      name="singleselect"
+                      value={value}
+                      checked={input.selectedOptions.includes(value)}
+                      onChange={() => onOptionToggle(value)}
+                      disabled={isSubmitting}
+                      className={styles.radio}
+                    />
+                    <span className={styles.optionText}>{text}</span>
+                  </label>
+                );
+              })}
             </div>
             {showOtherInput && (
               <div className={styles.otherInputWrapper}>
