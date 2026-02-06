@@ -1,6 +1,6 @@
 import { defineCommand } from "citty";
 import consola from "consola";
-import { writeEnvFiles } from "../lib/setup/env-writer.js";
+import { writeEnvFiles } from "../lib/setup/env-writer";
 
 export const setupCommand = defineCommand({
   meta: {

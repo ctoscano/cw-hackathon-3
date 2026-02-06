@@ -1,8 +1,8 @@
 import { defineCommand } from "citty";
-import { archiveCommand } from "./archive.js";
-import { evaluateCommand } from "./evaluate.js";
-import { generateCommand } from "./generate.js";
-import { syntheticCommand } from "./synthetic.js";
+import { archiveCommand } from "./archive";
+import { evaluateCommand } from "./evaluate";
+import { generateCommand } from "./generate";
+import { syntheticCommand } from "./synthetic";
 
 export const dapCommand = defineCommand({
   meta: {

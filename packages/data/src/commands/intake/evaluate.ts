@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import { z } from "zod";
-import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client.js";
-import type { IntakeAnswer, IntakeCompletionOutputs } from "../../lib/ai/intake-schemas.js";
-import { processIntakeStep } from "../../lib/intake/builder.js";
-import { getIntakeDefinition } from "../../lib/intake/definitions.js";
-import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
+import { formatTelemetry, generateStructuredOutput } from "../../lib/ai/client";
+import type { IntakeAnswer, IntakeCompletionOutputs } from "../../lib/ai/intake-schemas";
+import { processIntakeStep } from "../../lib/intake/builder";
+import { getIntakeDefinition } from "../../lib/intake/definitions";
+import { getLatestOutputFile, saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file";
 
 /**
  * Schema for evaluating reflection quality

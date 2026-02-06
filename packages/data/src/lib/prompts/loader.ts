@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import matter from "gray-matter";
-import type { PromptMetadata } from "../ai/schemas.js";
+import type { PromptMetadata } from "../ai/schemas";
 
 /**
  * A loaded prompt with metadata and content

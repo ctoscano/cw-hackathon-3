@@ -11,6 +11,7 @@
     "type-check": "turbo run type-check",
     "debug:chrome": "./scripts/chrome-debug.sh",
     "env:setup": "pnpm --filter @cw-hackathon/data cli setup",
+    "benchmark": "./scripts/benchmark-runtime.sh",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@typescript/native-preview": "7.0.0-dev.20260205.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "turbo": "^2.3.3",

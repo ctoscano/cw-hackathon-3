@@ -6,7 +6,7 @@ export {
   getQuestionByIndex,
   getTotalSteps,
   getAllQuestions,
-} from "./definitions.js";
+} from "./definitions";
 
 // Intake processing functions
 export {
@@ -17,4 +17,4 @@ export {
   processIntakeStep,
   getFirstQuestion,
   getIntakeMetadata,
-} from "./builder.js";
+} from "./builder";

@@ -1,8 +1,8 @@
 import { generateObject, generateText } from "ai";
 import type { z } from "zod";
-import type { LLMProvider, ModelSpec } from "./models.js";
-import { createModel } from "./providers/index.js";
-import { initWeave, isWeaveEnabled, weave } from "./weave.js";
+import type { LLMProvider, ModelSpec } from "./models";
+import { createModel } from "./providers/index";
+import { initWeave, isWeaveEnabled, weave } from "./weave";
 
 /**
  * Telemetry data collected during AI calls

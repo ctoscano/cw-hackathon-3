@@ -1,8 +1,8 @@
 import { defineCommand } from "citty";
-import { generateStructuredOutput } from "../../lib/ai/client.js";
-import { SchemaDescriptions, TherapistSessionInputSchema } from "../../lib/ai/schemas.js";
-import { type PromptOutputFormat, buildSyntheticPrompt } from "../../lib/prompts/builder.js";
-import { saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file.js";
+import { generateStructuredOutput } from "../../lib/ai/client";
+import { SchemaDescriptions, TherapistSessionInputSchema } from "../../lib/ai/schemas";
+import { type PromptOutputFormat, buildSyntheticPrompt } from "../../lib/prompts/builder";
+import { saveJsonOutput, saveMarkdownOutput } from "../../lib/utils/file";
 
 export const syntheticCommand = defineCommand({
   meta: {

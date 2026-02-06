@@ -4,7 +4,7 @@ import {
   getSessionData,
   isRedisEnabled,
   listIntakeSessions,
-} from "../../lib/redis/intake-archive.js";
+} from "../../lib/redis/intake-archive";
 
 const listCommand = defineCommand({
   meta: {
