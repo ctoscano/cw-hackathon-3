@@ -1,4 +1,8 @@
-import { getAllQuestions, getFirstQuestion, getIntakeMetadata } from "@cw-hackathon/data";
+import {
+  getAllQuestions,
+  getFirstQuestion,
+  getIntakeMetadata,
+} from "@cw-hackathon/data/web-static";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {

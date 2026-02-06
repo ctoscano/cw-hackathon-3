@@ -1,4 +1,4 @@
-import { IntakeStepRequestSchema, processIntakeStep } from "@cw-hackathon/data";
+import { IntakeStepRequestSchema, processIntakeStep } from "@cw-hackathon/data/web";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

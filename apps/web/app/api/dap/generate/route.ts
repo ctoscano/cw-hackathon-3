@@ -4,7 +4,7 @@ import {
   archiveDAPOutput,
   buildDAPPrompt,
   generateStructuredOutput,
-} from "@cw-hackathon/data";
+} from "@cw-hackathon/data/web";
 import { nanoid } from "nanoid";
 import { type NextRequest, NextResponse } from "next/server";
 

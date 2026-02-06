@@ -33,6 +33,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./web": {
+      "types": "./dist/web-exports.d.ts",
+      "import": "./dist/web-exports.js"
+    },
+    "./web-static": {
+      "types": "./dist/web-exports-static.d.ts",
+      "import": "./dist/web-exports-static.js"
+    },
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",
       "import": "./dist/lib/*.js"
