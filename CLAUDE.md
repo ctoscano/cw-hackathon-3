@@ -357,16 +357,23 @@ The design system uses Anthropic-inspired colors:
 │   └── prds/
 │       └── repo-setup.md # Initial setup implementation plan
 ├── apps/
-│   └── web/
+│   ├── web/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── next.config.ts
+│   │   ├── .gitignore
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── globals.css
+│   │   └── public/
+│   └── storybook/              # Storybook component explorer
 │       ├── package.json
 │       ├── tsconfig.json
-│       ├── next.config.ts
-│       ├── .gitignore
-│       ├── app/
-│       │   ├── layout.tsx
-│       │   ├── page.tsx
-│       │   └── globals.css
-│       └── public/
+│       └── .storybook/
+│           ├── main.ts         # Framework and addon config
+│           ├── preview.ts      # Global decorators and parameters
+│           └── globals.css     # Tailwind v4 entry for Storybook
 └── packages/
     ├── ui/                       # Shared UI components
     │   ├── package.json
@@ -388,6 +395,102 @@ The design system uses Anthropic-inspired colors:
         │       └── hello.ts      # Example hello command
         └── dist/                 # Build output (gitignored)
 ```
+
+## Storybook
+
+### Overview
+
+Storybook is set up at `apps/storybook/` as a dedicated app for developing and showcasing `packages/ui` components in isolation. It uses `@storybook/react-vite` (not `nextjs-vite`) since the shared UI components are pure React.
+
+### Running Storybook
+
+```bash
+# From root
+pnpm storybook
+# Visit http://localhost:6006
+
+# Or directly
+pnpm --filter @cw-hackathon/storybook dev
+```
+
+### Building Storybook (static export)
+
+```bash
+pnpm build:storybook
+# Output: apps/storybook/storybook-static/
+```
+
+### Writing Stories
+
+Stories are co-located with components in `packages/ui/src/components/`:
+
+```
+packages/ui/src/components/
+├── button.tsx              # Component
+├── button.stories.tsx      # Story (lives next to component)
+├── card.tsx
+├── card.stories.tsx
+└── ...
+```
+
+**Story file template (CSF3 format):**
+
+```tsx
+import type { Meta, StoryObj } from "@storybook/react";
+import { MyComponent } from "./my-component";
+
+const meta = {
+  title: "Components/MyComponent",
+  component: MyComponent,
+  argTypes: {
+    variant: {
+      control: "select",
+      options: ["default", "secondary"],
+    },
+  },
+  args: {
+    children: "Default content",
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { variant: "default" },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: "8px" }}>
+      <MyComponent variant="default">Default</MyComponent>
+      <MyComponent variant="secondary">Secondary</MyComponent>
+    </div>
+  ),
+};
+```
+
+### Writing Storybook-Friendly Components
+
+Components are easier to storybook when they follow these patterns:
+
+1. **Accept explicit props over context** - Props are directly controllable via Storybook's Controls panel; context-dependent components require decorators
+2. **Use CVA for variants** - CVA variants map directly to Storybook `argTypes` with dropdown selectors
+3. **Export variant types** - Allows typed `args` in stories: `export { Button, buttonVariants }`
+4. **Keep side effects minimal** - Pure presentational components "just work"; data-fetching components need mocking
+5. **Use composition over configuration** - Compound components (like Card) let stories show different compositions
+6. **Accept className** - Enables Storybook decorators to add wrapper styles
+7. **Use forwardRef** - Enables Storybook's "measure" addon and interaction testing
+8. **Define sensible defaults** - Components should render meaningfully with zero props
+
+### Storybook Architecture Notes
+
+- **Framework**: `@storybook/react-vite` — faster builds, no Next.js dependency needed
+- **Tailwind v4**: Uses `@tailwindcss/vite` via dynamic import in `viteFinal` (static import fails with ESM/CJS issues)
+- **CSS**: `apps/storybook/.storybook/globals.css` mirrors `packages/ui/src/globals.css` design tokens
+- **Dark mode**: Toggle via `@storybook/addon-themes` toolbar button
+- **Docgen**: Disabled (`reactDocgen: false`) to avoid monorepo crashes
+- **Story discovery**: Glob pattern `packages/ui/src/**/*.stories.@(ts|tsx)`
 
 ## Development Workflows
 
