@@ -91,15 +91,6 @@
 :root {
   --radius: 0.65rem;
 
-  /* Anthropic Brand Colors */
-  --anthropic-dark: #141413;
-  --anthropic-light: #faf9f5;
-  --anthropic-mid-gray: #b0aea5;
-  --anthropic-light-gray: #e8e6dc;
-  --anthropic-orange: #d97757;
-  --anthropic-blue: #6a9bcc;
-  --anthropic-green: #788c5d;
-
   /* Font Families */
   --font-heading: "Poppins", Arial, sans-serif;
   --font-body: "Lora", Georgia, serif;
@@ -200,53 +191,5 @@
   }
   .font-body {
     font-family: var(--font-body);
-  }
-  .text-anthropic-dark {
-    color: var(--anthropic-dark);
-  }
-  .text-anthropic-light {
-    color: var(--anthropic-light);
-  }
-  .text-anthropic-mid-gray {
-    color: var(--anthropic-mid-gray);
-  }
-  .text-anthropic-orange {
-    color: var(--anthropic-orange);
-  }
-  .text-anthropic-blue {
-    color: var(--anthropic-blue);
-  }
-  .text-anthropic-green {
-    color: var(--anthropic-green);
-  }
-  .bg-anthropic-dark {
-    background-color: var(--anthropic-dark);
-  }
-  .bg-anthropic-light {
-    background-color: var(--anthropic-light);
-  }
-  .bg-anthropic-mid-gray {
-    background-color: var(--anthropic-mid-gray);
-  }
-  .bg-anthropic-light-gray {
-    background-color: var(--anthropic-light-gray);
-  }
-  .bg-anthropic-orange {
-    background-color: var(--anthropic-orange);
-  }
-  .bg-anthropic-blue {
-    background-color: var(--anthropic-blue);
-  }
-  .bg-anthropic-green {
-    background-color: var(--anthropic-green);
-  }
-  .border-anthropic-orange {
-    border-color: var(--anthropic-orange);
-  }
-  .border-anthropic-blue {
-    border-color: var(--anthropic-blue);
-  }
-  .border-anthropic-green {
-    border-color: var(--anthropic-green);
   }
 }

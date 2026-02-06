@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import type { DAPArchiveEntry } from "@/lib/redis/ops";
 import { Activity, ArrowLeft, Calendar, CheckCircle, Clock, FileText, Zap } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,7 +13,12 @@ async function getDAPData(sessionId: string): Promise<DAPArchiveEntry | null> {
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    // Get the host from request headers for self-referential URL
+    const headersList = await headers();
+    const host = headersList.get("host") || "localhost:3000";
+    const protocol = headersList.get("x-forwarded-proto") || "http";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+
     const response = await fetch(`${baseUrl}/api/ops/dap/${sessionId}`, {
       cache: "no-store",
     });

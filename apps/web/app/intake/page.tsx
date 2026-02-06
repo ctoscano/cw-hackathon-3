@@ -4,7 +4,7 @@ import Link from "next/link";
 import { IntakeForm } from "./intake-form";
 
 export const metadata: Metadata = {
-  title: "Is Therapy Right for Me? | Clinical Workflow",
+  title: "Is Therapy Right for Me?",
   description:
     "A guided exploration to help you understand if therapy might be helpful right now, and how to make the most of it if you decide to try.",
 };
