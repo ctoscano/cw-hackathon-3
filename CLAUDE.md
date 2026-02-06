@@ -255,29 +255,34 @@ import { cn } from "@cw-hackathon/ui";
 </Card>
 ```
 
-### Component Patterns
+### Component Patterns (Storybook-Ready by Default)
 
-All components in packages/ui follow these patterns:
+All components in `packages/ui` are written Storybook-ready. Good component design and Storybook-friendliness are the same thing — explicit props, sensible defaults, minimal side effects. Following these patterns costs nothing extra and means any component can get a story later without refactoring.
 
-1. **CVA for variants** - Use class-variance-authority
+1. **CVA for variants** - Variants map directly to Storybook `argTypes` dropdowns
    ```tsx
    const buttonVariants = cva("base-classes", {
      variants: { variant: { default: "...", secondary: "..." } }
    });
    ```
 
-2. **forwardRef** - Support DOM refs
+2. **forwardRef** - Supports DOM refs, Storybook's measure addon, and interaction testing
    ```tsx
    const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(...)
    ```
 
-3. **Export variants too** - Allow styling without wrapping
+3. **Export variants too** - Enables typed `args` in stories and styling without wrapping
    ```tsx
    export { Button, buttonVariants };
    ```
 
-4. **Tailwind-first** - Use utility classes, avoid CSS modules
-5. **CSS variables** - Reference design tokens from globals.css
+4. **Accept explicit props over context** - Props are directly controllable via Storybook Controls; context-dependent components require decorators
+5. **Accept className** - Enables wrapper styling and Storybook decorators
+6. **Define sensible defaults** - Components should render meaningfully with zero props
+7. **Keep side effects minimal** - Pure presentational components work everywhere; data-fetching components need mocking
+8. **Use composition over configuration** - Compound components (like Card) let consumers and stories show different layouts
+9. **Tailwind-first** - Use utility classes, avoid CSS modules
+10. **CSS variables** - Reference design tokens from globals.css
 
 ### Optimistic UI Patterns (Critical for Chat)
 
@@ -470,18 +475,25 @@ export const AllVariants: Story = {
 };
 ```
 
-### Writing Storybook-Friendly Components
+### When to Write a Story
 
-Components are easier to storybook when they follow these patterns:
+Stories are a development tool, not a documentation chore. Write one when it helps you build better — not for every component.
 
-1. **Accept explicit props over context** - Props are directly controllable via Storybook's Controls panel; context-dependent components require decorators
-2. **Use CVA for variants** - CVA variants map directly to Storybook `argTypes` with dropdown selectors
-3. **Export variant types** - Allows typed `args` in stories: `export { Button, buttonVariants }`
-4. **Keep side effects minimal** - Pure presentational components "just work"; data-fetching components need mocking
-5. **Use composition over configuration** - Compound components (like Card) let stories show different compositions
-6. **Accept className** - Enables Storybook decorators to add wrapper styles
-7. **Use forwardRef** - Enables Storybook's "measure" addon and interaction testing
-8. **Define sensible defaults** - Components should render meaningfully with zero props
+**Suggest a story when:**
+- You're designing a specific interaction or experience (not just wiring data)
+- The component has multiple variants, states, or visual configurations worth seeing side by side
+- You need to iterate on look-and-feel in isolation (without navigating through the full app)
+- The component is reusable and other developers need to understand its API
+- You're building something where dark mode, responsive, or edge cases matter
+
+**Skip the story when:**
+- It's a thin wrapper or layout component with no meaningful visual states
+- The component is tightly coupled to app data/routing and would need heavy mocking
+- You're just wiring things together, not crafting an experience
+
+**Rule of thumb:** If you're putting effort into *how something looks or feels*, a story will save you time. If you're just connecting pieces, skip it.
+
+All `packages/ui` components follow the [Component Patterns](#component-patterns-storybook-ready-by-default) above, so adding a story later is always straightforward — no refactoring needed.
 
 ### Storybook Architecture Notes
 
