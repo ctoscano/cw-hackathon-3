@@ -485,12 +485,15 @@ Components are easier to storybook when they follow these patterns:
 
 ### Storybook Architecture Notes
 
+- **Version**: Storybook 10 (ESM-only, essentials bundled into core)
 - **Framework**: `@storybook/react-vite` — faster builds, no Next.js dependency needed
+- **Essentials**: Built into `storybook` core — do NOT install `@storybook/addon-essentials` (removed in v10)
 - **Tailwind v4**: Uses `@tailwindcss/vite` via dynamic import in `viteFinal` (static import fails with ESM/CJS issues)
 - **CSS**: `apps/storybook/.storybook/globals.css` mirrors `packages/ui/src/globals.css` design tokens
 - **Dark mode**: Toggle via `@storybook/addon-themes` toolbar button
 - **Docgen**: Disabled (`reactDocgen: false`) to avoid monorepo crashes
 - **Story discovery**: Glob pattern `packages/ui/src/**/*.stories.@(ts|tsx)`
+- **Story format**: CSF3 (Component Story Format 3) — CSF Factories available but optional until Storybook 11
 
 ## Development Workflows
 

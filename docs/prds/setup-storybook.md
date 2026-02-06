@@ -25,7 +25,7 @@ The scope includes: setting up Storybook as a dedicated app (`apps/storybook`), 
 - pnpm workspaces must resolve `@cw-hackathon/ui` correctly
 
 ### Compatibility Requirements
-- Storybook 8.6+ (stable, React 19 compatible)
+- Storybook 10 (latest, ESM-only, React 19 compatible)
 - React 19 support required
 - Vite builder (not Webpack)
 - pnpm 9.x workspace protocol support
@@ -36,7 +36,7 @@ The scope includes: setting up Storybook as a dedicated app (`apps/storybook`), 
 
 1. **`apps/storybook/package.json`** - Storybook app package definition
    - Private package within monorepo
-   - Dependencies: `@cw-hackathon/ui`, React 19, Storybook 8.6+, Tailwind v4
+   - Dependencies: `@cw-hackathon/ui`, React 19, Storybook 10, Tailwind v4
    - Scripts: `dev` (storybook dev), `build:storybook` (storybook build)
 
 2. **`apps/storybook/.storybook/main.ts`** - Storybook configuration
@@ -112,11 +112,9 @@ The scope includes: setting up Storybook as a dedicated app (`apps/storybook`), 
 
 ### Tech Stack
 
-- `storybook` (^8.6.0) - Core Storybook framework
-- `@storybook/react` (^8.6.0) - React renderer
-- `@storybook/react-vite` (^8.6.0) - Vite-based React framework
-- `@storybook/addon-essentials` (^8.6.0) - Controls, actions, docs, viewport
-- `@storybook/addon-themes` (^8.6.0) - Dark mode toggle
+- `storybook` (^10.2.0) - Core Storybook framework (essentials bundled in v10)
+- `@storybook/react-vite` (^10.2.0) - Vite-based React framework (includes @storybook/react)
+- `@storybook/addon-themes` (^10.2.0) - Dark mode toggle (not bundled in core)
 - `@tailwindcss/vite` (^4.1.0) - Tailwind CSS v4 Vite plugin
 - `tailwindcss` (^4.1.0) - Tailwind CSS v4 core
 
