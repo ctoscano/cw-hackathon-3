@@ -1,10 +1,16 @@
 "use client";
 
-import { BorderBeam } from "@/components/ui/border-beam";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Markdown } from "@/components/ui/markdown";
-import { TypingAnimation } from "@/components/ui/typing-animation";
 import { triggerConfetti } from "@/lib/confetti";
+import {
+  BorderBeam,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Markdown,
+  TypingAnimation,
+} from "@cw-hackathon/ui";
 import { Moon, PartyPopper, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "../chat-message";

@@ -3,10 +3,8 @@
  */
 
 import { trackChatGPTClick } from "@/actions/intake";
-import { BorderBeam } from "@/components/ui/border-beam";
-import { Markdown } from "@/components/ui/markdown";
-import { TypingAnimation } from "@/components/ui/typing-animation";
 import { createExperimentPrompt, generateChatGPTUrl } from "@/lib/chatgpt";
+import { BorderBeam, Markdown, TypingAnimation } from "@cw-hackathon/ui";
 import styles from "../intake.module.css";
 import type { IntakeStepResponse } from "../types";
 import { IntakeContactForm } from "./IntakeContactForm";

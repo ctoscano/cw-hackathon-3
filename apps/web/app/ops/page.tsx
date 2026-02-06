@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@cw-hackathon/ui";
 import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
 import { useEffect, useState } from "react";
 import DAPList from "./components/DAPList";

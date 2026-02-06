@@ -3,7 +3,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "!dist/**/*.map"]
+      "inputs": ["!**/*.stories.{tsx,jsx,mdx}"],
+      "outputs": [".next/**", "dist/**", "!dist/**/*.map", "storybook-static/**"]
+    },
+    "build:storybook": {
+      "dependsOn": ["^build"],
+      "outputs": ["storybook-static/**"]
     },
     "dev": {
       "cache": false,

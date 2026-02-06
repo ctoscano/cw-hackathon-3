@@ -61,3 +61,20 @@ export {
 
 // Feedback & Loading
 export { TypingIndicator, type TypingIndicatorProps } from "./typing-indicator";
+
+// Chat / Messaging
+export {
+  MessageBubble,
+  QuestionMessage,
+  AnswerMessage,
+  ReflectionMessage,
+  type MessageBubbleProps,
+  type QuestionMessageProps,
+  type AnswerMessageProps,
+  type ReflectionMessageProps,
+} from "./message-bubble";
+export { Markdown } from "./markdown";
+export { TypingAnimation } from "./typing-animation";
+
+// Effects
+export { BorderBeam } from "./border-beam";

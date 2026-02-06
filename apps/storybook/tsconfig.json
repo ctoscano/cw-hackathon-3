@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "@cw-hackathon/ui": ["../../packages/ui/src/index.ts"],
+      "@cw-hackathon/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": [".storybook/**/*", "../../packages/ui/src/**/*.stories.tsx"],
+  "exclude": ["node_modules"]
+}

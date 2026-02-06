@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import type { PaginatedResponse, SessionSummary } from "@/lib/redis/ops";
+import { Skeleton } from "@cw-hackathon/ui";
 import { useEffect, useState } from "react";
 import SessionTable from "./SessionTable";
 

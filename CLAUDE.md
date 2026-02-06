@@ -173,16 +173,18 @@ When implementing UI features, use components in this order of preference:
    - Best for: Standard UI patterns, forms, navigation
    - Import: `import { Button, Card } from "@heroui/react"`
 
-2. **ai-elements** (AI Features) - Chat/conversation interfaces
-   - Message, Conversation, ChainOfThought, CodeBlock, PromptInput
-   - Best for: Chat UI, AI responses, streaming content
-   - Install: `npx ai-elements@latest add <component>`
-   - See: `.agents/skills/ai-elements/` for component docs
+2. **@cw-hackathon/ui** (Shared Design System) - Base primitives + chat + animations
+   - Primitives: Button, Card, Badge, Tabs, Dialog, Table, Input, Select, Separator, Skeleton, Textarea
+   - Chat: MessageBubble, QuestionMessage, AnswerMessage, ReflectionMessage, Markdown
+   - Animation: TypingAnimation, TypingIndicator, BorderBeam
+   - Best for: Consistent design across apps, chat/intake flows, loading states
+   - Import: `import { Button, MessageBubble, TypingAnimation } from "@cw-hackathon/ui"`
 
-3. **@cw-hackathon/ui** (Shared Primitives) - Base shadcn/ui components
-   - Button, Card, Badge, Tabs, Dialog, Table, Input, Select
-   - Best for: Consistent primitives across apps, customization needs
-   - Import: `import { Button, Card } from "@cw-hackathon/ui"`
+3. **ai-elements** (New AI Features Only) - For features not yet built
+   - Use for: Open-ended chat (Conversation, PromptInput), AI reasoning display (ChainOfThought), streaming code/math content (MessageResponse)
+   - Do NOT use for: Intake flow, existing chat UI (custom components in @cw-hackathon/ui are a better fit)
+   - Install: `npx ai-elements@latest add <component>`
+   - Rule: Before installing an ai-elements component, check if @cw-hackathon/ui already handles the use case. Our custom components are simpler, have fewer dependencies, and match the design system.
 
 4. **KiboUI** (Specialized) - Complex specialized components
    - Kanban, Gantt, Calendar, Code Editor, File Tree, Markdown Editor
@@ -195,10 +197,13 @@ When implementing UI features, use components in this order of preference:
 | Use Case | Library | Why |
 |----------|---------|-----|
 | Form elements | HeroUI | Built-in validation, accessibility |
-| Chat/AI interface | ai-elements | Optimized for streaming, AI patterns |
+| Chat/intake messages | @cw-hackathon/ui | MessageBubble variants, tailored to our design |
+| Loading/typing states | @cw-hackathon/ui | TypingAnimation, TypingIndicator, BorderBeam |
+| Markdown rendering | @cw-hackathon/ui | Lightweight react-markdown wrapper |
 | Base primitives | @cw-hackathon/ui | Shared across apps, customizable |
+| NEW open-ended chat | ai-elements | Conversation, PromptInput, ChainOfThought |
+| NEW streaming code/math | ai-elements | MessageResponse with syntax highlighting |
 | Kanban/Calendar | KiboUI | Specialized features |
-| Custom component | packages/ui | Reusable, type-safe |
 
 ### Where to Put New Components
 
@@ -221,63 +226,91 @@ When implementing UI features, use components in this order of preference:
 
 ```
 packages/ui/src/
-├── components/           # Flat structure, alphabetically sorted
-│   ├── button.tsx        # CVA-based with variants
-│   ├── card.tsx          # Card + CardHeader/Content/Footer
-│   ├── dialog.tsx        # Modal/Dialog
-│   ├── input.tsx         # Text input
-│   ├── tabs.tsx          # Tab navigation
-│   ├── typing-indicator.tsx  # Loading dots animation
-│   └── index.ts          # Barrel export
-├── hooks/                # Shared hooks
+├── components/               # Flat structure, alphabetically sorted
+│   ├── badge.tsx             # CVA variants
+│   ├── border-beam.tsx       # Animated gradient border (motion)
+│   ├── button.tsx            # CVA variants + sizes + asChild
+│   ├── card.tsx              # Card + CardHeader/Content/Footer
+│   ├── dialog.tsx            # Modal/Dialog
+│   ├── input.tsx             # Text input
+│   ├── markdown.tsx          # GFM markdown renderer
+│   ├── message-bubble.tsx    # Chat bubbles (Question/Answer/Reflection)
+│   ├── select.tsx            # Select dropdown
+│   ├── separator.tsx         # Divider line
+│   ├── skeleton.tsx          # Loading placeholder
+│   ├── table.tsx             # Data table
+│   ├── tabs.tsx              # Tab navigation
+│   ├── textarea.tsx          # Multi-line text input
+│   ├── typing-animation.tsx  # Text typing/deleting effect (motion)
+│   ├── typing-indicator.tsx  # Pulsing dots loading indicator
+│   └── index.ts              # Barrel export
+├── hooks/                    # Shared hooks
 │   └── index.ts
 ├── utils/
-│   ├── cn.ts             # Class name utility (clsx + tailwind-merge)
+│   ├── cn.ts                 # Class name utility (clsx + tailwind-merge)
 │   └── index.ts
-├── globals.css           # Design tokens and theme
-└── index.ts              # Main package export
+├── globals.css               # Design tokens and theme
+└── index.ts                  # Main package export
 ```
 
 ### Using packages/ui
 
 ```tsx
 // Import components
-import { Button, Card, CardContent, TypingIndicator } from "@cw-hackathon/ui";
+import {
+  Button, Card, CardContent, Badge,
+  QuestionMessage, AnswerMessage, ReflectionMessage,
+  TypingAnimation, TypingIndicator, BorderBeam, Markdown,
+} from "@cw-hackathon/ui";
 
 // Import utilities
 import { cn } from "@cw-hackathon/ui";
 
-// Use in components
+// Primitives
 <Card>
   <CardContent>
     <Button variant="default">Click me</Button>
   </CardContent>
 </Card>
+
+// Chat messages
+<QuestionMessage questionNumber={1}>What is your name?</QuestionMessage>
+<AnswerMessage>My name is Alice</AnswerMessage>
+<ReflectionMessage>Great, thanks for sharing!</ReflectionMessage>
+
+// Loading states
+<TypingIndicator size="md" />
+<TypingAnimation words={["Reflecting...", "Processing...", "Thinking..."]} />
 ```
 
-### Component Patterns
+### Component Patterns (Storybook-Ready by Default)
 
-All components in packages/ui follow these patterns:
+All components in `packages/ui` are written Storybook-ready. Good component design and Storybook-friendliness are the same thing — explicit props, sensible defaults, minimal side effects. Following these patterns costs nothing extra and means any component can get a story later without refactoring.
 
-1. **CVA for variants** - Use class-variance-authority
+1. **CVA for variants** - Variants map directly to Storybook `argTypes` dropdowns
    ```tsx
    const buttonVariants = cva("base-classes", {
      variants: { variant: { default: "...", secondary: "..." } }
    });
    ```
 
-2. **forwardRef** - Support DOM refs
+2. **forwardRef** - Supports DOM refs, Storybook's measure addon, and interaction testing
    ```tsx
    const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(...)
    ```
 
-3. **Export variants too** - Allow styling without wrapping
+3. **Export variants too** - Enables typed `args` in stories and styling without wrapping
    ```tsx
    export { Button, buttonVariants };
    ```
 
-4. **Tailwind-first** - Use utility classes, avoid CSS modules
-5. **CSS variables** - Reference design tokens from globals.css
+4. **Accept explicit props over context** - Props are directly controllable via Storybook Controls; context-dependent components require decorators
+5. **Accept className** - Enables wrapper styling and Storybook decorators
+6. **Define sensible defaults** - Components should render meaningfully with zero props
+7. **Keep side effects minimal** - Pure presentational components work everywhere; data-fetching components need mocking
+8. **Use composition over configuration** - Compound components (like Card) let consumers and stories show different layouts
+9. **Tailwind-first** - Use utility classes, avoid CSS modules
+10. **CSS variables** - Reference design tokens from globals.css
 
 ### Optimistic UI Patterns (Critical for Chat)
 
@@ -310,14 +343,35 @@ async function handleSubmit() {
 
 ### Installing ai-elements Components
 
+**Important:** ai-elements is for genuinely new AI interaction patterns only. Check @cw-hackathon/ui first — our custom MessageBubble, TypingAnimation, TypingIndicator, and Markdown cover the intake/chat use cases with fewer dependencies and better design system integration.
+
+ai-elements components worth considering for **new features**:
+- **PromptInput** — Open-ended chat input with file attachments, drag-drop
+- **ChainOfThought / Reasoning** — Collapsible AI reasoning display
+- **Conversation** — ChatGPT-style free-form chat container
+- **MessageResponse** — Streaming markdown with code highlighting, math, mermaid
+
 ```bash
-# Install a specific component
-npx ai-elements@latest add message
-npx ai-elements@latest add conversation
+# Install a specific component (only when building new AI features)
+npx ai-elements@latest add prompt-input
 npx ai-elements@latest add chain-of-thought
+npx ai-elements@latest add conversation
 
 # Components are copied to components/ai-elements/
 ```
+
+### Demo Pages vs Storybook
+
+This project has both demo pages and Storybook. They serve different purposes:
+
+| | Demo Pages (`/ops/demo`, `/intake/demo`) | Storybook (`localhost:6006`) |
+|---|---|---|
+| **Purpose** | Full-flow integration testing | Isolated component development |
+| **Shows** | Complete features with real data flow | Individual components with controls |
+| **When to use** | Testing end-to-end behavior, showcasing features | Iterating on component design, testing variants/states |
+| **Requires** | Next.js dev server (`pnpm dev`) | Storybook dev server (`pnpm storybook`) |
+
+Both are valuable — don't remove demo pages in favor of Storybook or vice versa.
 
 ### Design System Colors
 
@@ -357,16 +411,23 @@ The design system uses Anthropic-inspired colors:
 │   └── prds/
 │       └── repo-setup.md # Initial setup implementation plan
 ├── apps/
-│   └── web/
+│   ├── web/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── next.config.ts
+│   │   ├── .gitignore
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── globals.css
+│   │   └── public/
+│   └── storybook/              # Storybook component explorer
 │       ├── package.json
 │       ├── tsconfig.json
-│       ├── next.config.ts
-│       ├── .gitignore
-│       ├── app/
-│       │   ├── layout.tsx
-│       │   ├── page.tsx
-│       │   └── globals.css
-│       └── public/
+│       └── .storybook/
+│           ├── main.ts         # Framework and addon config
+│           ├── preview.ts      # Global decorators and parameters
+│           └── globals.css     # Tailwind v4 entry for Storybook
 └── packages/
     ├── ui/                       # Shared UI components
     │   ├── package.json
@@ -388,6 +449,112 @@ The design system uses Anthropic-inspired colors:
         │       └── hello.ts      # Example hello command
         └── dist/                 # Build output (gitignored)
 ```
+
+## Storybook
+
+### Overview
+
+Storybook is set up at `apps/storybook/` as a dedicated app for developing and showcasing `packages/ui` components in isolation. It uses `@storybook/react-vite` (not `nextjs-vite`) since the shared UI components are pure React.
+
+### Running Storybook
+
+```bash
+# From root
+pnpm storybook
+# Visit http://localhost:6006
+
+# Or directly
+pnpm --filter @cw-hackathon/storybook dev
+```
+
+### Building Storybook (static export)
+
+```bash
+pnpm build:storybook
+# Output: apps/storybook/storybook-static/
+```
+
+### Writing Stories
+
+Stories are co-located with components in `packages/ui/src/components/`:
+
+```
+packages/ui/src/components/
+├── button.tsx              # Component
+├── button.stories.tsx      # Story (lives next to component)
+├── card.tsx
+├── card.stories.tsx
+└── ...
+```
+
+**Story file template (CSF3 format):**
+
+```tsx
+import type { Meta, StoryObj } from "@storybook/react";
+import { MyComponent } from "./my-component";
+
+const meta = {
+  title: "Components/MyComponent",
+  component: MyComponent,
+  argTypes: {
+    variant: {
+      control: "select",
+      options: ["default", "secondary"],
+    },
+  },
+  args: {
+    children: "Default content",
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { variant: "default" },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: "8px" }}>
+      <MyComponent variant="default">Default</MyComponent>
+      <MyComponent variant="secondary">Secondary</MyComponent>
+    </div>
+  ),
+};
+```
+
+### When to Write a Story
+
+Stories are a development tool, not a documentation chore. Write one when it helps you build better — not for every component.
+
+**Suggest a story when:**
+- You're designing a specific interaction or experience (not just wiring data)
+- The component has multiple variants, states, or visual configurations worth seeing side by side
+- You need to iterate on look-and-feel in isolation (without navigating through the full app)
+- The component is reusable and other developers need to understand its API
+- You're building something where dark mode, responsive, or edge cases matter
+
+**Skip the story when:**
+- It's a thin wrapper or layout component with no meaningful visual states
+- The component is tightly coupled to app data/routing and would need heavy mocking
+- You're just wiring things together, not crafting an experience
+
+**Rule of thumb:** If you're putting effort into *how something looks or feels*, a story will save you time. If you're just connecting pieces, skip it.
+
+All `packages/ui` components follow the [Component Patterns](#component-patterns-storybook-ready-by-default) above, so adding a story later is always straightforward — no refactoring needed.
+
+### Storybook Architecture Notes
+
+- **Version**: Storybook 10 (ESM-only, essentials bundled into core)
+- **Framework**: `@storybook/react-vite` — faster builds, no Next.js dependency needed
+- **Essentials**: Built into `storybook` core — do NOT install `@storybook/addon-essentials` (removed in v10)
+- **Tailwind v4**: Uses `@tailwindcss/vite` via dynamic import in `viteFinal` (static import fails with ESM/CJS issues)
+- **CSS**: `apps/storybook/.storybook/globals.css` mirrors `packages/ui/src/globals.css` design tokens
+- **Dark mode**: Toggle via `@storybook/addon-themes` toolbar button
+- **Docgen**: Disabled (`reactDocgen: false`) to avoid monorepo crashes
+- **Story discovery**: Glob pattern `packages/ui/src/**/*.stories.@(ts|tsx)`
+- **Story format**: CSF3 (Component Story Format 3) — CSF Factories available but optional until Storybook 11
 
 ## Development Workflows
 

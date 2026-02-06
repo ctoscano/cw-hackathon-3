@@ -1,9 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { AnswerMessage, QuestionMessage, ReflectionMessage } from "@/components/ui/message-bubble";
 import type { SessionData } from "@/lib/redis/intake";
 import type { DAPArchiveEntry } from "@/lib/redis/ops";
+import { AnswerMessage, Badge, QuestionMessage, ReflectionMessage } from "@cw-hackathon/ui";
 import { Button } from "@heroui/react";
 import {
   ArrowLeft,
