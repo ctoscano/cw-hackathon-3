@@ -17,6 +17,7 @@ import {
   createAnswerMessage,
   createQuestionMessage,
   createReflectionMessage,
+  resolveAnswerDisplayText,
 } from "../intake-utils";
 import type {
   IntakeAnswer,
@@ -117,7 +118,9 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
       if (!answer) continue;
 
       msgs.push(createQuestionMessage(question, i + 1));
-      msgs.push(createAnswerMessage(answer.answer, answer.questionId));
+      msgs.push(
+        createAnswerMessage(resolveAnswerDisplayText(answer.answer, question), answer.questionId),
+      );
 
       // Don't show reflection for the last question (too much on the page)
       const isLast = metadata ? i === metadata.totalSteps - 1 : false;

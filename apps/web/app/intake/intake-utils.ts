@@ -108,6 +108,23 @@ export function hasOtherOption(question: Question): boolean {
  */
 
 /**
+ * Resolves answer values back to their display text using the question's options.
+ * For multiselect/singleselect, maps values like "cost" to "Cost or insurance concerns".
+ * For text answers or answers without matching options, returns the original answer.
+ */
+export function resolveAnswerDisplayText(
+  answer: string | string[],
+  question: Question,
+): string | string[] {
+  if (!Array.isArray(answer) || !question.options) return answer;
+
+  return answer.map((value) => {
+    const option = question.options?.find((opt) => getOptionValue(opt) === value);
+    return option ? getOptionText(option) : value;
+  });
+}
+
+/**
  * Builds the answer payload for API submission
  */
 export function buildAnswerPayload(question: Question, input: FormInput): string | string[] {
