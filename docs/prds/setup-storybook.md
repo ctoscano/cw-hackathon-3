@@ -300,12 +300,29 @@ Components are easier to storybook when they:
 
 ### Gotchas & Surprises
 
-[To be added during implementation]
+- **`@source` path must be relative to the CSS file, not the project root.** This was the single most painful bug. The `@source` directive in `apps/storybook/.storybook/globals.css` needs to resolve relative to where that CSS file lives on disk. We had `../../../../packages/ui/src/**/*.{ts,tsx}` (4 levels up) when we needed `../../../packages/ui/src/**/*.{ts,tsx}` (3 levels up). The extra `../` caused Tailwind to scan a non-existent directory, producing zero utility classes — components rendered completely unstyled. **This fails silently** — no build errors, no warnings, just invisible CSS. Always verify with `realpath --relative-to=<css-dir> <target-dir>`.
+
+- **Storybook 10 bundles addon-essentials into core.** Do NOT install `@storybook/addon-essentials` — it doesn't exist at v10. This is easy to miss since most tutorials and examples still reference v8 patterns.
+
+- **`@storybook/react` is pulled automatically by `@storybook/react-vite`.** Installing it separately is redundant (but harmless).
+
+- **Storybook package MUST have a `build` script** (not just `build:storybook`), otherwise Turbo's `build` task fails across the workspace since it tries to run `build` in every package.
+
+- **`@tailwindcss/vite` must use dynamic import** in `viteFinal`. Static `import tailwindcss from "@tailwindcss/vite"` at the top of `main.ts` fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`. Must use `const { default: tailwindcss } = await import("@tailwindcss/vite")`.
+
+- **`"use client"` directives produce warnings** during Storybook build (`Module level directives cause errors when bundled, "use client" was ignored`) — these are cosmetic and don't break anything.
+
+- **`reactDocgen: false` is required** in monorepo setups to avoid `ReferenceError: c is not defined` crashes from the react-docgen plugin.
 
 ### Demo Instructions
 
 **How to Demo:**
-[To be added during implementation]
+1. Run `pnpm storybook` from root (or `pnpm --filter @cw-hackathon/storybook dev`)
+2. Visit http://localhost:6006
+3. Click through components in the sidebar: Badge, Button, Card, Input, Skeleton
+4. Use the Controls panel to change variants/sizes interactively
+5. Use the theme toggle in the toolbar to switch between light and dark mode
+6. Verify components have proper colors, shadows, borders, and spacing
 
 ## Quality Checks
 
