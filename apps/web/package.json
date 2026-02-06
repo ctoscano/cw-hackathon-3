@@ -12,8 +12,8 @@
     "start": "next start",
     "start:bun": "bun --bun next start",
     "lint": "biome check .",
-    "type-check": "tsc --noEmit",
-    "type-check:tsgo": "tsgo --noEmit",
+    "type-check": "tsgo --noEmit",
+    "type-check:tsc": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:verify": "playwright test integration-verify.spec.ts"
