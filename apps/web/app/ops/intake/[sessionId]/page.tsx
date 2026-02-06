@@ -1,8 +1,12 @@
-import { Badge } from "@/components/ui/badge";
-import { AnswerMessage, QuestionMessage, ReflectionMessage } from "@/components/ui/message-bubble";
-import { Separator } from "@/components/ui/separator";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import type { SessionData } from "@/lib/redis/intake";
+import {
+  AnswerMessage,
+  Badge,
+  QuestionMessage,
+  ReflectionMessage,
+  Separator,
+} from "@cw-hackathon/ui";
 import {
   Activity,
   ArrowLeft,

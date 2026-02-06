@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { Lightbulb } from "lucide-react";
+import { cn } from "../utils/cn";
 
 export interface MessageBubbleProps {
   variant: "assistant" | "user" | "system";

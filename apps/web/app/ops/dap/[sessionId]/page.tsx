@@ -1,7 +1,6 @@
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import type { DAPArchiveEntry } from "@/lib/redis/ops";
+import { Badge, Separator } from "@cw-hackathon/ui";
 import { Activity, ArrowLeft, Calendar, CheckCircle, Clock, FileText, Zap } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";

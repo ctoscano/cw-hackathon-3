@@ -1,7 +1,6 @@
 "use client";
 
-import { TypingAnimation } from "@/components/ui/typing-animation";
-import { TypingIndicator } from "@cw-hackathon/ui";
+import { TypingAnimation, TypingIndicator } from "@cw-hackathon/ui";
 import type { ReactNode } from "react";
 
 type MessageType = "question" | "answer" | "reflection";

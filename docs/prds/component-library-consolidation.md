@@ -363,28 +363,38 @@ The highest-risk step is Step 4 (updating imports and deleting files). Mitigatio
 
 ### Gotchas & Surprises
 
-[To be added during implementation]
+- **ai-elements is heavyweight**: The Message component alone pulls in 11+ sub-components and streamdown with 5 plugins. Our custom MessageBubble has 4 focused exports with minimal dependencies. ai-elements is best reserved for genuinely new AI features, not retrofitting existing chat UI.
+- **lucide-react was already in packages/ui**: No need to add it as a new dependency — it was already at ^0.563.0.
+- **`apps/web/components/ui/` directory is now empty**: All 14 files were either duplicates of packages/ui or promoted to packages/ui. The directory can be removed entirely.
+- **The backup file (`intake-form-original-backup.tsx`) had stale imports**: Updated along with other consumer files.
 
 ### Demo Instructions
 
 **How to Demo:**
-[To be added during implementation]
+1. Verify type-check and build pass: `pnpm type-check && pnpm build`
+2. Verify Storybook builds: `pnpm build:storybook`
+3. Run Storybook: `pnpm storybook` → visit http://localhost:6006
+4. Check new stories in sidebar: MessageBubble, TypingAnimation, TypingIndicator
+5. Use Controls panel to interact with variants and props
+6. Run the web app: `pnpm dev` → visit http://localhost:3000
+7. Verify intake flow still works: http://localhost:3000/intake
+8. Verify ops pages still work: http://localhost:3000/ops
 
 ## Quality Checks
 
-- [ ] Type check passed (`pnpm type-check`)
-- [ ] Build passed (`pnpm build`)
-- [ ] Demo instructions provided
-- [ ] All completion criteria met
+- [x] Type check passed (`pnpm type-check`)
+- [x] Build passed (`pnpm build`)
+- [x] Demo instructions provided
+- [x] All completion criteria met
 
-**Last Verified**: N/A
+**Last Verified**: 2026-02-05
 
 ---
 
-**Status**: Draft
+**Status**: Accepted
 **Created**: 2026-02-06
-**Last Updated**: 2026-02-06
-**Implementation Started**: N/A
-**Completed**: N/A
-**Accepted**: N/A
+**Last Updated**: 2026-02-05
+**Implementation Started**: 2026-02-05
+**Completed**: 2026-02-05
+**Accepted**: 2026-02-05
 **Rejected**: N/A

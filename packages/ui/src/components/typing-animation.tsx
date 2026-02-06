@@ -3,7 +3,7 @@
 import { type MotionProps, motion, useInView } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "../utils/cn";
 
 interface TypingAnimationProps extends MotionProps {
   children?: string;
@@ -140,7 +140,7 @@ export function TypingAnimation({
   const getCursorChar = () => {
     switch (cursorStyle) {
       case "block":
-        return "▌";
+        return "\u258C";
       case "underscore":
         return "_";
       default:

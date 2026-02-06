@@ -1,10 +1,8 @@
 "use client";
 
-import { BorderBeam } from "@/components/ui/border-beam";
-import { Markdown } from "@/components/ui/markdown";
-import { TypingAnimation } from "@/components/ui/typing-animation";
 import { createExperimentPrompt, generateChatGPTUrl } from "@/lib/chatgpt";
 import { triggerConfetti } from "@/lib/confetti";
+import { BorderBeam, Markdown, TypingAnimation } from "@cw-hackathon/ui";
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage, formatAnswerForDisplay } from "./chat-message";
 import styles from "./intake.module.css";
