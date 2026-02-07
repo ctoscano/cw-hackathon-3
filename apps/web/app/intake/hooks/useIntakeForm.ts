@@ -252,12 +252,13 @@ export function useIntakeForm(intakeType = "therapy_readiness"): UseIntakeFormRe
 
         // Save progress to Redis (graceful - don't block UX on failure)
         // We know the answer exists and has the reflection now
+        // Save display text (not raw values) so /ops shows full option labels
         if (sessionId) {
           saveIntakeProgress(
             sessionId,
             questionId,
             submittingQuestion.prompt,
-            answer,
+            resolveAnswerDisplayText(answer, submittingQuestion),
             data.reflection,
           ).catch((err) => {
             console.error("Failed to save intake progress to Redis:", err);
