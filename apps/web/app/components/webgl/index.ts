@@ -10,3 +10,4 @@ export { MountainLandscape } from "./shaders/MountainLandscape";
 export { OceanLandscape } from "./shaders/OceanLandscape";
 export { ForestLandscape } from "./shaders/ForestLandscape";
 export { CanyonLandscape } from "./shaders/CanyonLandscape";
+export { AuroraLandscape } from "./shaders/AuroraLandscape";

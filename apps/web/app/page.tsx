@@ -22,6 +22,20 @@ const landscapes = [
     color: "#1a252f",
     accentColor: "#f39c12",
   },
+  {
+    slug: "canyon",
+    title: "Desert Canyon",
+    description: "Layered mesa silhouettes rising from sun-baked desert floor",
+    color: "#2a1a12",
+    accentColor: "#cc8844",
+  },
+  {
+    slug: "aurora",
+    title: "Aurora Borealis",
+    description: "Dancing curtains of light illuminate the arctic night sky",
+    color: "#040810",
+    accentColor: "#22cc66",
+  },
 ];
 
 export default function HomePage() {
