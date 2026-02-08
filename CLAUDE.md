@@ -11,8 +11,143 @@ This is a Turbo-powered monorepo using pnpm workspaces for a hackathon project.
 - **Language**: TypeScript 5.7.2 with strict mode enabled
 - **Linter/Formatter**: Biome 1.9.4 (replaces ESLint + Prettier)
 - **Web Framework**: Next.js 15.1.4 with React 19
+- **UI Frameworks**:
+  - **Tailwind CSS v4.1.18** - CSS-first configuration (v4 ONLY, no v3!)
+  - **HeroUI v3.0.0-beta.5** - React Aria-based component library
+  - **shadcn/ui** - Accessible components built with Radix UI
 - **CLI Framework**: Citty 0.1.6 (lightweight, TypeScript-first)
 - **CLI Runtime**: Bun (fast startup, native TypeScript support)
+
+## Tailwind CSS v4 - Critical Rules
+
+**⚠️ IMPORTANT:** This project uses **Tailwind CSS v4 ONLY**. Do NOT use v3 patterns or create `tailwind.config.ts` files.
+
+### Core Principles
+
+1. **CSS-First Configuration** - All configuration in `globals.css`, NO JavaScript config files
+2. **@source Directives** - Required to scan files for classes (replaces v3's `content` array)
+3. **@theme inline** - Define custom properties and theme mappings
+4. **No tailwind.config.ts** - Delete any v3 config files immediately
+
+### ✅ RIGHT (Tailwind v4)
+
+```css
+/* apps/web/app/globals.css */
+@custom-variant dark (&:is(.dark *));
+
+@import "tailwindcss";
+
+/* Scan source files */
+@source "./app/**/*.{ts,tsx}";
+@source "./components/**/*.{ts,tsx}";
+@source "./lib/**/*.{ts,tsx}";
+
+/* Theme configuration */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-border: var(--border);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+:root {
+  --primary: oklch(0.648 0.2 131.684);
+  --border: oklch(0.88 0 0);
+}
+```
+
+### ❌ WRONG (Tailwind v3 - DO NOT USE)
+
+```js
+// tailwind.config.ts - DELETE THIS FILE!
+export default {
+  content: ['./app/**/*.{ts,tsx}'],  // v3 pattern
+  theme: {
+    extend: {
+      colors: {
+        primary: '#00ff00',  // v3 pattern
+      },
+    },
+  },
+};
+```
+
+### Key Differences: v3 vs v4
+
+| Feature | v3 (WRONG) | v4 (CORRECT) |
+|---------|------------|--------------|
+| **Config file** | `tailwind.config.ts` | None - delete it! |
+| **Content scanning** | `content: [...]` array | `@source` directives in CSS |
+| **Theme** | JavaScript `theme.extend` | `@theme inline` in CSS |
+| **Imports** | Often in PostCSS | `@import "tailwindcss"` in CSS |
+| **Colors** | Hex/RGB strings | `oklch()` color space recommended |
+
+### Common Mistakes to Avoid
+
+#### ❌ WRONG: Creating a config file
+```bash
+# DO NOT RUN THIS
+npx tailwindcss init
+```
+**Why:** Creates `tailwind.config.ts` which v4 doesn't use.
+
+#### ❌ WRONG: Forgetting @source directives
+```css
+@import "tailwindcss";
+/* Missing @source - NO CLASSES WILL GENERATE! */
+```
+**Why:** Tailwind v4 won't scan any files without `@source` directives.
+
+#### ❌ WRONG: Wrong import order
+```css
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));  /* Too late! */
+```
+**Why:** Custom variants must come BEFORE the Tailwind import.
+
+#### ❌ WRONG: Using v3 color syntax
+```css
+@theme inline {
+  --color-primary: #00ff00;  /* Wrong! */
+}
+```
+**Why:** Use CSS variables that reference `:root` values: `--color-primary: var(--primary)`.
+
+### ✅ RIGHT: Complete Setup Checklist
+
+1. **No config file** - Delete `tailwind.config.ts` if it exists
+2. **PostCSS setup** - `@tailwindcss/postcss` in `postcss.config.mjs`
+3. **CSS imports** - `@import "tailwindcss"` at top of `globals.css`
+4. **@source directives** - Scan all component directories
+5. **@theme inline** - Map CSS variables to Tailwind utilities
+6. **Color variables** - Define in `:root` and `.dark` using `oklch()`
+
+### shadcn/ui + Tailwind v4 Requirements
+
+When using shadcn/ui components, you MUST define these in `@theme inline`:
+
+```css
+@theme inline {
+  /* Shadow variables - REQUIRED for shadcn components */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Color mappings - REQUIRED for utility classes */
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* ... etc */
+}
+```
+
+**Why:** shadcn components use `shadow` class (not `shadow-sm`), which Tailwind v4 doesn't provide by default.
+
+### Reference Documentation
+
+- **Tailwind v4 Setup**: [docs/tailwind-setup.md](./docs/tailwind-setup.md)
+- **Official Docs**: [tailwindcss.com/docs](https://tailwindcss.com/docs)
+- **Demo Page**: [/ops/demo](http://localhost:3001/ops/demo) - Verify setup works
 
 ### Workspace Structure
 
@@ -21,7 +156,241 @@ cw-hackathon-3/
 ├── apps/
 │   └── web/              # Next.js 15 web application
 └── packages/
+    ├── ui/               # Shared UI components (@cw-hackathon/ui)
     └── data/             # CLI tool using Citty, runs with Bun
+```
+
+## Component Library Strategy
+
+This project uses a hierarchical approach to UI components. Follow this decision tree when building UI.
+
+### Component Library Priority
+
+When implementing UI features, use components in this order of preference:
+
+1. **HeroUI** (Primary) - Interactive components with built-in accessibility
+   - Buttons, Inputs, Modals, Cards, Tables, Navigation
+   - Best for: Standard UI patterns, forms, navigation
+   - Import: `import { Button, Card } from "@heroui/react"`
+
+2. **@cw-hackathon/ui** (Shared Design System) - Base primitives + chat + animations
+   - Primitives: Button, Card, Badge, Tabs, Dialog, Table, Input, Select, Separator, Skeleton, Textarea
+   - Chat: MessageBubble, QuestionMessage, AnswerMessage, ReflectionMessage, Markdown
+   - Animation: TypingAnimation, TypingIndicator, BorderBeam
+   - Best for: Consistent design across apps, chat/intake flows, loading states
+   - Import: `import { Button, MessageBubble, TypingAnimation } from "@cw-hackathon/ui"`
+
+3. **ai-elements** (New AI Features Only) - For features not yet built
+   - Use for: Open-ended chat (Conversation, PromptInput), AI reasoning display (ChainOfThought), streaming code/math content (MessageResponse)
+   - Do NOT use for: Intake flow, existing chat UI (custom components in @cw-hackathon/ui are a better fit)
+   - Install: `npx ai-elements@latest add <component>`
+   - Rule: Before installing an ai-elements component, check if @cw-hackathon/ui already handles the use case. Our custom components are simpler, have fewer dependencies, and match the design system.
+
+4. **KiboUI** (Specialized) - Complex specialized components
+   - Kanban, Gantt, Calendar, Code Editor, File Tree, Markdown Editor
+   - Best for: Rich interactive widgets not in HeroUI
+   - Install: Copy from https://www.kibo-ui.com/docs/usage
+   - Consider when: Building project management, code editing, file browsing
+
+### When to Use Each Library
+
+| Use Case | Library | Why |
+|----------|---------|-----|
+| Form elements | HeroUI | Built-in validation, accessibility |
+| Chat/intake messages | @cw-hackathon/ui | MessageBubble variants, tailored to our design |
+| Loading/typing states | @cw-hackathon/ui | TypingAnimation, TypingIndicator, BorderBeam |
+| Markdown rendering | @cw-hackathon/ui | Lightweight react-markdown wrapper |
+| Base primitives | @cw-hackathon/ui | Shared across apps, customizable |
+| NEW open-ended chat | ai-elements | Conversation, PromptInput, ChainOfThought |
+| NEW streaming code/math | ai-elements | MessageResponse with syntax highlighting |
+| Kanban/Calendar | KiboUI | Specialized features |
+
+### Where to Put New Components
+
+**Put in `packages/ui`** (PREFERRED):
+- Reusable across multiple apps
+- Design system primitives
+- Components you might demo or document
+- Anything that could go in a Storybook later
+- Examples: Button variants, Cards, Form controls, Layout components
+
+**Put in `apps/web/components`** (ONLY when app-specific):
+- Tightly coupled to app routes/data
+- Uses app-specific hooks or context
+- Not reusable outside this app
+- Examples: PageHeader with app navigation, FeatureSpecificWidget
+
+**Rule of thumb:** When in doubt, put it in `packages/ui`. It's easier to use an existing package component than to migrate one later.
+
+### packages/ui Organization
+
+```
+packages/ui/src/
+├── components/               # Flat structure, alphabetically sorted
+│   ├── badge.tsx             # CVA variants
+│   ├── border-beam.tsx       # Animated gradient border (motion)
+│   ├── button.tsx            # CVA variants + sizes + asChild
+│   ├── card.tsx              # Card + CardHeader/Content/Footer
+│   ├── dialog.tsx            # Modal/Dialog
+│   ├── input.tsx             # Text input
+│   ├── markdown.tsx          # GFM markdown renderer
+│   ├── message-bubble.tsx    # Chat bubbles (Question/Answer/Reflection)
+│   ├── select.tsx            # Select dropdown
+│   ├── separator.tsx         # Divider line
+│   ├── skeleton.tsx          # Loading placeholder
+│   ├── table.tsx             # Data table
+│   ├── tabs.tsx              # Tab navigation
+│   ├── textarea.tsx          # Multi-line text input
+│   ├── typing-animation.tsx  # Text typing/deleting effect (motion)
+│   ├── typing-indicator.tsx  # Pulsing dots loading indicator
+│   └── index.ts              # Barrel export
+├── hooks/                    # Shared hooks
+│   └── index.ts
+├── utils/
+│   ├── cn.ts                 # Class name utility (clsx + tailwind-merge)
+│   └── index.ts
+├── globals.css               # Design tokens and theme
+└── index.ts                  # Main package export
+```
+
+### Using packages/ui
+
+```tsx
+// Import components
+import {
+  Button, Card, CardContent, Badge,
+  QuestionMessage, AnswerMessage, ReflectionMessage,
+  TypingAnimation, TypingIndicator, BorderBeam, Markdown,
+} from "@cw-hackathon/ui";
+
+// Import utilities
+import { cn } from "@cw-hackathon/ui";
+
+// Primitives
+<Card>
+  <CardContent>
+    <Button variant="default">Click me</Button>
+  </CardContent>
+</Card>
+
+// Chat messages
+<QuestionMessage questionNumber={1}>What is your name?</QuestionMessage>
+<AnswerMessage>My name is Alice</AnswerMessage>
+<ReflectionMessage>Great, thanks for sharing!</ReflectionMessage>
+
+// Loading states
+<TypingIndicator size="md" />
+<TypingAnimation words={["Reflecting...", "Processing...", "Thinking..."]} />
+```
+
+### Component Patterns (Storybook-Ready by Default)
+
+All components in `packages/ui` are written Storybook-ready. Good component design and Storybook-friendliness are the same thing — explicit props, sensible defaults, minimal side effects. Following these patterns costs nothing extra and means any component can get a story later without refactoring.
+
+1. **CVA for variants** - Variants map directly to Storybook `argTypes` dropdowns
+   ```tsx
+   const buttonVariants = cva("base-classes", {
+     variants: { variant: { default: "...", secondary: "..." } }
+   });
+   ```
+
+2. **forwardRef** - Supports DOM refs, Storybook's measure addon, and interaction testing
+   ```tsx
+   const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(...)
+   ```
+
+3. **Export variants too** - Enables typed `args` in stories and styling without wrapping
+   ```tsx
+   export { Button, buttonVariants };
+   ```
+
+4. **Accept explicit props over context** - Props are directly controllable via Storybook Controls; context-dependent components require decorators
+5. **Accept className** - Enables wrapper styling and Storybook decorators
+6. **Define sensible defaults** - Components should render meaningfully with zero props
+7. **Keep side effects minimal** - Pure presentational components work everywhere; data-fetching components need mocking
+8. **Use composition over configuration** - Compound components (like Card) let consumers and stories show different layouts
+9. **Tailwind-first** - Use utility classes, avoid CSS modules
+10. **CSS variables** - Reference design tokens from globals.css
+
+### Optimistic UI Patterns (Critical for Chat)
+
+When building conversational interfaces, follow these patterns from `docs/prds/intake-chat-ui.md`:
+
+1. **Show next question immediately** - Don't wait for LLM reflection
+2. **Protect user input** - Never overwrite current input when async content resolves
+3. **Typing indicators** - Show TypingIndicator while waiting
+4. **fadeInUp animation** - Smooth transitions for new content
+
+```tsx
+// Optimistic pattern example
+async function handleSubmit() {
+  // 1. Immediately update UI
+  addMessage({ type: 'answer', content: currentAnswer });
+  addMessage({ type: 'reflection', content: null }); // Loading
+
+  // 2. Show next question immediately (if known)
+  if (nextQuestionKnown) {
+    addMessage({ type: 'question', content: nextQuestion.prompt });
+  }
+
+  // 3. Fetch reflection in background
+  const response = await submitAnswer();
+
+  // 4. Update reflection when ready (don't touch user's current input!)
+  updateMessage(pendingReflectionIndex, { content: response.reflection });
+}
+```
+
+### Installing ai-elements Components
+
+**Important:** ai-elements is for genuinely new AI interaction patterns only. Check @cw-hackathon/ui first — our custom MessageBubble, TypingAnimation, TypingIndicator, and Markdown cover the intake/chat use cases with fewer dependencies and better design system integration.
+
+ai-elements components worth considering for **new features**:
+- **PromptInput** — Open-ended chat input with file attachments, drag-drop
+- **ChainOfThought / Reasoning** — Collapsible AI reasoning display
+- **Conversation** — ChatGPT-style free-form chat container
+- **MessageResponse** — Streaming markdown with code highlighting, math, mermaid
+
+```bash
+# Install a specific component (only when building new AI features)
+npx ai-elements@latest add prompt-input
+npx ai-elements@latest add chain-of-thought
+npx ai-elements@latest add conversation
+
+# Components are copied to components/ai-elements/
+```
+
+### Demo Pages vs Storybook
+
+This project has both demo pages and Storybook. They serve different purposes:
+
+| | Demo Pages (`/ops/demo`, `/intake/demo`) | Storybook (`localhost:6006`) |
+|---|---|---|
+| **Purpose** | Full-flow integration testing | Isolated component development |
+| **Shows** | Complete features with real data flow | Individual components with controls |
+| **When to use** | Testing end-to-end behavior, showcasing features | Iterating on component design, testing variants/states |
+| **Requires** | Next.js dev server (`pnpm dev`) | Storybook dev server (`pnpm storybook`) |
+
+Both are valuable — don't remove demo pages in favor of Storybook or vice versa.
+
+### Design System Colors
+
+The design system uses Anthropic-inspired colors:
+
+```css
+/* Primary palette */
+--anthropic-orange: #d97757   /* Primary actions */
+--anthropic-blue: #6a9bcc     /* Secondary, info */
+--anthropic-green: #788c5d    /* Success, accent */
+--anthropic-dark: #141413     /* Text, headings */
+--anthropic-light: #faf9f5    /* Backgrounds */
+
+/* Use via Tailwind */
+.bg-primary        /* Orange */
+.bg-secondary      /* Blue */
+.bg-accent         /* Green */
+.text-foreground   /* Dark */
+.bg-background     /* Light */
 ```
 
 ## Project Structure
@@ -42,17 +411,33 @@ cw-hackathon-3/
 │   └── prds/
 │       └── repo-setup.md # Initial setup implementation plan
 ├── apps/
-│   └── web/
+│   ├── web/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── next.config.ts
+│   │   ├── .gitignore
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── globals.css
+│   │   └── public/
+│   └── storybook/              # Storybook component explorer
 │       ├── package.json
 │       ├── tsconfig.json
-│       ├── next.config.ts
-│       ├── .gitignore
-│       ├── app/
-│       │   ├── layout.tsx
-│       │   ├── page.tsx
-│       │   └── globals.css
-│       └── public/
+│       └── .storybook/
+│           ├── main.ts         # Framework and addon config
+│           ├── preview.ts      # Global decorators and parameters
+│           └── globals.css     # Tailwind v4 entry for Storybook
 └── packages/
+    ├── ui/                       # Shared UI components
+    │   ├── package.json
+    │   ├── tsconfig.json
+    │   └── src/
+    │       ├── index.ts          # Main package export
+    │       ├── components/       # UI components (button, card, etc.)
+    │       ├── hooks/            # Shared React hooks
+    │       ├── utils/            # Utilities (cn function)
+    │       └── globals.css       # Design system tokens
     └── data/
         ├── package.json
         ├── tsconfig.json
@@ -65,7 +450,127 @@ cw-hackathon-3/
         └── dist/                 # Build output (gitignored)
 ```
 
+## Storybook
+
+### Overview
+
+Storybook is set up at `apps/storybook/` as a dedicated app for developing and showcasing `packages/ui` components in isolation. It uses `@storybook/react-vite` (not `nextjs-vite`) since the shared UI components are pure React.
+
+### Running Storybook
+
+```bash
+# From root
+pnpm storybook
+# Visit http://localhost:6006
+
+# Or directly
+pnpm --filter @cw-hackathon/storybook dev
+```
+
+### Building Storybook (static export)
+
+```bash
+pnpm build:storybook
+# Output: apps/storybook/storybook-static/
+```
+
+### Writing Stories
+
+Stories are co-located with components in `packages/ui/src/components/`:
+
+```
+packages/ui/src/components/
+├── button.tsx              # Component
+├── button.stories.tsx      # Story (lives next to component)
+├── card.tsx
+├── card.stories.tsx
+└── ...
+```
+
+**Story file template (CSF3 format):**
+
+```tsx
+import type { Meta, StoryObj } from "@storybook/react";
+import { MyComponent } from "./my-component";
+
+const meta = {
+  title: "Components/MyComponent",
+  component: MyComponent,
+  argTypes: {
+    variant: {
+      control: "select",
+      options: ["default", "secondary"],
+    },
+  },
+  args: {
+    children: "Default content",
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { variant: "default" },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: "8px" }}>
+      <MyComponent variant="default">Default</MyComponent>
+      <MyComponent variant="secondary">Secondary</MyComponent>
+    </div>
+  ),
+};
+```
+
+### When to Write a Story
+
+Stories are a development tool, not a documentation chore. Write one when it helps you build better — not for every component.
+
+**Suggest a story when:**
+- You're designing a specific interaction or experience (not just wiring data)
+- The component has multiple variants, states, or visual configurations worth seeing side by side
+- You need to iterate on look-and-feel in isolation (without navigating through the full app)
+- The component is reusable and other developers need to understand its API
+- You're building something where dark mode, responsive, or edge cases matter
+
+**Skip the story when:**
+- It's a thin wrapper or layout component with no meaningful visual states
+- The component is tightly coupled to app data/routing and would need heavy mocking
+- You're just wiring things together, not crafting an experience
+
+**Rule of thumb:** If you're putting effort into *how something looks or feels*, a story will save you time. If you're just connecting pieces, skip it.
+
+All `packages/ui` components follow the [Component Patterns](#component-patterns-storybook-ready-by-default) above, so adding a story later is always straightforward — no refactoring needed.
+
+### Storybook Architecture Notes
+
+- **Version**: Storybook 10 (ESM-only, essentials bundled into core)
+- **Framework**: `@storybook/react-vite` — faster builds, no Next.js dependency needed
+- **Essentials**: Built into `storybook` core — do NOT install `@storybook/addon-essentials` (removed in v10)
+- **Tailwind v4**: Uses `@tailwindcss/vite` via dynamic import in `viteFinal` (static import fails with ESM/CJS issues)
+- **CSS**: `apps/storybook/.storybook/globals.css` mirrors `packages/ui/src/globals.css` design tokens
+- **Dark mode**: Toggle via `@storybook/addon-themes` toolbar button
+- **Docgen**: Disabled (`reactDocgen: false`) to avoid monorepo crashes
+- **Story discovery**: Glob pattern `packages/ui/src/**/*.stories.@(ts|tsx)`
+- **Story format**: CSF3 (Component Story Format 3) — CSF Factories available but optional until Storybook 11
+
 ## Development Workflows
+
+### Initial Setup
+
+After cloning the repository, run the interactive setup wizard:
+
+```bash
+pnpm env:setup
+```
+
+This will configure environment variables for LLM provider and development settings. The wizard will:
+- Prompt for LLM provider selection (Claude Code or W&B Inference)
+- Configure API keys and project settings
+- Set the development server port (default: 3010)
+- Create `.env.local` and `.env` files for both workspaces
 
 ### Installing Dependencies
 
@@ -109,6 +614,30 @@ pnpm check
 # Type checking
 pnpm type-check
 ```
+
+### Quality Gates (Automated Checks)
+
+The project uses automated quality gates to prevent broken code from being committed or pushed.
+
+**Pre-Commit (Tier 1)** - Runs automatically before every commit:
+- Formats and lints staged files with Biome
+- Fast checks (~5-10 seconds)
+- Auto-fixes most issues
+
+**Pre-Push (Tier 2)** - Runs automatically before every push:
+- Type checks all workspaces
+- Builds all workspaces for production
+- Catches build failures and type errors (~30-60 seconds)
+
+**Bypass hooks (emergency only):**
+```bash
+git commit --no-verify  # Skip pre-commit
+git push --no-verify    # Skip pre-push
+```
+
+⚠️ **Important:** Only bypass hooks in emergencies. They prevent broken builds from reaching the repository.
+
+**See:** [docs/quality-gates.md](./docs/quality-gates.md) for detailed documentation.
 
 ### Running Individual Commands
 
@@ -278,6 +807,44 @@ For creating performant WebGL backgrounds using React Three Fiber:
 - Respect `prefers-reduced-motion` accessibility preference
 - Provide CSS fallback backgrounds for non-WebGL browsers
 
+### UI Icons - NEVER Use Emojis
+
+**CRITICAL RULE:** Never use emoji characters in the UI. Always use Lucide React icons instead.
+
+**Why:**
+- Emojis render inconsistently across platforms and browsers
+- Emojis don't match the professional design aesthetic
+- SVG icons are more accessible and customizable
+- Icons can be styled with Tailwind classes (size, color, etc.)
+
+**Correct pattern:**
+```tsx
+import { ClipboardList, FileText, Check, FlaskConical } from "lucide-react";
+
+// Header icons
+<ClipboardList className="h-6 w-6 text-primary" />
+
+// Checkmarks
+<Check className="h-4 w-4 text-accent" />
+
+// Demo/test pages
+<FlaskConical className="h-6 w-6 text-muted-foreground" />
+```
+
+**Icon mappings (emoji -> Lucide):**
+| Instead of | Use |
+|------------|-----|
+| 📋 | `<ClipboardList />` |
+| 📝 | `<FileText />` or `<StickyNote />` |
+| ✓ ✔ | `<Check />` or `<CheckCircle />` |
+| 🧪 | `<FlaskConical />` or `<TestTube2 />` |
+| ✨ | `<Sparkles />` |
+| 🎯 | `<Target />` |
+| 🚀 | `<Rocket />` |
+| 🎉 | Use confetti animation, not emoji |
+
+**See:** [docs/design-guidelines.md](./docs/design-guidelines.md) for complete icon usage guide.
+
 ## Adding New Workspaces
 
 ### New App
@@ -438,13 +1005,35 @@ Create `.env.local` for local development:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
+
+# Weights & Biases Weave Tracing (optional)
+WANDB_API_KEY=your-wandb-api-key
+WEAVE_PROJECT=your-team/your-project
 ```
 
 Never commit `.env.local` - it's gitignored.
 
+See `apps/web/.env.example` for all available options.
+
 ### packages/data
 
-CLI can read environment variables via `process.env` or Bun's `Bun.env`.
+Create `.env` for local CLI development:
+
+```env
+# Weights & Biases Weave Tracing
+WANDB_API_KEY=your-wandb-api-key
+WEAVE_PROJECT=your-team/your-project
+```
+
+Run CLI with env file:
+```bash
+cd packages/data
+bun --env-file=.env run src/bin/cli.ts dap generate ...
+```
+
+See `packages/data/.env.example` for all available options.
+
+**Weave Tracing**: Set `WEAVE_PROJECT` (or `WANDB_PROJECT` or `CORE_WEAVE`) to enable W&B Weave tracing for LLM calls. Also requires `WANDB_API_KEY` for authentication.
 
 ## Why These Tools?
 
@@ -463,6 +1052,9 @@ CLI can read environment variables via `process.env` or Bun's `Bun.env`.
 ## Quick Reference
 
 ```bash
+# Initial setup (configure env vars)
+pnpm env:setup
+
 # Install dependencies
 pnpm install
 
@@ -487,3 +1079,110 @@ pnpm --filter @cw-hackathon/web dev
 See `docs/` directory for:
 - PRDs (Product Requirement Documents) in `docs/prds/`
 - Additional documentation in `docs/README.md`
+
+## Chrome DevTools Debugging
+
+### Overview
+
+The `/chrome-devtools` skill enables real-time browser debugging with Claude Code through the Chrome DevTools Protocol. This allows you to inspect actual Chrome browser tabs, capture console errors, inspect DOM, monitor network requests, and debug issues without screenshots or copy-pasting.
+
+### What This Enables
+
+- ✅ Connect to actual Chrome browser tabs
+- ✅ Capture console errors automatically
+- ✅ Inspect DOM elements and network requests
+- ✅ Take screenshots of current state
+- ✅ Execute JavaScript in page context
+- ✅ Real-time debugging with Claude Code
+
+### When to Use
+
+Use the `/chrome-devtools` skill when:
+- You see errors in the browser console that need investigation
+- You need to debug rendering issues or hydration errors
+- You want to inspect network requests and responses
+- You're testing the web app and need Claude to see what's happening
+- You want to avoid taking screenshots and copying error messages manually
+
+### Quick Start
+
+```bash
+# 1. Set up Chrome debugging (run once, or after closing debug Chrome)
+/chrome-devtools setup
+
+# 2. Navigate to your app in the debug Chrome window
+# Example: http://localhost:3000/intake/demo
+
+# 3. Restart Claude Code to load the MCP server
+
+# 4. Debug the current tab
+/chrome-devtools debug
+```
+
+### Available Commands
+
+- `/chrome-devtools setup` - Configure and launch debug Chrome automatically
+- `/chrome-devtools debug` - Inspect current Chrome tab and debug errors
+- `/chrome-devtools info` - Display status and usage information
+
+### Example Usage
+
+**Debugging a page:**
+```
+/chrome-devtools setup
+[Navigate to http://localhost:3000/intake/demo]
+[Restart Claude Code]
+/chrome-devtools debug
+```
+
+Claude will automatically:
+- List available Chrome tabs
+- Find your localhost tab
+- Inspect console errors
+- Analyze the DOM
+- Suggest fixes
+
+**Investigating an error:**
+```
+User: "There's an error on the intake demo page"
+Assistant: /chrome-devtools debug
+[Claude inspects the tab and reports exact errors with line numbers]
+[Claude suggests specific fixes based on the error]
+```
+
+### How It Works
+
+1. **Debug Chrome runs on port 9222** with DevTools Protocol enabled
+2. **MCP Server connects** to the debug endpoint at http://localhost:9222
+3. **Claude Code uses MCP tools** to inspect tabs, read console, execute JS, etc.
+4. **Separate profile** (`~/.chrome-debug-profile`) keeps your debugging isolated
+
+### Requirements
+
+- Chrome browser installed
+- Node.js 22+ (for MCP server)
+- Port 9222 available (close regular Chrome before launching debug Chrome)
+
+### Troubleshooting
+
+**Port already in use:**
+- Debug Chrome is already running - use the existing instance
+- Or close it and run setup again
+
+**MCP not loading:**
+- Ensure debug Chrome is running: visit http://localhost:9222/json
+- Restart Claude Code after running setup
+- Check Claude Code logs for MCP connection errors
+
+**Can't find tabs:**
+- Make sure you navigated to your app in the debug Chrome window (not regular Chrome)
+- The MCP server only sees tabs in the debug Chrome instance
+
+### Documentation
+
+For comprehensive details, see [docs/chrome-devtools-mcp.md](./docs/chrome-devtools-mcp.md):
+- Detailed setup instructions
+- MCP tool reference
+- Security considerations
+- Comparison with other browser tools
+- Best practices

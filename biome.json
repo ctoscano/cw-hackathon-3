@@ -18,7 +18,8 @@
     "lineWidth": 100
   },
   "files": {
-    "ignore": ["node_modules", "dist", ".next", ".turbo", "build", "out"]
+    "ignore": ["node_modules", "dist", ".next", ".turbo", "build", "out"],
+    "ignoreUnknown": false
   },
   "javascript": {
     "formatter": {

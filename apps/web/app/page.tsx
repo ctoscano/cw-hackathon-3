@@ -1,98 +1,140 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cw-hackathon/ui";
+import { ClipboardList, FileText } from "lucide-react";
 import Link from "next/link";
-
-const landscapes = [
-  {
-    slug: "mountain",
-    title: "Mountain Serenity",
-    description: "Layered peaks fading into misty distance under a starlit sky",
-    color: "#1a1a2e",
-    accentColor: "#533483",
-  },
-  {
-    slug: "ocean",
-    title: "Ocean Sunset",
-    description: "Gentle waves catching golden light as the sun dips below the horizon",
-    color: "#2c3e50",
-    accentColor: "#ff6b6b",
-  },
-  {
-    slug: "forest",
-    title: "Misty Forest",
-    description: "Ancient trees standing sentinel in ethereal morning mist",
-    color: "#1a252f",
-    accentColor: "#f39c12",
-  },
-  {
-    slug: "canyon",
-    title: "Desert Canyon",
-    description: "Layered mesa silhouettes rising from sun-baked desert floor",
-    color: "#2a1a12",
-    accentColor: "#cc8844",
-  },
-  {
-    slug: "aurora",
-    title: "Aurora Borealis",
-    description: "Dancing curtains of light illuminate the arctic night sky",
-    color: "#040810",
-    accentColor: "#22cc66",
-  },
-];
 
 export default function HomePage() {
   return (
-    <main className="home">
-      <header className="home-header">
-        <h1>WebGL Landscape Showcase</h1>
-        <p className="home-subtitle">
-          Explore peaceful, shader-based landscapes built with React Three Fiber. Each scene
-          features procedural generation, parallax depth, and smooth animations.
-        </p>
+    <main className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto max-w-4xl px-6 py-8">
+          <h1 className="font-heading text-3xl font-bold text-foreground">
+            Clinical Workflow Hackathon
+          </h1>
+          <p className="mt-2 text-lg text-muted-foreground">
+            AI-powered tools for mental health professionals
+          </p>
+        </div>
       </header>
 
-      <section className="landscapes-grid">
-        {landscapes.map((landscape) => (
-          <Link
-            key={landscape.slug}
-            href={`/landscapes/${landscape.slug}`}
-            className="landscape-card"
-            style={
-              {
-                "--card-bg": landscape.color,
-                "--card-accent": landscape.accentColor,
-              } as React.CSSProperties
-            }
-          >
-            <div className="card-content">
-              <h2>{landscape.title}</h2>
-              <p>{landscape.description}</p>
-              <span className="card-cta">Explore →</span>
-            </div>
+      {/* Main Content */}
+      <div className="mx-auto max-w-4xl px-6 py-12">
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Intake Assessment Card */}
+          <Link href="/intake" className="group">
+            <Card className="h-full transition-all hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-2">
+                  <ClipboardList className="h-10 w-10 text-primary" aria-hidden="true" />
+                </div>
+                <CardTitle className="text-xl group-hover:text-primary">
+                  Therapy Readiness Assessment
+                </CardTitle>
+                <CardDescription>
+                  Interactive intake questionnaire with AI-powered reflections
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                <ul className="list-inside list-disc space-y-1">
+                  <li>Conversational chat-style interface</li>
+                  <li>Personalized reflections on responses</li>
+                  <li>Tailored therapy recommendations</li>
+                  <li>Optional contact collection</li>
+                </ul>
+                <div className="mt-4 font-medium text-primary group-hover:underline">
+                  Start Assessment &rarr;
+                </div>
+              </CardContent>
+            </Card>
           </Link>
-        ))}
-      </section>
 
-      <section className="home-info">
-        <h2>About This Project</h2>
-        <p>
-          This showcase demonstrates performant WebGL backgrounds using React Three Fiber and GLSL
-          shaders. All visuals are procedurally generated with no external textures, following
-          Framer-inspired design principles.
-        </p>
-        <div className="features">
-          <div className="feature">
-            <h3>Performant</h3>
-            <p>On-demand rendering, optimized shaders, minimal draw calls</p>
-          </div>
-          <div className="feature">
-            <h3>Accessible</h3>
-            <p>Respects reduced motion preferences, CSS fallbacks</p>
-          </div>
-          <div className="feature">
-            <h3>Reusable</h3>
-            <p>Component-based architecture for easy customization</p>
+          {/* DAP Notes Card */}
+          <Link href="/dap" className="group">
+            <Card className="h-full transition-all hover:border-secondary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-2">
+                  <FileText className="h-10 w-10 text-secondary" aria-hidden="true" />
+                </div>
+                <CardTitle className="text-xl group-hover:text-secondary">
+                  DAP Notes Generator
+                </CardTitle>
+                <CardDescription>
+                  Transform session notes into structured DAP format
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                <ul className="list-inside list-disc space-y-1">
+                  <li>Data, Assessment, Plan structure</li>
+                  <li>AI-generated clinical documentation</li>
+                  <li>Copy-ready for EHR systems</li>
+                  <li>Prompt-only mode available</li>
+                </ul>
+                <div className="mt-4 font-medium text-secondary group-hover:underline">
+                  Generate Notes &rarr;
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Operations Link */}
+        <div className="mt-12 border-t border-border pt-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                Operations Dashboard
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                View analytics, manage sessions, and monitor activity
+              </p>
+            </div>
+            <Link
+              href="/ops"
+              className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted-foreground hover:text-background"
+            >
+              View Dashboard
+            </Link>
           </div>
         </div>
-      </section>
+
+        {/* Landscapes Link */}
+        <div className="mt-8 border-t border-border pt-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                WebGL Landscape Showcase
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Explore shader-based landscapes with procedural generation and parallax depth
+              </p>
+            </div>
+            <Link
+              href="/landscapes/aurora"
+              className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted-foreground hover:text-background"
+            >
+              View Landscapes
+            </Link>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-16 text-center text-sm text-muted-foreground">
+          <p>Built with Next.js, Tailwind CSS, and Claude</p>
+          <p className="mt-1">
+            <Link href="/intake/demo" className="hover:underline">
+              View Component Demo
+            </Link>
+            {" | "}
+            <Link href="/ops/demo" className="hover:underline">
+              View Ops Demo
+            </Link>
+            {" | "}
+            <Link href="/landscapes/aurora" className="hover:underline">
+              View Landscapes
+            </Link>
+          </p>
+        </footer>
+      </div>
     </main>
   );
 }

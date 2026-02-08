@@ -1,0 +1,856 @@
+.main {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Loading & Error States */
+.loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+  font-size: 1rem;
+}
+
+.error {
+  padding: 1rem;
+  color: #c00;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.inlineError {
+  padding: 0.75rem;
+  color: #c00;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #222;
+  margin: 0 0 0.5rem 0;
+}
+
+.description {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+/* Progress Bar */
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progressBar {
+  width: 100%;
+  max-width: 300px;
+  height: 6px;
+  background: #e5e5e5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90d9, #357abd);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+/* Value Proposition */
+.valueProposition {
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+  border: 1px solid rgba(74, 144, 217, 0.2);
+  border-radius: 12px;
+}
+
+.valuePropositionText {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.5;
+}
+
+.valuePropositionList {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style: none;
+}
+
+.valuePropositionList li {
+  position: relative;
+  padding-left: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.valuePropositionList li:last-child {
+  margin-bottom: 0;
+}
+
+.valuePropositionList li::before {
+  content: "✓";
+  position: absolute;
+  left: -1.25rem;
+  color: #4a90d9;
+  font-weight: 600;
+}
+
+/* Chat Container */
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
+}
+
+/* Legacy Question History - kept for reference */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.historyItem {
+  padding: 1rem 1.25rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+  border-left: 3px solid #4a90d9;
+}
+
+.historyQuestion {
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.historyAnswer {
+  color: #333;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.reflection {
+  font-style: italic;
+  color: #5a7a9a;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+  border-radius: 8px;
+  line-height: 1.5;
+  font-size: 0.9375rem;
+}
+
+/* Current Question Form */
+.questionForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.currentQuestion {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border: 2px solid #4a90d9;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(74, 144, 217, 0.1);
+}
+
+.questionLabel {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #222;
+  line-height: 1.4;
+}
+
+.questionNumber {
+  color: #4a90d9;
+  margin-right: 0.5rem;
+}
+
+/* Text Input */
+.textInputWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.875rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.textarea:disabled {
+  background: #f5f5f5;
+  color: #888;
+}
+
+.textarea::placeholder {
+  color: #aaa;
+}
+
+.examples {
+  font-size: 0.8125rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Options (Checkboxes & Radio) */
+.optionsWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.optionsHint {
+  font-size: 0.8125rem;
+  color: #888;
+  margin: 0;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8f8f8;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.optionLabel:hover {
+  background: #f0f7ff;
+  border-color: #4a90d9;
+}
+
+.optionLabel:has(input:checked) {
+  background: #e8f4fd;
+  border-color: #4a90d9;
+}
+
+.checkbox,
+.radio {
+  margin-top: 0.125rem;
+  width: 18px;
+  height: 18px;
+  accent-color: #4a90d9;
+  cursor: pointer;
+}
+
+.optionText {
+  flex: 1;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: #333;
+}
+
+/* Other Input Field */
+.otherInputWrapper {
+  margin-top: 0.5rem;
+  padding-left: 0;
+}
+
+.otherInput {
+  width: 100%;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+}
+
+.otherInput:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.otherInput:disabled {
+  background: #f5f5f5;
+  color: #888;
+}
+
+.otherInput::placeholder {
+  color: #aaa;
+}
+
+/* Submit Button */
+.submitButton {
+  align-self: flex-start;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #357abd 0%, #2a6199 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+}
+
+.submitButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Completion Section */
+/* Keyframe animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.completion {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-top: 1rem;
+}
+
+.completionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #222;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.completionSection {
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  animation: fadeInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+/* Stagger animations for each section */
+.completionSection:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.completionSection:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.completionSection:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.completionSection:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+.completionSection h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #4a90d9;
+}
+
+.completionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.completionContent p,
+.completionParagraph {
+  margin: 0;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Experiments */
+.experimentsIntro {
+  font-size: 0.9375rem;
+  color: #666;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+.experiments {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.experiment {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.experimentNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #4a90d9;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.experimentContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.experiment p {
+  margin: 0;
+  line-height: 1.5;
+  color: #444;
+}
+
+.chatGptButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4a90d9;
+  background: white;
+  border: 1.5px solid #4a90d9;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  align-self: flex-start;
+}
+
+.chatGptButton:hover {
+  background: #4a90d9;
+  color: white;
+  transform: translateX(2px);
+}
+
+.chatGptButton:active {
+  transform: translateX(0px);
+}
+
+/* Completion Footer */
+.completionFooter {
+  text-align: center;
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+}
+
+.completionFooter p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Completion Waiting State */
+.completionWaiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.completionWaitingCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 3rem 2rem;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  overflow: hidden;
+  min-width: 320px;
+  min-height: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.completionWaitingText {
+  font-size: 1.125rem;
+  color: #444;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 300px;
+  text-align: center;
+  z-index: 1;
+  min-height: 1.6875rem; /* Prevent jitter when text changes (1.125rem * 1.5 line-height) */
+}
+
+/* Contact Info Collection (during wait) */
+.contactPrompt {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e5e5;
+  z-index: 1;
+}
+
+.contactPromptText {
+  font-size: 0.9375rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.contactPromptButtons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.contactYesButton,
+.contactNoButton {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: white;
+  color: #444;
+}
+
+.contactYesButton {
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+  border-color: #4a90d9;
+}
+
+.contactYesButton:hover {
+  background: linear-gradient(135deg, #357abd 0%, #2a6199 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 217, 0.3);
+}
+
+.contactNoButton:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.contactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e5e5;
+  z-index: 1;
+  width: 100%;
+  max-width: 320px;
+}
+
+.contactFormText {
+  font-size: 0.9375rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.contactInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contactInput {
+  width: 100%;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+}
+
+.contactInput:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.contactInput::placeholder {
+  color: #aaa;
+}
+
+.contactFormNote {
+  font-size: 0.8125rem;
+  color: #888;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Contact form above results - improved UI */
+.contactPromptAboveResults {
+  background: linear-gradient(135deg, #f8fbff 0%, #f0f7ff 100%);
+  border: 1px solid #d6e8f7;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.contactPromptTextAbove {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2c5282;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.contactPromptButtonsAbove {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.contactYesButtonAbove,
+.contactNoButtonAbove {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  color: #444;
+}
+
+.contactYesButtonAbove {
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+  border-color: #4a90d9;
+  box-shadow: 0 2px 4px rgba(74, 144, 217, 0.2);
+}
+
+.contactYesButtonAbove:hover {
+  background: linear-gradient(135deg, #357abd 0%, #2a6199 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+}
+
+.contactNoButtonAbove:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.contactFormAboveResults {
+  background: linear-gradient(135deg, #f8fbff 0%, #f0f7ff 100%);
+  border: 1px solid #d6e8f7;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.contactFormTextAbove {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #2c5282;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.contactInputsAbove {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 600px;
+  align-items: flex-end;
+}
+
+.contactInputAbove {
+  flex: 1;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  border: 1px solid #d6e8f7;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.contactInputAbove:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.contactInputAbove::placeholder {
+  color: #aaa;
+}
+
+.contactSubmitButtonAbove {
+  padding: 0.75rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+  border: 1px solid #4a90d9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(74, 144, 217, 0.2);
+}
+
+.contactSubmitButtonAbove:hover:not(:disabled) {
+  background: linear-gradient(135deg, #357abd 0%, #2a6199 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+}
+
+.contactSubmitButtonAbove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive for contact form above */
+@media (max-width: 600px) {
+  .contactInputsAbove {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .contactSubmitButtonAbove {
+    width: 100%;
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .main {
+    padding: 1.5rem 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .currentQuestion {
+    padding: 1.25rem;
+  }
+
+  .questionLabel {
+    font-size: 1rem;
+  }
+
+  .submitButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

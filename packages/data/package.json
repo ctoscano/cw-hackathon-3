@@ -13,11 +13,37 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "citty": "^0.1.6"
+    "@ai-sdk/openai": "^3.0.25",
+    "ai": "^6.0.0",
+    "ai-sdk-provider-claude-code": "^3.3.5",
+    "citty": "^0.1.6",
+    "consola": "^3.4.2",
+    "gray-matter": "^4.0.3",
+    "redis": "^5.10.0",
+    "weave": "^0.11.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",
     "@types/node": "^22.10.5",
     "typescript": "^5.7.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./web": {
+      "types": "./dist/web-exports.d.ts",
+      "import": "./dist/web-exports.js"
+    },
+    "./web-static": {
+      "types": "./dist/web-exports-static.d.ts",
+      "import": "./dist/web-exports-static.js"
+    },
+    "./lib/*": {
+      "types": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
+    }
   }
 }

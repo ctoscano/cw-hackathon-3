@@ -8,6 +8,8 @@ dist/
 build/
 .next/
 out/
+storybook-static/
+*.tsbuildinfo
 
 # Turbo
 .turbo/
@@ -44,5 +46,19 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
+# Generated outputs (CLI tool outputs)
+packages/data/output/
+
 # Misc
 .cache/
+
+# Chrome Debug Profile
+.chrome-debug-profile/
+
+# Skills (local installations)
+.agents/
+.claude/skills/
+.opencode/
+
+# PRD context tracking (project-specific state)
+.claude/prd-context.json

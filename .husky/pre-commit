@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Tier 1: Pre-commit quality checks
+# - Format and lint staged files with Biome
+# - Fast checks (5-10 seconds)
+
+pnpm lint-staged

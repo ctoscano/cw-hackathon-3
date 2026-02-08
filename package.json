@@ -8,16 +8,32 @@
     "lint": "turbo run lint",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "storybook": "pnpm --filter @cw-hackathon/storybook dev",
+    "build:storybook": "turbo run build:storybook",
+    "debug:chrome": "./scripts/chrome-debug.sh",
+    "env:setup": "pnpm --filter @cw-hackathon/data cli setup",
+    "benchmark": "./scripts/benchmark-runtime.sh",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "biome check --write --no-errors-on-unmatched",
+      "biome format --write --no-errors-on-unmatched"
+    ],
+    "*.{json,md}": ["biome format --write --no-errors-on-unmatched"]
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@playwright/test": "^1.58.1",
+    "@typescript/native-preview": "7.0.0-dev.20260205.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "playwright": "^1.58.1",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@10.28.2",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=9.0.0"
