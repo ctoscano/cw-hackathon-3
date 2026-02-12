@@ -132,6 +132,10 @@ export default function HomePage() {
             <Link href="/landscapes/aurora" className="hover:underline">
               View Landscapes
             </Link>
+            {" | "}
+            <Link href="/backgrounds" className="hover:underline">
+              Background Effects
+            </Link>
           </p>
         </footer>
       </div>
