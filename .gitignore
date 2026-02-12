@@ -40,6 +40,12 @@ pnpm-debug.log*
 # Testing
 coverage/
 
+# Screenshots (from Playwright visual testing)
+*.png
+
+# TypeScript
+*.tsbuildinfo
+
 # Generated outputs (CLI tool outputs)
 packages/data/output/
 

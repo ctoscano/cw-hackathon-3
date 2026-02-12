@@ -97,6 +97,26 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Landscapes Link */}
+        <div className="mt-8 border-t border-border pt-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                WebGL Landscape Showcase
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Explore shader-based landscapes with procedural generation and parallax depth
+              </p>
+            </div>
+            <Link
+              href="/landscapes/aurora"
+              className="rounded-md bg-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted-foreground hover:text-background"
+            >
+              View Landscapes
+            </Link>
+          </div>
+        </div>
+
         {/* Footer */}
         <footer className="mt-16 text-center text-sm text-muted-foreground">
           <p>Built with Next.js, Tailwind CSS, and Claude</p>
@@ -107,6 +127,14 @@ export default function HomePage() {
             {" | "}
             <Link href="/ops/demo" className="hover:underline">
               View Ops Demo
+            </Link>
+            {" | "}
+            <Link href="/landscapes/aurora" className="hover:underline">
+              View Landscapes
+            </Link>
+            {" | "}
+            <Link href="/backgrounds" className="hover:underline">
+              Background Effects
             </Link>
           </p>
         </footer>

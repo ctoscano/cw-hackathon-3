@@ -793,6 +793,20 @@ For detailed React development patterns, performance optimization, and component
 - Parallelize independent async operations with `Promise.all()`
 - Calculate derived state during rendering, not in effects
 
+### WebGL and 3D Background Development
+
+For creating performant WebGL backgrounds using React Three Fiber:
+- **Skill**: Use `/r3f-webgl-background` skill for scaffolding and optimization
+- **[docs/react-best-practices.md](./docs/react-best-practices.md)** - Includes WebGL performance section
+
+**Key WebGL patterns for this project:**
+- Use `frameloop="demand"` with `invalidate()` for controlled rendering
+- Keep draw calls under 100, prefer shaders over many meshes
+- Use `'use client'` directive and `dynamic()` import with `ssr: false`
+- Mutate Three.js objects in `useFrame`, never use React state for animation
+- Respect `prefers-reduced-motion` accessibility preference
+- Provide CSS fallback backgrounds for non-WebGL browsers
+
 ### UI Icons - NEVER Use Emojis
 
 **CRITICAL RULE:** Never use emoji characters in the UI. Always use Lucide React icons instead.

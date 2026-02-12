@@ -17,6 +17,9 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# TypeScript
+*.tsbuildinfo
+
 # Playwright
 /playwright-report/
 /playwright/.cache/
