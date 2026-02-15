@@ -111,7 +111,7 @@ See [docs/quality-gates.md](./docs/quality-gates.md) for details.
 |----------|---------------|
 | [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) | **Development guide — start here** |
 | [CLAUDE.md](./CLAUDE.md) | AI assistant context, component library, conventions |
-| [docs/prds/](./docs/prds/) | Product Requirement Documents (18 PRDs) |
+| [docs/prds/](./docs/prds/) | Product Requirement Documents (wave-numbered for chronological order) |
 | [docs/react-best-practices.md](./docs/react-best-practices.md) | React/Next.js performance patterns |
 | [docs/design-guidelines.md](./docs/design-guidelines.md) | Color palette, typography, icons |
 | [docs/quality-gates.md](./docs/quality-gates.md) | Pre-commit and pre-push hooks |

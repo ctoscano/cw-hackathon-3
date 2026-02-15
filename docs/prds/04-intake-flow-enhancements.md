@@ -1,5 +1,7 @@
 # Intake Flow Enhancements - Product Requirement Document
 
+> **Status: Accepted** | Merged via PR #5 on 2026-02-04
+
 <!--
 META-INSTRUCTIONS FOR LLMs:
 This template provides a structured format for creating Product Requirement Documents (PRDs).

@@ -9,7 +9,7 @@ This directory contains documentation for the CW Hackathon monorepo.
 ## Structure
 
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Development guide (start here for onboarding)
-- **prds/** - Product Requirement Documents (18 PRDs tracking all major features)
+- **[prds/](./prds/)** - Product Requirement Documents (check the folder for the full list, prefixed by wave number for chronological ordering)
 - **templates/** - Document templates
   - [prd-template.md](./templates/prd-template.md) - Template for creating new PRDs
 - **[react-best-practices.md](./react-best-practices.md)** - React and Next.js development patterns and performance guidelines

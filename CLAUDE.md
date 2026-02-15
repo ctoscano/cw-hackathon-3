@@ -18,6 +18,18 @@ This is a Turbo-powered monorepo using pnpm workspaces for a hackathon project.
 - **CLI Framework**: Citty 0.1.6 (lightweight, TypeScript-first)
 - **CLI Runtime**: Bun (fast startup, native TypeScript support)
 
+## Claude Code Skills
+
+This project extends Claude Code with custom slash commands (skills). Use these during development:
+
+| Skill | Usage | Purpose |
+|-------|-------|---------|
+| `/prd` | `/prd plan\|start\|end\|accept\|reject\|status` | Manage PRDs — create requirements, track implementation, run quality gates |
+| `/evaluate` | `/evaluate run\|review\|iterate [dap\|intake]` | Score AI pipeline outputs and iterate on prompts |
+| `/chrome-devtools` | `/chrome-devtools setup\|debug\|info` | Connect to Chrome for real-time browser debugging |
+
+**Development workflow**: Every significant feature uses `/prd plan` to define requirements, `/prd start` to track progress, `/prd end` to run quality gates, and `/prd accept` after verification. See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for detailed skill documentation and examples.
+
 ## Tailwind CSS v4 - Critical Rules
 
 **⚠️ IMPORTANT:** This project uses **Tailwind CSS v4 ONLY**. Do NOT use v3 patterns or create `tailwind.config.ts` files.
@@ -397,164 +409,39 @@ The design system uses Anthropic-inspired colors:
 
 ```
 /
-├── .gitignore            # Ignores node_modules, dist, .next, .turbo, .env
-├── .npmrc                # pnpm configuration (shamefully-hoist, auto-install-peers)
-├── package.json          # Root package with turbo scripts
-├── pnpm-workspace.yaml   # Workspace configuration (apps/*, packages/*)
-├── turbo.json            # Turbo pipeline configuration
-├── biome.json            # Biome linting and formatting rules
-├── tsconfig.json         # Base TypeScript configuration
-├── CLAUDE.md             # This file - AI assistant context
-├── README.md             # Project overview and quick start
+├── CLAUDE.md              # This file - AI rules and context
+├── README.md              # Project overview
 ├── docs/
-│   ├── README.md         # Documentation index
-│   └── prds/
-│       └── repo-setup.md # Initial setup implementation plan
+│   ├── DEVELOPMENT.md     # Development guide (start here for onboarding)
+│   ├── prds/              # PRDs with wave-number prefixes (01-, 02-, etc.)
+│   └── templates/         # PRD template
+├── .claude/
+│   └── skills/            # Claude Code skills (prd, evaluate)
 ├── apps/
-│   ├── web/
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── next.config.ts
-│   │   ├── .gitignore
-│   │   ├── app/
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx
-│   │   │   └── globals.css
-│   │   └── public/
-│   └── storybook/              # Storybook component explorer
-│       ├── package.json
-│       ├── tsconfig.json
-│       └── .storybook/
-│           ├── main.ts         # Framework and addon config
-│           ├── preview.ts      # Global decorators and parameters
-│           └── globals.css     # Tailwind v4 entry for Storybook
+│   ├── web/               # Next.js 15 app (routes: /intake, /dap, /ops)
+│   └── storybook/         # Storybook 10 component explorer
 └── packages/
-    ├── ui/                       # Shared UI components
-    │   ├── package.json
-    │   ├── tsconfig.json
-    │   └── src/
-    │       ├── index.ts          # Main package export
-    │       ├── components/       # UI components (button, card, etc.)
-    │       ├── hooks/            # Shared React hooks
-    │       ├── utils/            # Utilities (cn function)
-    │       └── globals.css       # Design system tokens
-    └── data/
-        ├── package.json
-        ├── tsconfig.json
-        ├── src/
-        │   ├── index.ts          # Main CLI definition
-        │   ├── bin/
-        │   │   └── cli.ts        # Bun executable entry point
-        │   └── commands/
-        │       └── hello.ts      # Example hello command
-        └── dist/                 # Build output (gitignored)
+    ├── ui/                # Shared UI components (@cw-hackathon/ui)
+    │   └── src/components/  # Flat structure, alphabetically sorted
+    └── data/              # CLI + AI pipelines (@cw-hackathon/data)
+        └── src/
+            ├── commands/    # CLI commands (hello, dap, intake, setup)
+            └── prompts/     # Versioned prompt templates (v1, v2, v3)
 ```
 
 ## Storybook
 
-### Overview
+Run `pnpm storybook` to launch at http://localhost:6006. Stories are co-located with components in `packages/ui/src/components/*.stories.tsx`.
 
-Storybook is set up at `apps/storybook/` as a dedicated app for developing and showcasing `packages/ui` components in isolation. It uses `@storybook/react-vite` (not `nextjs-vite`) since the shared UI components are pure React.
+**Key rules:**
+- Storybook 10 (ESM-only, essentials bundled into core) — do NOT install `@storybook/addon-essentials`
+- Framework: `@storybook/react-vite` (not `nextjs-vite`)
+- Story format: CSF3
+- Tailwind v4 via `@tailwindcss/vite` dynamic import in `viteFinal`
 
-### Running Storybook
+**When to write a story:** When you're designing how something looks or feels. Skip for thin wrappers or data-wiring components.
 
-```bash
-# From root
-pnpm storybook
-# Visit http://localhost:6006
-
-# Or directly
-pnpm --filter @cw-hackathon/storybook dev
-```
-
-### Building Storybook (static export)
-
-```bash
-pnpm build:storybook
-# Output: apps/storybook/storybook-static/
-```
-
-### Writing Stories
-
-Stories are co-located with components in `packages/ui/src/components/`:
-
-```
-packages/ui/src/components/
-├── button.tsx              # Component
-├── button.stories.tsx      # Story (lives next to component)
-├── card.tsx
-├── card.stories.tsx
-└── ...
-```
-
-**Story file template (CSF3 format):**
-
-```tsx
-import type { Meta, StoryObj } from "@storybook/react";
-import { MyComponent } from "./my-component";
-
-const meta = {
-  title: "Components/MyComponent",
-  component: MyComponent,
-  argTypes: {
-    variant: {
-      control: "select",
-      options: ["default", "secondary"],
-    },
-  },
-  args: {
-    children: "Default content",
-  },
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: { variant: "default" },
-};
-
-export const AllVariants: Story = {
-  render: () => (
-    <div style={{ display: "flex", gap: "8px" }}>
-      <MyComponent variant="default">Default</MyComponent>
-      <MyComponent variant="secondary">Secondary</MyComponent>
-    </div>
-  ),
-};
-```
-
-### When to Write a Story
-
-Stories are a development tool, not a documentation chore. Write one when it helps you build better — not for every component.
-
-**Suggest a story when:**
-- You're designing a specific interaction or experience (not just wiring data)
-- The component has multiple variants, states, or visual configurations worth seeing side by side
-- You need to iterate on look-and-feel in isolation (without navigating through the full app)
-- The component is reusable and other developers need to understand its API
-- You're building something where dark mode, responsive, or edge cases matter
-
-**Skip the story when:**
-- It's a thin wrapper or layout component with no meaningful visual states
-- The component is tightly coupled to app data/routing and would need heavy mocking
-- You're just wiring things together, not crafting an experience
-
-**Rule of thumb:** If you're putting effort into *how something looks or feels*, a story will save you time. If you're just connecting pieces, skip it.
-
-All `packages/ui` components follow the [Component Patterns](#component-patterns-storybook-ready-by-default) above, so adding a story later is always straightforward — no refactoring needed.
-
-### Storybook Architecture Notes
-
-- **Version**: Storybook 10 (ESM-only, essentials bundled into core)
-- **Framework**: `@storybook/react-vite` — faster builds, no Next.js dependency needed
-- **Essentials**: Built into `storybook` core — do NOT install `@storybook/addon-essentials` (removed in v10)
-- **Tailwind v4**: Uses `@tailwindcss/vite` via dynamic import in `viteFinal` (static import fails with ESM/CJS issues)
-- **CSS**: `apps/storybook/.storybook/globals.css` mirrors `packages/ui/src/globals.css` design tokens
-- **Dark mode**: Toggle via `@storybook/addon-themes` toolbar button
-- **Docgen**: Disabled (`reactDocgen: false`) to avoid monorepo crashes
-- **Story discovery**: Glob pattern `packages/ui/src/**/*.stories.@(ts|tsx)`
-- **Story format**: CSF3 (Component Story Format 3) — CSF Factories available but optional until Storybook 11
+See `apps/storybook/CLAUDE.md` for architecture details, story templates, and guidelines.
 
 ## Development Workflows
 
@@ -649,93 +536,16 @@ pnpm --filter @cw-hackathon/web lint
 pnpm --filter @cw-hackathon/data type-check
 ```
 
-## Workspace Details
+## Workspaces
 
-### apps/web
+| Workspace | Type | Dev Command | Notes |
+|-----------|------|-------------|-------|
+| `apps/web` | Next.js 15 + React 19 | `pnpm --filter @cw-hackathon/web dev` → http://localhost:3000 | App Router, Server Components |
+| `apps/storybook` | Storybook 10 | `pnpm storybook` → http://localhost:6006 | Component explorer |
+| `packages/ui` | Shared components | Consumed by apps | Design system, chat components |
+| `packages/data` | CLI + AI pipelines | `cd packages/data && bun run src/bin/cli.ts <cmd>` | Runs on Bun |
 
-Next.js 15 web application with React 19.
-
-**Tech Stack:**
-- Next.js 15.1.4 (App Router)
-- React 19.0.0
-- TypeScript
-- CSS
-
-**Key Files:**
-- `next.config.ts`: Next.js configuration with `reactStrictMode: true`
-- `app/layout.tsx`: Root layout with metadata
-- `app/page.tsx`: Home page
-- `app/globals.css`: Global styles
-
-**Development:**
-```bash
-cd apps/web
-pnpm dev
-# Visit http://localhost:3000
-```
-
-### packages/data
-
-CLI tool using Citty framework, runs with Bun runtime.
-
-**Tech Stack:**
-- Citty 0.1.6 (CLI framework)
-- Bun (runtime)
-- TypeScript
-
-**Key Files:**
-- `src/bin/cli.ts`: Entry point with `#!/usr/bin/env bun` shebang
-- `src/index.ts`: Main command definition with subcommands
-- `src/commands/hello.ts`: Example hello command
-
-**Development:**
-```bash
-cd packages/data
-
-# Run directly from source (no build needed)
-bun run src/bin/cli.ts hello
-bun run src/bin/cli.ts hello --name="Developer" --loud
-
-# After building
-bun dist/bin/cli.js hello
-```
-
-## CLI Usage
-
-### Running the CLI
-
-```bash
-# From packages/data directory
-cd packages/data
-bun run src/bin/cli.ts <command> [options]
-
-# Or via npm script
-pnpm --filter @cw-hackathon/data cli <command> [options]
-```
-
-### Available Commands
-
-**hello** - Say hello to the world
-
-```bash
-# Basic usage
-bun run src/bin/cli.ts hello
-# Output: Hello, World!
-
-# With custom name
-bun run src/bin/cli.ts hello Developer
-# Output: Hello, Developer!
-
-# Loud mode
-bun run src/bin/cli.ts hello --name="Developer" --loud
-# Output: HELLO, DEVELOPER!!!
-```
-
-**Arguments:**
-- `name` (positional, optional): Name to greet (default: "World")
-
-**Flags:**
-- `--loud, -l`: Make it loud with exclamation marks
+See `packages/data/CLAUDE.md` for CLI commands, prompt versioning, and AI pipeline details.
 
 ## Code Conventions
 
@@ -831,75 +641,6 @@ import { ClipboardList, FileText, Check, FlaskConical } from "lucide-react";
 
 **See:** [docs/design-guidelines.md](./docs/design-guidelines.md) for complete icon usage guide.
 
-## Adding New Workspaces
-
-### New App
-
-```bash
-mkdir apps/new-app
-cd apps/new-app
-
-# Create package.json
-cat > package.json <<EOF
-{
-  "name": "@cw-hackathon/new-app",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "...",
-    "build": "...",
-    "lint": "biome check .",
-    "type-check": "tsc --noEmit"
-  }
-}
-EOF
-
-# Install from root
-cd ../..
-pnpm install
-```
-
-### New Package
-
-```bash
-mkdir packages/new-package
-cd packages/new-package
-
-# Create package.json
-cat > package.json <<EOF
-{
-  "name": "@cw-hackathon/new-package",
-  "version": "0.0.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "lint": "biome check .",
-    "type-check": "tsc --noEmit"
-  }
-}
-EOF
-
-# Install from root
-cd ../..
-pnpm install
-```
-
-### Using Internal Packages
-
-Reference workspace packages in `package.json`:
-
-```json
-{
-  "dependencies": {
-    "@cw-hackathon/data": "workspace:*",
-    "@cw-hackathon/utils": "workspace:*"
-  }
-}
-```
-
 ## Turborepo Pipeline
 
 Defined in `turbo.json`:
@@ -909,131 +650,22 @@ Defined in `turbo.json`:
 - **lint**: Depends on build
 - **type-check**: Depends on build
 
-## Common Tasks
-
-### Add a New Dependency
+## Adding Dependencies and Workspaces
 
 ```bash
-# To root
+# Add dependency to specific workspace
+pnpm --filter @cw-hackathon/web add <package>
+
+# Add root dev dependency
 pnpm add -D <package> -w
 
-# To specific workspace
-pnpm --filter @cw-hackathon/web add <package>
-pnpm --filter @cw-hackathon/data add -D <package>
+# Use workspace protocol for internal packages
+# In package.json: "@cw-hackathon/ui": "workspace:*"
+
+# New workspaces: create in apps/ or packages/, name as @cw-hackathon/<name>
 ```
 
-### Update Dependencies
-
-```bash
-# Update all
-pnpm update
-
-# Update specific package
-pnpm update <package>
-
-# Interactive update
-pnpm update -i
-```
-
-### Clean Build Artifacts
-
-```bash
-# Clean all
-pnpm exec turbo clean
-
-# Or manually
-rm -rf apps/*/dist apps/*/.next packages/*/dist .turbo
-```
-
-### Reset Node Modules
-
-```bash
-# Remove all node_modules
-rm -rf node_modules apps/*/node_modules packages/*/node_modules
-
-# Reinstall
-pnpm install
-```
-
-## Troubleshooting
-
-### pnpm install fails
-
-- Ensure you have pnpm 9.15.0: `pnpm --version`
-- Install correct version: `npm install -g pnpm@9.15.0`
-- Clear pnpm cache: `pnpm store prune`
-
-### Turbo cache issues
-
-```bash
-# Clear turbo cache
-rm -rf .turbo
-pnpm exec turbo clean
-```
-
-### Type errors in workspace packages
-
-- Ensure packages are built: `pnpm build`
-- Check tsconfig.json extends base config
-- Verify workspace links: `pnpm list --depth 0`
-
-### Biome not formatting
-
-- Check file is not in `files.ignore` in biome.json
-- Run with write flag: `pnpm check`
-- Manual format: `pnpm format`
-
-## Environment Variables
-
-### apps/web
-
-Create `.env.local` for local development:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-
-# Weights & Biases Weave Tracing (optional)
-WANDB_API_KEY=your-wandb-api-key
-WEAVE_PROJECT=your-team/your-project
-```
-
-Never commit `.env.local` - it's gitignored.
-
-See `apps/web/.env.example` for all available options.
-
-### packages/data
-
-Create `.env` for local CLI development:
-
-```env
-# Weights & Biases Weave Tracing
-WANDB_API_KEY=your-wandb-api-key
-WEAVE_PROJECT=your-team/your-project
-```
-
-Run CLI with env file:
-```bash
-cd packages/data
-bun --env-file=.env run src/bin/cli.ts dap generate ...
-```
-
-See `packages/data/.env.example` for all available options.
-
-**Weave Tracing**: Set `WEAVE_PROJECT` (or `WANDB_PROJECT` or `CORE_WEAVE`) to enable W&B Weave tracing for LLM calls. Also requires `WANDB_API_KEY` for authentication.
-
-## Why These Tools?
-
-**Turbo**: Fast builds with intelligent caching, parallel execution
-
-**pnpm**: Efficient disk usage, fast installs, strict dependency resolution
-
-**Biome**: Single tool for linting + formatting, faster than ESLint + Prettier
-
-**Bun**: Fast CLI startup, native TypeScript support, Node.js compatible
-
-**Citty**: Lightweight CLI framework, TypeScript-first, easy to use
-
-**Next.js 15**: Latest React features, App Router, server components
+See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for detailed workflows, environment variables, troubleshooting, and common tasks.
 
 ## Quick Reference
 
@@ -1062,113 +694,16 @@ pnpm --filter @cw-hackathon/web dev
 
 ## Documentation
 
-See `docs/` directory for:
-- PRDs (Product Requirement Documents) in `docs/prds/`
-- Additional documentation in `docs/README.md`
+- **[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)** - Development guide, skills, workflows (start here for onboarding)
+- **[docs/prds/](./docs/prds/)** - PRDs with wave-number prefixes for chronological ordering
+- **[docs/react-best-practices.md](./docs/react-best-practices.md)** - React/Next.js patterns
+- **[docs/design-guidelines.md](./docs/design-guidelines.md)** - Colors, typography, icons
+- **[docs/chrome-devtools-mcp.md](./docs/chrome-devtools-mcp.md)** - Browser debugging
+- **`packages/data/CLAUDE.md`** - CLI, prompt versioning, AI pipelines
+- **`apps/storybook/CLAUDE.md`** - Storybook architecture and story guidelines
 
 ## Chrome DevTools Debugging
 
-### Overview
+Use `/chrome-devtools setup` to launch a debug Chrome, then `/chrome-devtools debug` to inspect console errors, DOM, and network requests in real time. Requires Chrome + port 9222.
 
-The `/chrome-devtools` skill enables real-time browser debugging with Claude Code through the Chrome DevTools Protocol. This allows you to inspect actual Chrome browser tabs, capture console errors, inspect DOM, monitor network requests, and debug issues without screenshots or copy-pasting.
-
-### What This Enables
-
-- ✅ Connect to actual Chrome browser tabs
-- ✅ Capture console errors automatically
-- ✅ Inspect DOM elements and network requests
-- ✅ Take screenshots of current state
-- ✅ Execute JavaScript in page context
-- ✅ Real-time debugging with Claude Code
-
-### When to Use
-
-Use the `/chrome-devtools` skill when:
-- You see errors in the browser console that need investigation
-- You need to debug rendering issues or hydration errors
-- You want to inspect network requests and responses
-- You're testing the web app and need Claude to see what's happening
-- You want to avoid taking screenshots and copying error messages manually
-
-### Quick Start
-
-```bash
-# 1. Set up Chrome debugging (run once, or after closing debug Chrome)
-/chrome-devtools setup
-
-# 2. Navigate to your app in the debug Chrome window
-# Example: http://localhost:3000/intake/demo
-
-# 3. Restart Claude Code to load the MCP server
-
-# 4. Debug the current tab
-/chrome-devtools debug
-```
-
-### Available Commands
-
-- `/chrome-devtools setup` - Configure and launch debug Chrome automatically
-- `/chrome-devtools debug` - Inspect current Chrome tab and debug errors
-- `/chrome-devtools info` - Display status and usage information
-
-### Example Usage
-
-**Debugging a page:**
-```
-/chrome-devtools setup
-[Navigate to http://localhost:3000/intake/demo]
-[Restart Claude Code]
-/chrome-devtools debug
-```
-
-Claude will automatically:
-- List available Chrome tabs
-- Find your localhost tab
-- Inspect console errors
-- Analyze the DOM
-- Suggest fixes
-
-**Investigating an error:**
-```
-User: "There's an error on the intake demo page"
-Assistant: /chrome-devtools debug
-[Claude inspects the tab and reports exact errors with line numbers]
-[Claude suggests specific fixes based on the error]
-```
-
-### How It Works
-
-1. **Debug Chrome runs on port 9222** with DevTools Protocol enabled
-2. **MCP Server connects** to the debug endpoint at http://localhost:9222
-3. **Claude Code uses MCP tools** to inspect tabs, read console, execute JS, etc.
-4. **Separate profile** (`~/.chrome-debug-profile`) keeps your debugging isolated
-
-### Requirements
-
-- Chrome browser installed
-- Node.js 22+ (for MCP server)
-- Port 9222 available (close regular Chrome before launching debug Chrome)
-
-### Troubleshooting
-
-**Port already in use:**
-- Debug Chrome is already running - use the existing instance
-- Or close it and run setup again
-
-**MCP not loading:**
-- Ensure debug Chrome is running: visit http://localhost:9222/json
-- Restart Claude Code after running setup
-- Check Claude Code logs for MCP connection errors
-
-**Can't find tabs:**
-- Make sure you navigated to your app in the debug Chrome window (not regular Chrome)
-- The MCP server only sees tabs in the debug Chrome instance
-
-### Documentation
-
-For comprehensive details, see [docs/chrome-devtools-mcp.md](./docs/chrome-devtools-mcp.md):
-- Detailed setup instructions
-- MCP tool reference
-- Security considerations
-- Comparison with other browser tools
-- Best practices
+See [docs/chrome-devtools-mcp.md](./docs/chrome-devtools-mcp.md) for full setup and troubleshooting.
