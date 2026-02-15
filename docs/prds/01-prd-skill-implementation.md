@@ -322,8 +322,9 @@ This is a skill for Claude Code, so the demo involves using the skill commands:
 
 ---
 
-**Status**: In Progress
+**Status**: Accepted
 **Created**: 2026-01-31
-**Last Updated**: 2026-01-31
+**Last Updated**: 2026-02-15
 **Implementation Started**: 2026-01-31
-**Completed**: N/A
+**Completed**: 2026-01-31
+**Accepted**: 2026-02-15 — Skill has been used to manage all 15 PRDs. Expanded beyond original spec to include `start` (replacing `impl`), `accept`, `reject`, and `status` subcommands.
