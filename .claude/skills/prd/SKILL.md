@@ -59,13 +59,22 @@ Create a new PRD from the template.
    - Read `docs/templates/prd-template.md`
    - This contains the structure and meta-instructions
 
-2. **Prompt for PRD name**
+2. **Determine wave number prefix**
+   - Scan `docs/prds/` for existing PRD files
+   - Parse the highest wave number from existing filenames (format: `NN-slug.md`)
+   - **Default behavior**: Increment the highest wave number by 1 (new development phase)
+   - **Same-wave option**: If the user says this is part of the same batch of work, reuse the current highest wave number
+   - Ask user: "Current highest wave is NN. Create as wave NN+1 (new phase) or NN (same batch)?"
+   - If no existing PRDs have prefixes, start at `01`
+   - Wave numbers are zero-padded to 2 digits: `01`, `02`, ..., `09`, `10`, etc.
+
+3. **Prompt for PRD name**
    - Ask user for a descriptive slug (e.g., "user-authentication", "api-redesign")
    - Suggest converting to kebab-case if needed
    - Validate: no spaces, lowercase, alphanumeric with hyphens
 
-3. **Create PRD file**
-   - Path: `docs/prds/<slug>.md`
+4. **Create PRD file**
+   - Path: `docs/prds/<wave>-<slug>.md` (e.g., `docs/prds/06-user-authentication.md`)
    - Check if file already exists (abort if it does)
    - Copy template content to new file
    - Update the title line to reflect the feature name (convert slug to Title Case)
@@ -73,15 +82,17 @@ Create a new PRD from the template.
    - Update **Created** date to today (YYYY-MM-DD format)
    - Update **Last Updated** to today
 
-4. **Update context file**
+5. **Update context file**
    - Write to `.claude/prd-context.json` with:
-     - activePRD: "<slug>.md"
+     - activePRD: "<wave>-<slug>.md"
+     - wave: <wave number>
      - status: "Draft"
      - lastUpdated: (ISO timestamp)
      - nextAction: "Fill in PRD details and run /prd start when ready to implement"
 
-5. **Inform user**
-   - Tell user the PRD was created at `docs/prds/<slug>.md`
+6. **Inform user**
+   - Tell user the PRD was created at `docs/prds/<wave>-<slug>.md`
+   - Show the wave number assigned
    - Suggest they can now edit it to fill in details
    - Mention they can use `/prd start` to track progress later
 
@@ -526,8 +537,16 @@ Follow these steps to verify the implementation:
 
 ### File Paths
 - Template is always at: `docs/templates/prd-template.md`
-- PRDs are always in: `docs/prds/<name>.md`
+- PRDs are always in: `docs/prds/<wave>-<slug>.md` (e.g., `06-user-authentication.md`)
+- Wave prefix is required — never create PRDs without a wave number prefix
 - Never create PRDs outside the `docs/prds/` directory
+
+### Wave Number Convention
+- PRDs are prefixed with a two-digit wave number: `01-`, `02-`, etc.
+- Wave numbers group PRDs by development phase (PRDs created around the same time share a wave)
+- Within a wave, PRDs sort alphabetically by slug
+- Across waves, PRDs sort chronologically by development phase
+- When scanning for the current wave: `ls docs/prds/*.md | sort -r | head -1` and parse the prefix
 
 ### Date Format
 - Always use ISO format: YYYY-MM-DD
@@ -554,7 +573,8 @@ Draft → In Progress → Pending Review → Accepted
 - Context file format:
   ```json
   {
-    "activePRD": "filename.md",
+    "activePRD": "06-feature-name.md",
+    "wave": 6,
     "status": "current status",
     "lastUpdated": "ISO timestamp",
     "completionDate": "YYYY-MM-DD or null",
@@ -582,21 +602,26 @@ Draft → In Progress → Pending Review → Accepted
 ### Creating a new PRD:
 ```
 User: /prd plan
-You: I'll create a new PRD from the template. What would you like to name this PRD?
+You: I'll create a new PRD from the template.
+
+     Current highest wave: 05 (e.g., 05-setup-storybook.md)
+     → Wave 06 (new phase) or 05 (same batch)?
+User: 06
+You: What would you like to name this PRD?
      (Use kebab-case, e.g., "user-authentication" or "dashboard-redesign")
 User: api-rate-limiting
-You: Creating PRD at docs/prds/api-rate-limiting.md...
-     ✓ PRD created successfully
+You: Creating PRD at docs/prds/06-api-rate-limiting.md...
+     ✓ PRD created (wave 06)
 
      Next steps:
-     - Edit docs/prds/api-rate-limiting.md to fill in details
-     - Use /prd impl to track progress during implementation
+     - Edit docs/prds/06-api-rate-limiting.md to fill in details
+     - Use /prd start to track progress during implementation
 ```
 
 ### Adding implementation notes:
 ```
 User: /prd start
-You: Found current PRD: docs/prds/api-rate-limiting.md (Step 2 in progress)
+You: Found current PRD: docs/prds/06-api-rate-limiting.md (Step 2 in progress)
 
      What was accomplished in this step?
 User: Completed middleware implementation and added tests
@@ -618,7 +643,7 @@ You: ✓ Updated implementation log for Step 2
 ### Marking complete (pending review):
 ```
 User: /prd end
-You: Found PRD: docs/prds/api-rate-limiting.md
+You: Found PRD: docs/prds/06-api-rate-limiting.md
 
      Running quality checks...
 
@@ -650,7 +675,7 @@ You: ✓ Added demo instructions to Notes section
 ### Accepting PRD:
 ```
 User: /prd accept
-You: Found PRD: docs/prds/api-rate-limiting.md (Pending Review)
+You: Found PRD: docs/prds/06-api-rate-limiting.md (Pending Review)
 
      ✓ PRD accepted (2026-01-31)
 
@@ -665,7 +690,7 @@ You: Found PRD: docs/prds/api-rate-limiting.md (Pending Review)
 ### Rejecting PRD:
 ```
 User: /prd reject Build is broken on production
-You: Found PRD: docs/prds/api-rate-limiting.md (Pending Review)
+You: Found PRD: docs/prds/06-api-rate-limiting.md (Pending Review)
 
      What issues were found? (This will be logged in the PRD)
      [User input captured: "Build is broken on production"]
@@ -686,7 +711,7 @@ You: Found PRD: docs/prds/api-rate-limiting.md (Pending Review)
 ```
 User: /prd status
 You: 📋 Active PRD: API Rate Limiting
-     File: docs/prds/api-rate-limiting.md
+     File: docs/prds/06-api-rate-limiting.md
      Status: Pending Review
      Completed: 2026-01-31
 
@@ -777,7 +802,7 @@ You: 📋 Active PRD: API Rate Limiting
 ```
 User: /prd status
 You: 📋 Active PRD: API Rate Limiting
-     File: docs/prds/api-rate-limiting.md
+     File: docs/prds/06-api-rate-limiting.md
      Status: In Progress
      Started: 2026-01-28
 
@@ -826,7 +851,7 @@ You: 📋 Active PRD: API Rate Limiting
 ```
 User: /prd status
 You: 📋 Active PRD: API Rate Limiting
-     File: docs/prds/api-rate-limiting.md
+     File: docs/prds/06-api-rate-limiting.md
 
      ✅ PRD is complete and accepted
      Accepted: 2026-01-31
