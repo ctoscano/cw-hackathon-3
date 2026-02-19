@@ -1,5 +1,7 @@
 # DAP Notes CLI - Product Requirement Document
 
+> **Status: Accepted** | Merged via PR #1 on 2026-02-01
+
 ## Purpose
 
 This PRD defines the implementation of a CLI tool and shared library for generating DAP (Data, Assessment, Plan) notes for therapists. The system enables therapists to verbally describe a session with a patient, and uses AI to generate structured DAP notes suitable for insurance documentation. The scope includes a CLI for testing and development, shared utilities that can be used in both CLI and Next.js web contexts, synthetic data generation for testing, markdown-based prompt templates, and a self-evaluation workflow for iterative improvement. The design emphasizes observability through file-based output at each stage for review and debugging.

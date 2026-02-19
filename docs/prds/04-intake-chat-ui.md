@@ -1,5 +1,7 @@
 # PRD: Intake Chat-Style UI Redesign
 
+> **Status: Accepted** | Merged via PR #4 on 2026-02-01
+
 ## Overview
 
 Redesign the intake experience to use a chat-like interface that improves perceived performance and creates a more conversational feel. The key insight is that showing the next question immediately after submission—before the personalized reflection arrives—dramatically reduces perceived wait time.

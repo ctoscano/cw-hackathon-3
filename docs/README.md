@@ -2,18 +2,30 @@
 
 This directory contains documentation for the CW Hackathon monorepo.
 
+## Start Here
+
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Development guide for new engineers (skills, workflows, architecture)
+
 ## Structure
 
-- **prds/** - Product Requirement Documents
-  - [repo-setup.md](./prds/repo-setup.md) - Initial monorepo setup implementation plan
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Development guide (start here for onboarding)
+- **[prds/](./prds/)** - Product Requirement Documents (check the folder for the full list, prefixed by wave number for chronological ordering)
 - **templates/** - Document templates
   - [prd-template.md](./templates/prd-template.md) - Template for creating new PRDs
 - **[react-best-practices.md](./react-best-practices.md)** - React and Next.js development patterns and performance guidelines
+- **[design-guidelines.md](./design-guidelines.md)** - Color palette, typography, icon usage
+- **[tailwind-setup.md](./tailwind-setup.md)** - Tailwind CSS v4 configuration reference
+- **[quality-gates.md](./quality-gates.md)** - Pre-commit and pre-push automated checks
+- **[chrome-devtools-mcp.md](./chrome-devtools-mcp.md)** - Browser debugging with Chrome DevTools Protocol
+- **[heroui-tailwind-monorepo.md](./heroui-tailwind-monorepo.md)** - HeroUI + Tailwind v4 integration guide
+- **[spa-pattern-data-heavy-pages.md](./spa-pattern-data-heavy-pages.md)** - SPA patterns for data-intensive pages
+- **[redis-data-structure.md](./redis-data-structure.md)** - Redis schema design
 
 ## Quick Links
 
 - [Root README](../README.md) - Project overview and quick start
 - [CLAUDE.md](../CLAUDE.md) - Detailed AI assistant context and development guide
+- [DEVELOPMENT.md](./DEVELOPMENT.md) - Development guide for new engineers
 
 ## Adding Documentation
 

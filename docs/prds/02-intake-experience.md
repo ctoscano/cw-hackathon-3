@@ -1,5 +1,7 @@
 # PRD: "Is Therapy Right for Me?" Guided Intake Experience
 
+> **Status: Accepted** | Merged via PR #4 on 2026-02-01
+
 ## Overview
 
 A guided, step-by-step intake experience for adults considering therapy. The goal is to help users make an informed, self-directed decision about whether therapy is worth trying, what kinds of therapy might fit them, and how therapy could help their specific situation.

@@ -1,5 +1,7 @@
 # PRD: LLM Provider Switching
 
+> **Status: Accepted** | Merged via PR #8 on 2026-02-04
+
 ## Overview
 
 Add the ability to switch between Claude Code (via Anthropic) and Weights & Biases Inference as LLM providers. This enables cost optimization and flexibility in model selection while maintaining the existing telemetry and tracing infrastructure.
